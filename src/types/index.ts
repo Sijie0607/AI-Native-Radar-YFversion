@@ -111,6 +111,19 @@ export interface RecommendationSubmissionResult {
   existingBook?: RecommendationExistingBookSnapshot;
 }
 
+export interface RecommendationRecord {
+  id: string;
+  title: string;
+  author: string;
+  domain: Domain;
+  score: RecommendationScore;
+  reason: string;
+  status: RecommendationSubmissionStatus;
+  message: string;
+  submittedAt: string;
+  existingBook?: RecommendationExistingBookSnapshot;
+}
+
 // 兼容性类型 - 为了让旧代码继续工作
 export type Resource = Book & {
   difficulty: string;

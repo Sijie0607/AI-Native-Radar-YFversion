@@ -13,6 +13,7 @@ interface RecommendationResultProps {
   onRetrySubmit: () => void;
   onContinueRecommend: () => void;
   onReturnBrowse: () => void;
+  onViewRecords: () => void;
 }
 
 const STATUS_META: Record<
@@ -66,6 +67,7 @@ const RecommendationResult = ({
   onRetrySubmit,
   onContinueRecommend,
   onReturnBrowse,
+  onViewRecords,
 }: RecommendationResultProps) => {
   const meta = STATUS_META[result.status];
   const Icon = meta.icon;
@@ -115,6 +117,13 @@ const RecommendationResult = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
+            onClick={onViewRecords}
+            className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
+          >
+            查看推荐记录
+          </button>
+          <button
+            type="button"
             onClick={onContinueRecommend}
             className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
           >
@@ -138,6 +147,13 @@ const RecommendationResult = ({
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
+              onClick={onViewRecords}
+              className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
+            >
+              查看推荐记录
+            </button>
+            <button
+              type="button"
               onClick={onBackToForm}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400"
             >
@@ -150,6 +166,13 @@ const RecommendationResult = ({
 
       {result.status === 'error' && (
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onViewRecords}
+            className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
+          >
+            查看推荐记录
+          </button>
           <button
             type="button"
             onClick={onBackToForm}

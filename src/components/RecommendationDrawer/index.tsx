@@ -2,15 +2,19 @@ import { useMemo, useState } from 'react';
 import { BookPlus, FileText, X } from 'lucide-react';
 import DraftConfirmModal from '../DraftConfirmModal';
 import RecommendationForm from '../RecommendationForm';
+import RecommendationRecords from '../RecommendationRecords';
 import RecommendationResult from '../RecommendationResult';
 import { useRecommendationStore } from '../../store/useRecommendationStore';
 import { useResourceStore } from '../../store/useResourceStore';
 import {
   BookRecommendationDraft,
   RecommendationDraftErrors,
+  RecommendationRecord,
   RecommendationSubmissionResult,
 } from '../../types';
 import { recommendationService } from '../../services/recommendationService';
+
+type DrawerView = 'form' | 'result' | 'records';
 
 interface RecommendationDrawerProps {
   isOpen: boolean;
@@ -19,12 +23,13 @@ interface RecommendationDrawerProps {
 
 const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) => {
   const { books } = useResourceStore();
-  const { draft, setDraftField, resetDraft } = useRecommendationStore();
+  const { draft, records, addRecord, clearRecords, setDraftField, resetDraft } = useRecommendationStore();
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BookRecommendationDraft, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<RecommendationSubmissionResult | null>(null);
   const [allowDuplicateSubmit, setAllowDuplicateSubmit] = useState(false);
+  const [drawerView, setDrawerView] = useState<DrawerView>('form');
 
   const allValidationErrors = useMemo<RecommendationDraftErrors>(() => {
     const errors: RecommendationDraftErrors = {};
@@ -94,6 +99,7 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
     setSubmissionResult(null);
     setAllowDuplicateSubmit(false);
     setIsSubmitting(false);
+    setDrawerView('form');
   };
 
   const closeDrawer = () => {
@@ -116,6 +122,25 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
     });
   };
 
+  const createRecordFromResult = (result: RecommendationSubmissionResult): RecommendationRecord | null => {
+    if (!draft.domain || draft.score === null) {
+      return null;
+    }
+
+    return {
+      id: `${result.submittedAt}-${result.status}-${draft.title}-${draft.author}`,
+      title: draft.title.trim(),
+      author: draft.author.trim(),
+      domain: draft.domain,
+      score: draft.score,
+      reason: draft.reason.trim(),
+      status: result.status,
+      message: result.message,
+      submittedAt: result.submittedAt,
+      existingBook: result.existingBook,
+    };
+  };
+
   const handleSubmit = async () => {
     markAllFieldsTouched();
 
@@ -131,8 +156,14 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
       allowDuplicateSubmit,
     });
 
+    const record = createRecordFromResult(result);
+    if (record) {
+      addRecord(record);
+    }
+
     setSubmissionResult(result);
     setAllowDuplicateSubmit(result.status === 'duplicate');
+    setDrawerView('result');
     setIsSubmitting(false);
   };
 
@@ -196,11 +227,29 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
               </p>
             </section>
 
-            {submissionResult ? (
+            {drawerView === 'records' ? (
+              <RecommendationRecords
+                records={records}
+                onBackToForm={() => {
+                  setSubmissionResult(null);
+                  setDrawerView('form');
+                }}
+                onReturnBrowse={() => {
+                  if (submissionResult?.status === 'success') {
+                    resetDraft();
+                  }
+                  closeDrawer();
+                }}
+                onClearRecords={clearRecords}
+              />
+            ) : submissionResult ? (
               <RecommendationResult
                 result={submissionResult}
                 isSubmitting={isSubmitting}
-                onBackToForm={() => setSubmissionResult(null)}
+                onBackToForm={() => {
+                  setSubmissionResult(null);
+                  setDrawerView('form');
+                }}
                 onRetrySubmit={handleSubmit}
                 onContinueRecommend={() => {
                   resetForNewRecommendation();
@@ -209,6 +258,7 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
                   resetDraft();
                   closeDrawer();
                 }}
+                onViewRecords={() => setDrawerView('records')}
               />
             ) : (
               <RecommendationForm
