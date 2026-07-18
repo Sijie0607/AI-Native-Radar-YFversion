@@ -1,15 +1,22 @@
 import { X, BookOpen, User, Star, Target, BookMarked, Tag, CheckCircle, MessageSquare } from 'lucide-react';
 import { useResourceStore } from '../../store/useResourceStore';
 import { getDomainConfig, DIFFICULTIES } from '../../constants';
+import { useBookScoringStore } from '../../store/useBookScoringStore';
 
-const DetailSidebar = () => {
+interface DetailSidebarProps {
+  onScoreClick?: () => void;
+}
+
+const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
   const { books, viewState, selectBook, toggleDetailPanel } = useResourceStore();
+  const { sessionScores } = useBookScoringStore();
   const selectedBook = books.find(b => b.id === viewState.selectedBookId);
 
   if (!selectedBook) return null;
 
   const domainConfig = getDomainConfig(selectedBook.domain);
   const difficultyConfig = DIFFICULTIES[selectedBook.ringIndex];
+  const hasSessionScore = Boolean(sessionScores[selectedBook.id]);
 
   return (
     <div className="fixed inset-y-0 right-0 z-50 w-full border-l border-slate-700 bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 sm:w-[450px]">
@@ -70,6 +77,16 @@ const DetailSidebar = () => {
               <div className="text-xs text-slate-400">{selectedBook.votesCount} 人推荐</div>
             </div>
           </div>
+
+          {onScoreClick && (
+            <button
+              type="button"
+              onClick={onScoreClick}
+              className="w-full rounded-xl bg-amber-500 px-4 py-3 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400"
+            >
+              {hasSessionScore ? '修改我的评分' : '评分投票'}
+            </button>
+          )}
 
           {/* 领域和难度 */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

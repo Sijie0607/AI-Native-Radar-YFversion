@@ -1,7 +1,12 @@
 import { useResourceStore } from '../../store/useResourceStore';
 import ResourceCard from '../ResourceCard';
+import { Book } from '../../types';
 
-const ResourceList = () => {
+interface ResourceListProps {
+  onScoreClick?: (book: Book) => void;
+}
+
+const ResourceList = ({ onScoreClick }: ResourceListProps) => {
   const { filteredBooks } = useResourceStore();
   const books = filteredBooks();
 
@@ -16,7 +21,7 @@ const ResourceList = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {books.map((book) => (
-        <ResourceCard key={book.id} resource={book} />
+        <ResourceCard key={book.id} resource={book} onScoreClick={onScoreClick} />
       ))}
     </div>
   );

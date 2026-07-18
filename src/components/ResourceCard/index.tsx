@@ -2,14 +2,18 @@ import { useNavigate } from 'react-router-dom';
 import { Book } from '../../types';
 import { DOMAIN_LABELS, DOMAIN_COLORS, DIFFICULTIES } from '../../constants';
 import { Star } from 'lucide-react';
+import { useBookScoringStore } from '../../store/useBookScoringStore';
 
 interface ResourceCardProps {
   resource: Book;
+  onScoreClick?: (book: Book) => void;
 }
 
-const ResourceCard = ({ resource }: ResourceCardProps) => {
+const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
   const navigate = useNavigate();
   const difficultyConfig = DIFFICULTIES[resource.ringIndex];
+  const { sessionScores } = useBookScoringStore();
+  const hasSessionScore = Boolean(sessionScores[resource.id]);
 
   return (
     <div
@@ -56,6 +60,21 @@ const ResourceCard = ({ resource }: ResourceCardProps) => {
           </span>
         )}
       </div>
+
+      {onScoreClick && (
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onScoreClick(resource);
+            }}
+            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition-colors hover:border-amber-400/50 hover:bg-amber-500/15"
+          >
+            {hasSessionScore ? '修改评分' : '评分投票'}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

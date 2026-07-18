@@ -3,21 +3,35 @@ import Navbar from '../../components/Navbar';
 import RadarChart from '../../components/RadarChart';
 import SearchFilter from '../../components/SearchFilter';
 import DetailSidebar from '../../components/DetailSidebar';
+import BookScoringDrawer from '../../components/BookScoringDrawer';
 import RecommendationDrawer from '../../components/RecommendationDrawer';
 import { useResourceStore } from '../../store/useResourceStore';
 import { mockService } from '../../mocks/mockData';
 import { BookPlus, Info } from 'lucide-react';
+import { Book } from '../../types';
 
 const Home = () => {
   const [isRecommendationOpen, setIsRecommendationOpen] = useState(false);
-  const { setBooks, setLoadingStatus, viewState, filteredBooks, selectBook, toggleDetailPanel } = useResourceStore();
+  const [isScoringOpen, setIsScoringOpen] = useState(false);
+  const [activeScoringBook, setActiveScoringBook] = useState<Book | null>(null);
+  const { books, setBooks, setLoadingStatus, viewState, filteredBooks, selectBook, toggleDetailPanel } = useResourceStore();
 
-  const openRecommendation = () => {
+  const closeDetailPanelIfNeeded = () => {
     if (viewState.isDetailPanelOpen) {
       selectBook(null);
       toggleDetailPanel(false);
     }
+  };
+
+  const openRecommendation = () => {
+    closeDetailPanelIfNeeded();
     setIsRecommendationOpen(true);
+  };
+
+  const openScoring = (book: Book) => {
+    closeDetailPanelIfNeeded();
+    setActiveScoringBook(book);
+    setIsScoringOpen(true);
   };
 
   // 加载数据
@@ -108,7 +122,28 @@ const Home = () => {
       </main>
 
       {/* 详情侧边栏 */}
-      {viewState.isDetailPanelOpen && <DetailSidebar />}
+      {viewState.isDetailPanelOpen && (
+        <DetailSidebar
+          onScoreClick={() => {
+            const targetBook = viewState.selectedBookId
+              ? books.find((item) => item.id === viewState.selectedBookId) ?? null
+              : null;
+            if (!targetBook) {
+              return;
+            }
+
+            openScoring(targetBook);
+          }}
+        />
+      )}
+      <BookScoringDrawer
+        isOpen={isScoringOpen}
+        book={activeScoringBook}
+        onClose={() => {
+          setIsScoringOpen(false);
+          setActiveScoringBook(null);
+        }}
+      />
       <RecommendationDrawer
         isOpen={isRecommendationOpen}
         onClose={() => setIsRecommendationOpen(false)}

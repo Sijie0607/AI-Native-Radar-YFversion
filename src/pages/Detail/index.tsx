@@ -1,13 +1,18 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
 import Navbar from '../../components/Navbar';
+import BookScoringDrawer from '../../components/BookScoringDrawer';
 import { DIFFICULTIES, DOMAINS } from '../../constants';
 import { ArrowLeft, Star, User, Target, BookMarked, MessageSquare, CheckCircle, Tag } from 'lucide-react';
+import { useBookScoringStore } from '../../store/useBookScoringStore';
 
 const Detail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [isScoringOpen, setIsScoringOpen] = useState(false);
   const { books } = useResourceStore();
+  const { sessionScores } = useBookScoringStore();
   const book = books.find((b) => b.id === id);
 
   if (!book) {
@@ -31,6 +36,7 @@ const Detail = () => {
 
   const domainConfig = DOMAINS.find((d) => d.id === book.domain) || DOMAINS[0];
   const difficultyConfig = DIFFICULTIES[book.ringIndex];
+  const hasSessionScore = Boolean(sessionScores[book.id]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -86,6 +92,19 @@ const Detail = () => {
                     <BookMarked size={16} className="inline mr-1" />
                     {difficultyConfig.name}
                   </span>
+                </div>
+
+                <div className="mb-8 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsScoringOpen(true)}
+                    className="rounded-xl bg-amber-500 px-4 py-3 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400"
+                  >
+                    {hasSessionScore ? '修改我的评分' : '评分投票'}
+                  </button>
+                  <p className="self-center text-sm text-slate-400">
+                    提交后会实时刷新推荐指数，但本轮不会影响雷达展示。
+                  </p>
                 </div>
 
                 {/* 推荐理由 */}
@@ -210,6 +229,12 @@ const Detail = () => {
           </div>
         </div>
       </main>
+
+      <BookScoringDrawer
+        isOpen={isScoringOpen}
+        book={book}
+        onClose={() => setIsScoringOpen(false)}
+      />
     </div>
   );
 };
