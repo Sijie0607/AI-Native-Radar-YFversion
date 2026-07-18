@@ -1,7 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, List as ListIcon } from 'lucide-react';
+import { BookOpen, BookPlus, List as ListIcon } from 'lucide-react';
 
-const Navbar = () => {
+interface NavbarProps {
+  onRecommendClick?: () => void;
+}
+
+const Navbar = ({ onRecommendClick }: NavbarProps) => {
   const location = useLocation();
 
   return (
@@ -15,7 +19,7 @@ const Navbar = () => {
           AI-Native 读书雷达
         </Link>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
           <Link
             to="/"
             className={`flex items-center gap-2 transition-colors ${
@@ -38,6 +42,17 @@ const Navbar = () => {
             <ListIcon size={20} />
             书单列表
           </Link>
+
+          {onRecommendClick && (
+            <button
+              type="button"
+              onClick={onRecommendClick}
+              className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20"
+            >
+              <BookPlus size={18} />
+              推荐一本书
+            </button>
+          )}
         </div>
       </div>
     </nav>

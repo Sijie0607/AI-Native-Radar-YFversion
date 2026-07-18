@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useResourceStore } from '../../store/useResourceStore';
 import Navbar from '../../components/Navbar';
-import { DOMAIN_LABELS, DOMAIN_COLORS, DIFFICULTIES } from '../../constants';
+import { DIFFICULTIES, DOMAINS } from '../../constants';
 import { ArrowLeft, Star, User, Target, BookMarked, MessageSquare, CheckCircle, Tag } from 'lucide-react';
 
 const Detail = () => {
@@ -29,7 +29,7 @@ const Detail = () => {
     );
   }
 
-  const domainConfig = DOMAINS.find(d => d.id === book.domain) || DOMAINS[0];
+  const domainConfig = DOMAINS.find((d) => d.id === book.domain) || DOMAINS[0];
   const difficultyConfig = DIFFICULTIES[book.ringIndex];
 
   return (

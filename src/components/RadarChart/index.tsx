@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { ReactNode, useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
 import { DOMAINS, DIFFICULTIES, getDomainConfig } from '../../constants';
 import { Book } from '../../types';
@@ -123,7 +123,7 @@ const RadarChart = () => {
 
   // 渲染书籍点
   const renderBookPoints = () => {
-    const points = [];
+    const points: ReactNode[] = [];
 
     filteredBooks().forEach((book) => {
       const x = centerX + book.x * maxRadius;
