@@ -124,6 +124,53 @@ export interface RecommendationRecord {
   existingBook?: RecommendationExistingBookSnapshot;
 }
 
+export type BookScoringScore = 3 | 3.5 | 4 | 4.5 | 5;
+
+export type BookScoringMode = 'create' | 'edit';
+
+export interface BookScoringDraft {
+  bookId: string;
+  score: BookScoringScore | null;
+  reason: string;
+  mode: BookScoringMode;
+  originalScore?: BookScoringScore;
+  originalReason?: string;
+}
+
+export type BookScoringDraftErrors = Partial<Record<'score' | 'reason', string>>;
+
+export interface SessionBookScore {
+  bookId: string;
+  score: BookScoringScore;
+  reason: string;
+  submittedAt: string;
+}
+
+export type BookScoringActionType = 'create' | 'update';
+
+export interface BookScoringRecord {
+  id: string;
+  bookId: string;
+  title: string;
+  author: string;
+  score: BookScoringScore;
+  reason: string;
+  actionType: BookScoringActionType;
+  submittedAt: string;
+  updatedRecommendationScore: number;
+  updatedVotesCount: number;
+}
+
+export interface BookScoringSubmissionResult {
+  status: 'success' | 'error';
+  actionType: BookScoringActionType;
+  message: string;
+  submittedAt: string;
+  bookId: string;
+  updatedRecommendationScore?: number;
+  updatedVotesCount?: number;
+}
+
 // 兼容性类型 - 为了让旧代码继续工作
 export type Resource = Book & {
   difficulty: string;
