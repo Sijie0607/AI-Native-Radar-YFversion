@@ -1,6 +1,61 @@
 import { Book, Domain } from '../types';
 import { DOMAINS } from '../constants';
 
+const DOMAIN_BOOK_METADATA: Record<
+  Domain,
+  Pick<Book, 'fitFor' | 'takeaways' | 'tags'>
+> = {
+  'ai-engineering': {
+    fitFor: ['AI 初学者', '应用开发者', '技术产品经理'],
+    takeaways: ['理解模型基础原理', '掌握工程入门路径', '建立 AI 技术认知'],
+    tags: ['深度学习', '工程入门', 'Python', '神经网络'],
+  },
+  'ai-product-design': {
+    fitFor: ['AI 产品经理', '产品设计师', '转型 PM'],
+    takeaways: ['掌握 AI 产品设计方法', '理解技术协作边界', '建立落地判断框架'],
+    tags: ['AI 产品', '产品设计', '方法论', '场景落地'],
+  },
+  'agent-and-intelligent-systems': {
+    fitFor: ['AI 工程师', '智能体开发者', '系统架构师'],
+    takeaways: ['理解智能体架构设计', '掌握多智能体协作思路', '建立任务决策认知'],
+    tags: ['Agent', '智能体', '多智能体', '任务规划'],
+  },
+  'ai-organizational-transformation': {
+    fitFor: ['业务管理者', '组织发展负责人', '转型项目负责人'],
+    takeaways: ['理解组织转型关键机制', '建立 AI 时代组织认知', '掌握变革推进基本方法'],
+    tags: ['组织变革', 'AI 转型', '管理升级', '变革管理'],
+  },
+  'data-intelligence-and-knowledge': {
+    fitFor: ['算法工程师', '数据工程师', 'AI 应用开发者'],
+    takeaways: ['理解知识组织基本方法', '掌握语义检索核心原理', '建立 RAG 设计认知'],
+    tags: ['知识图谱', '语义检索', 'RAG', '数据智能'],
+  },
+  'ai-business-implementation': {
+    fitFor: ['业务负责人', '解决方案顾问', '产品负责人'],
+    takeaways: ['理解 AI 商业落地路径', '掌握价值评估基本框架', '建立场景推进判断'],
+    tags: ['商业落地', '场景设计', '价值评估', '解决方案'],
+  },
+  'ai-ethics-and-governance': {
+    fitFor: ['治理负责人', '风险合规人员', 'AI 项目负责人'],
+    takeaways: ['理解 AI 治理关键议题', '掌握风险识别基本框架', '建立合规判断意识'],
+    tags: ['AI 治理', '风险管理', '伦理', '合规'],
+  },
+  'ai-frontier-trends': {
+    fitFor: ['AI 从业者', '技术研究者', '战略观察者'],
+    takeaways: ['理解前沿方向演进脉络', '建立趋势判断框架', '拓展技术视野'],
+    tags: ['前沿趋势', '技术演进', '行业观察', '趋势判断'],
+  },
+};
+
+function getStructuredBookMetadata(domain: Domain): Pick<Book, 'fitFor' | 'takeaways' | 'tags'> {
+  const metadata = DOMAIN_BOOK_METADATA[domain];
+  return {
+    fitFor: [...metadata.fitFor],
+    takeaways: [...metadata.takeaways],
+    tags: [...metadata.tags],
+  };
+}
+
 // 计算书籍在雷达图上的位置
 function calculatePosition(
   sectorIndex: number,
@@ -40,10 +95,10 @@ export const MOCK_BOOKS: Book[] = [
     recommendationScore: 4.5,
     reasonShort: 'AI 入门必读，通俗易懂',
     reasonFull: '这本书是深度学习入门的最佳选择，从基础的神经网络概念讲起，配有大量 Python 代码示例。不需要深厚的数学背景也能理解。',
-    fitFor: ['AI 初学者', '程序员', '产品经理'],
-    takeaways: ['理解神经网络基本原理', '能够实现简单的深度学习模型', '建立 AI 技术知识体系'],
+    fitFor: ['AI 初学者', '应用开发者', '技术产品经理'],
+    takeaways: ['理解神经网络基本原理', '掌握深度学习入门路径', '建立 AI 工程基础认知'],
     contentType: '书籍',
-    tags: ['深度学习', '入门', 'Python', '神经网络'],
+    tags: ['深度学习', '工程入门', 'Python', '神经网络'],
     votesCount: 128,
     competenceThemes: ['全员通用 - 通用AI素养'],
     recommendations: [
@@ -72,10 +127,10 @@ export const MOCK_BOOKS: Book[] = [
     recommendationScore: 4.2,
     reasonShort: 'AI PM 必备，系统性强',
     reasonFull: '从产品视角讲解 AI 产品设计，包含大量实战案例，帮助产品经理理解技术边界和设计原则。',
-    fitFor: ['AI 产品经理', '产品设计师', '转岗 PM'],
-    takeaways: ['AI 产品设计方法论', '技术与产品的协作方式', 'AI 产品落地路径'],
+    fitFor: ['AI 产品经理', '产品设计师', '转型 PM'],
+    takeaways: ['掌握 AI 产品设计方法', '理解技术协作边界', '建立 AI 落地判断框架'],
     contentType: '书籍',
-    tags: ['产品设计', 'AI PM', '方法论'],
+    tags: ['AI 产品', '产品设计', '方法论', '场景落地'],
     votesCount: 95,
     competenceThemes: ['产品 - AI产品需求分析'],
     recommendations: [
@@ -104,10 +159,10 @@ export const MOCK_BOOKS: Book[] = [
     recommendationScore: 4.8,
     reasonShort: 'Agent 领域权威著作',
     reasonFull: '全面讲解智能体系统设计，从理论到实践，是 Agent 开发的必读之作。',
-    fitFor: ['AI 工程师', '研究员', '架构师'],
-    takeaways: ['智能体架构设计', '多智能体协作', '决策理论'],
+    fitFor: ['AI 工程师', '智能体开发者', '系统架构师'],
+    takeaways: ['理解智能体架构设计', '掌握多智能体协作思路', '建立任务决策认知'],
     contentType: '书籍',
-    tags: ['Agent', '智能体', '人工智能'],
+    tags: ['Agent', '智能体', '多智能体', '任务规划'],
     votesCount: 156,
     competenceThemes: ['技术-应用 - Agent系统设计'],
     recommendations: [
@@ -136,10 +191,10 @@ export const MOCK_BOOKS: Book[] = [
     recommendationScore: 4.0,
     reasonShort: '组织 AI 转型必读',
     reasonFull: '从管理学角度讲解企业如何在 AI 时代进行组织变革和能力升级。',
-    fitFor: ['管理者', 'HR', '组织发展'],
-    takeaways: ['组织转型方法论', 'AI 时代的组织能力', '变革管理实践'],
+    fitFor: ['业务管理者', '组织发展负责人', '转型项目负责人'],
+    takeaways: ['理解组织转型关键机制', '建立 AI 时代组织认知', '掌握变革推进基本方法'],
     contentType: '书籍',
-    tags: ['组织变革', '管理', 'AI 转型'],
+    tags: ['组织变革', 'AI 转型', '管理升级', '变革管理'],
     votesCount: 78,
     competenceThemes: ['FDE - 业务流程建模'],
     recommendations: [
@@ -168,10 +223,10 @@ export const MOCK_BOOKS: Book[] = [
     recommendationScore: 4.6,
     reasonShort: 'RAG 系统必备知识',
     reasonFull: '系统讲解知识图谱构建和语义检索技术，是学习 RAG 系统的必备参考书。',
-    fitFor: ['算法工程师', '数据科学家', 'AI 工程师'],
-    takeaways: ['知识图谱技术', '语义检索原理', 'RAG 系统设计'],
+    fitFor: ['算法工程师', '数据工程师', 'AI 应用开发者'],
+    takeaways: ['理解知识组织基本方法', '掌握语义检索核心原理', '建立 RAG 设计认知'],
     contentType: '书籍',
-    tags: ['知识图谱', 'RAG', '语义检索'],
+    tags: ['知识图谱', '语义检索', 'RAG', '数据智能'],
     votesCount: 112,
     competenceThemes: ['技术-数据 - 语义检索系统设计'],
     recommendations: [
@@ -205,6 +260,7 @@ export function generateMockBooks(): Book[] {
     const key = `${sectorIndex}-${ringIndex}`;
     const slotIndex = slotCountMap.get(key) || 0;
     const pos = calculatePosition(sectorIndex, ringIndex, slotIndex);
+    const structuredMetadata = getStructuredBookMetadata(domain);
     slotCountMap.set(key, slotIndex + 1);
     
     books.push({
@@ -222,10 +278,10 @@ export function generateMockBooks(): Book[] {
       recommendationScore: 3 + Math.random() * 2,
       reasonShort: '这是一本值得阅读的 AI 书籍',
       reasonFull: '这本书详细讲解了 AI 相关的重要概念和实践方法，适合相关领域的从业者阅读。',
-      fitFor: ['从业者', '学习者'],
-      takeaways: ['知识1', '知识2', '知识3'],
+      fitFor: structuredMetadata.fitFor,
+      takeaways: structuredMetadata.takeaways,
       contentType: '书籍',
-      tags: ['AI', '技术'],
+      tags: structuredMetadata.tags,
       votesCount: Math.floor(Math.random() * 100),
       competenceThemes: [DOMAINS[sectorIndex].name],
       recommendations: [

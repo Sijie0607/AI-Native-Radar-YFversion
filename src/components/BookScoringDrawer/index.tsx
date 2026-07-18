@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { FileText, Star, X } from 'lucide-react';
 import DraftConfirmModal from '../DraftConfirmModal';
 import BookScoringForm from '../BookScoringForm';
+import BookScoringRecords from '../BookScoringRecords';
 import BookScoringResult from '../BookScoringResult';
 import { useBookScoringStore } from '../../store/useBookScoringStore';
 import { useResourceStore } from '../../store/useResourceStore';
@@ -14,6 +15,8 @@ import {
   BookScoringSubmissionResult,
   SessionBookScore,
 } from '../../types';
+
+type DrawerView = 'form' | 'result' | 'records';
 
 interface BookScoringDrawerProps {
   isOpen: boolean;
@@ -31,30 +34,42 @@ const createDraftFromBook = (book: Book, existingSessionScore?: SessionBookScore
 });
 
 const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) => {
-  const { updateBook } = useResourceStore();
+  const { books, updateBook } = useResourceStore();
   const {
     draft,
+    records,
     sessionScores,
     setDraft,
     setDraftField,
     resetDraft,
     addRecord,
+    clearRecords,
     setSessionBookScore,
   } = useBookScoringStore();
+  const [activeBook, setActiveBook] = useState<Book | null>(book);
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<'score' | 'reason', boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<BookScoringSubmissionResult | null>(null);
+  const [drawerView, setDrawerView] = useState<DrawerView>('form');
 
-  const existingSessionScore = book ? sessionScores[book.id] : undefined;
+  const existingSessionScore = activeBook ? sessionScores[activeBook.id] : undefined;
 
   const initialDraft = useMemo(
-    () => (book ? createDraftFromBook(book, existingSessionScore) : null),
-    [book, existingSessionScore],
+    () => (activeBook ? createDraftFromBook(activeBook, existingSessionScore) : null),
+    [activeBook, existingSessionScore],
   );
 
   useEffect(() => {
-    if (!isOpen || !book || !initialDraft) {
+    if (!isOpen || !book) {
+      return;
+    }
+
+    setActiveBook(book);
+  }, [book, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !activeBook || !initialDraft) {
       return;
     }
 
@@ -63,7 +78,8 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
     setSubmissionResult(null);
     setIsSubmitting(false);
     setShowDraftConfirm(false);
-  }, [book, initialDraft, isOpen, setDraft]);
+    setDrawerView('form');
+  }, [activeBook, initialDraft, isOpen, setDraft]);
 
   const allValidationErrors = useMemo<BookScoringDraftErrors>(() => {
     const errors: BookScoringDraftErrors = {};
@@ -104,10 +120,12 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
     setShowDraftConfirm(false);
     setSubmissionResult(null);
     setIsSubmitting(false);
+    setDrawerView('form');
   };
 
   const closeDrawer = () => {
     resetTransientState();
+    setActiveBook(null);
     onClose();
   };
 
@@ -154,7 +172,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
   };
 
   const handleSubmit = async () => {
-    if (!book) {
+    if (!activeBook) {
       return;
     }
 
@@ -167,25 +185,26 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
     setIsSubmitting(true);
 
     const response = await bookScoringService.submitBookScore({
-      book,
+      book: activeBook,
       draft,
       existingSessionScore,
     });
 
     if (response.updatedBook) {
-      updateBook(book.id, response.updatedBook);
+      updateBook(activeBook.id, response.updatedBook);
     }
 
     if (response.sessionScore) {
       setSessionBookScore(response.sessionScore);
     }
 
-    const record = createRecordFromResult(response.result, book);
+    const record = createRecordFromResult(response.result, activeBook);
     if (record && response.result.status === 'success') {
       addRecord(record);
     }
 
     setSubmissionResult(response.result);
+    setDrawerView('result');
     setIsSubmitting(false);
   };
 
@@ -204,7 +223,21 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
     closeDrawer();
   };
 
-  if (!isOpen || !book) return null;
+  const handleEditRecord = (record: BookScoringRecord) => {
+    const targetBook = books.find((item) => item.id === record.bookId);
+    if (!targetBook) {
+      return;
+    }
+
+    const targetSessionScore = sessionScores[targetBook.id];
+    setActiveBook(targetBook);
+    setDraft(createDraftFromBook(targetBook, targetSessionScore));
+    setTouchedFields({});
+    setSubmissionResult(null);
+    setDrawerView('form');
+  };
+
+  if (!isOpen || !activeBook) return null;
 
   return (
     <div className="fixed inset-0 z-50">
@@ -226,7 +259,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
                 {draft.mode === 'edit' ? '修改评分' : '评分投票'}
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                为《{book.title}》填写你的评分和判断理由。提交后，推荐指数会实时更新，但本轮不会影响雷达展示。
+                为《{activeBook.title}》填写你的评分和判断理由。提交后，推荐指数会实时更新，但本轮不会影响雷达展示。
               </p>
             </div>
             <button
@@ -249,12 +282,29 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
               </p>
             </section>
 
-            {submissionResult ? (
+            {drawerView === 'records' ? (
+              <BookScoringRecords
+                records={records}
+                onBackToForm={() => {
+                  setSubmissionResult(null);
+                  setDrawerView('form');
+                }}
+                onReturnBrowse={() => {
+                  closeDrawer();
+                }}
+                onClearRecords={clearRecords}
+                onEditRecord={handleEditRecord}
+              />
+            ) : submissionResult ? (
               <BookScoringResult
                 result={submissionResult}
                 isSubmitting={isSubmitting}
-                onBackToForm={() => setSubmissionResult(null)}
+                onBackToForm={() => {
+                  setSubmissionResult(null);
+                  setDrawerView('form');
+                }}
                 onRetrySubmit={handleSubmit}
+                onViewRecords={() => setDrawerView('records')}
                 onReturnBrowse={() => {
                   closeDrawer();
                 }}
@@ -263,7 +313,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
               <BookScoringForm
                 draft={draft}
                 errors={visibleValidationErrors}
-                bookTitle={book.title}
+                bookTitle={activeBook.title}
                 onFieldChange={handleFieldChange}
                 onFieldBlur={handleFieldBlur}
                 onSubmit={handleSubmit}

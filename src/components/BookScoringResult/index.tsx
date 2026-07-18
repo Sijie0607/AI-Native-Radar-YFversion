@@ -6,6 +6,7 @@ interface BookScoringResultProps {
   isSubmitting: boolean;
   onBackToForm: () => void;
   onRetrySubmit: () => void;
+  onViewRecords: () => void;
   onReturnBrowse: () => void;
 }
 
@@ -22,6 +23,7 @@ const BookScoringResult = ({
   isSubmitting,
   onBackToForm,
   onRetrySubmit,
+  onViewRecords,
   onReturnBrowse,
 }: BookScoringResultProps) => {
   const isSuccess = result.status === 'success';
@@ -74,6 +76,13 @@ const BookScoringResult = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
           <button
             type="button"
+            onClick={onViewRecords}
+            className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
+          >
+            查看评分记录
+          </button>
+          <button
+            type="button"
             onClick={onBackToForm}
             className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
           >
@@ -89,6 +98,13 @@ const BookScoringResult = ({
         </div>
       ) : (
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={onViewRecords}
+            className="rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:border-slate-500 hover:bg-slate-700"
+          >
+            查看评分记录
+          </button>
           <button
             type="button"
             onClick={onBackToForm}
