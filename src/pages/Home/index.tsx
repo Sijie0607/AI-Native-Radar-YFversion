@@ -95,7 +95,7 @@ const Home = () => {
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20"
               >
                 <BookPlus size={18} />
-                推荐一本书
+                书籍推荐
               </button>
             </div>
 
