@@ -2,8 +2,15 @@ import { useMemo, useState } from 'react';
 import { BookPlus, FileText, X } from 'lucide-react';
 import DraftConfirmModal from '../DraftConfirmModal';
 import RecommendationForm from '../RecommendationForm';
+import RecommendationResult from '../RecommendationResult';
 import { useRecommendationStore } from '../../store/useRecommendationStore';
-import { BookRecommendationDraft, RecommendationDraftErrors } from '../../types';
+import { useResourceStore } from '../../store/useResourceStore';
+import {
+  BookRecommendationDraft,
+  RecommendationDraftErrors,
+  RecommendationSubmissionResult,
+} from '../../types';
+import { recommendationService } from '../../services/recommendationService';
 
 interface RecommendationDrawerProps {
   isOpen: boolean;
@@ -11,9 +18,13 @@ interface RecommendationDrawerProps {
 }
 
 const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) => {
+  const { books } = useResourceStore();
   const { draft, setDraftField, resetDraft } = useRecommendationStore();
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BookRecommendationDraft, boolean>>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<RecommendationSubmissionResult | null>(null);
+  const [allowDuplicateSubmit, setAllowDuplicateSubmit] = useState(false);
 
   const allValidationErrors = useMemo<RecommendationDraftErrors>(() => {
     const errors: RecommendationDraftErrors = {};
@@ -51,6 +62,18 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
     [draft]
   );
 
+  const isFormComplete = useMemo(
+    () =>
+      Boolean(
+        draft.title.trim() &&
+          draft.author.trim() &&
+          draft.domain &&
+          draft.reason.trim() &&
+          draft.score !== null
+      ),
+    [draft]
+  );
+
   const handleFieldChange = <K extends keyof BookRecommendationDraft>(
     field: K,
     value: BookRecommendationDraft[K]
@@ -65,13 +88,67 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
     }));
   };
 
+  const resetTransientState = () => {
+    setShowDraftConfirm(false);
+    setTouchedFields({});
+    setSubmissionResult(null);
+    setAllowDuplicateSubmit(false);
+    setIsSubmitting(false);
+  };
+
+  const closeDrawer = () => {
+    resetTransientState();
+    onClose();
+  };
+
+  const resetForNewRecommendation = () => {
+    resetDraft();
+    resetTransientState();
+  };
+
+  const markAllFieldsTouched = () => {
+    setTouchedFields({
+      title: true,
+      author: true,
+      domain: true,
+      reason: true,
+      score: true,
+    });
+  };
+
+  const handleSubmit = async () => {
+    markAllFieldsTouched();
+
+    if (!isFormComplete || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const result = await recommendationService.submitRecommendation({
+      draft,
+      books,
+      allowDuplicateSubmit,
+    });
+
+    setSubmissionResult(result);
+    setAllowDuplicateSubmit(result.status === 'duplicate');
+    setIsSubmitting(false);
+  };
+
   const handleRequestClose = () => {
+    if (submissionResult?.status === 'success') {
+      resetDraft();
+      closeDrawer();
+      return;
+    }
+
     if (hasDraftContent) {
       setShowDraftConfirm(true);
       return;
     }
 
-    onClose();
+    closeDrawer();
   };
 
   if (!isOpen) return null;
@@ -119,26 +196,42 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
               </p>
             </section>
 
-            <RecommendationForm
-              draft={draft}
-              errors={visibleValidationErrors}
-              onFieldChange={handleFieldChange}
-              onFieldBlur={handleFieldBlur}
-            />
+            {submissionResult ? (
+              <RecommendationResult
+                result={submissionResult}
+                isSubmitting={isSubmitting}
+                onBackToForm={() => setSubmissionResult(null)}
+                onRetrySubmit={handleSubmit}
+                onContinueRecommend={() => {
+                  resetForNewRecommendation();
+                }}
+                onReturnBrowse={() => {
+                  resetDraft();
+                  closeDrawer();
+                }}
+              />
+            ) : (
+              <RecommendationForm
+                draft={draft}
+                errors={visibleValidationErrors}
+                onFieldChange={handleFieldChange}
+                onFieldBlur={handleFieldBlur}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+                submitLabel={allowDuplicateSubmit ? '提交补充推荐' : '提交推荐'}
+              />
+            )}
           </div>
         </div>
 
         <DraftConfirmModal
           isOpen={showDraftConfirm}
           onKeepDraft={() => {
-            setShowDraftConfirm(false);
-            onClose();
+            closeDrawer();
           }}
           onDiscardDraft={() => {
             resetDraft();
-            setTouchedFields({});
-            setShowDraftConfirm(false);
-            onClose();
+            closeDrawer();
           }}
           onContinueEditing={() => setShowDraftConfirm(false)}
         />

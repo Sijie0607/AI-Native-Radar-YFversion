@@ -94,6 +94,23 @@ export interface BookRecommendationDraft {
 
 export type RecommendationDraftErrors = Partial<Record<keyof BookRecommendationDraft, string>>;
 
+export interface RecommendationExistingBookSnapshot {
+  id: string;
+  title: string;
+  author: string;
+  domain: Domain;
+  recommendationScore: number;
+}
+
+export type RecommendationSubmissionStatus = 'success' | 'duplicate' | 'error';
+
+export interface RecommendationSubmissionResult {
+  status: RecommendationSubmissionStatus;
+  message: string;
+  submittedAt: string;
+  existingBook?: RecommendationExistingBookSnapshot;
+}
+
 // 兼容性类型 - 为了让旧代码继续工作
 export type Resource = Book & {
   difficulty: string;

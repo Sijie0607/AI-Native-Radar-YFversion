@@ -7,11 +7,22 @@ interface RecommendationFormProps {
   errors: RecommendationDraftErrors;
   onFieldChange: <K extends keyof BookRecommendationDraft>(field: K, value: BookRecommendationDraft[K]) => void;
   onFieldBlur: (field: keyof BookRecommendationDraft) => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  submitLabel?: string;
 }
 
 const SCORE_OPTIONS: RecommendationScore[] = [3, 4, 5];
 
-const RecommendationForm = ({ draft, errors, onFieldChange, onFieldBlur }: RecommendationFormProps) => {
+const RecommendationForm = ({
+  draft,
+  errors,
+  onFieldChange,
+  onFieldBlur,
+  onSubmit,
+  isSubmitting,
+  submitLabel = '提交推荐',
+}: RecommendationFormProps) => {
   const isComplete = useMemo(
     () =>
       Boolean(
@@ -149,7 +160,7 @@ const RecommendationForm = ({ draft, errors, onFieldChange, onFieldBlur }: Recom
 
       <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
         <p className="text-sm leading-6 text-slate-400">
-          推荐内容不会自动进入正式雷达。当前可先完成信息填写，后续会接入提交反馈与推荐记录。
+          推荐内容不会自动进入正式雷达。提交后你会收到明确结果反馈。
         </p>
       </div>
 
@@ -159,10 +170,11 @@ const RecommendationForm = ({ draft, errors, onFieldChange, onFieldBlur }: Recom
         </p>
         <button
           type="button"
-          disabled
-          className="cursor-not-allowed rounded-xl bg-slate-700 px-4 py-3 text-sm font-medium text-slate-400"
+          onClick={onSubmit}
+          disabled={!isComplete || isSubmitting}
+          className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
         >
-          提交功能即将开放
+          {isSubmitting ? '提交中...' : submitLabel}
         </button>
       </div>
     </section>
