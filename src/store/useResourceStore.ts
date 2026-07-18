@@ -15,6 +15,7 @@ interface RadarStore {
   
   // Actions - 新接口
   setBooks: (books: Book[]) => void;
+  updateBook: (bookId: string, updates: Partial<Book>) => void;
   setLoadingStatus: (status: LoadingStatus) => void;
   setError: (error: string | null) => void;
   
@@ -60,6 +61,17 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
   
   // Actions
   setBooks: (books) => set({ books }),
+  updateBook: (bookId, updates) =>
+    set((state) => ({
+      books: state.books.map((book) =>
+        book.id === bookId
+          ? {
+              ...book,
+              ...updates,
+            }
+          : book
+      ),
+    })),
   setLoadingStatus: (status) => set({ loadingStatus: status }),
   setError: (error) => set({ error }),
   
