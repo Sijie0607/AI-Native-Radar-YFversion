@@ -12,9 +12,9 @@ const DetailSidebar = () => {
   const difficultyConfig = DIFFICULTIES[selectedBook.ringIndex];
 
   return (
-    <div className="fixed inset-y-0 right-0 w-[450px] bg-slate-800 border-l border-slate-700 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out translate-x-0">
+    <div className="fixed inset-y-0 right-0 z-50 w-full border-l border-slate-700 bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 sm:w-[450px]">
       {/* 头部 */}
-      <div className="p-6 border-b border-slate-700">
+      <div className="border-b border-slate-700 p-4 sm:p-6">
         <div className="flex items-start justify-between">
           <div className="flex-1 pr-4">
             <h2 className="text-2xl font-bold text-slate-50 mb-2">{selectedBook.title}</h2>
@@ -39,14 +39,14 @@ const DetailSidebar = () => {
       </div>
 
       {/* 内容 */}
-      <div className="overflow-y-auto h-[calc(100vh-80px)] p-6">
+      <div className="h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
         {/* 封面 */}
         {selectedBook.cover && (
           <div className="mb-6 flex justify-center">
             <img
               src={selectedBook.cover}
               alt={selectedBook.title}
-              className="w-48 h-72 object-cover rounded-lg shadow-lg"
+              className="h-64 w-44 rounded-lg object-cover shadow-lg sm:h-72 sm:w-48"
             />
           </div>
         )}
@@ -72,7 +72,7 @@ const DetailSidebar = () => {
           </div>
 
           {/* 领域和难度 */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="p-4 bg-slate-700/50 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <BookOpen size={16} className="text-slate-400" />

@@ -23,8 +23,8 @@ const SearchFilter = () => {
   const hasActiveFilters = filters.domains.length > 0 || filters.difficultyLevels.length > 0 || filters.minScore > 3 || filters.searchQuery;
 
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <div className="flex items-center justify-between mb-6">
+    <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
+      <div className="mb-6 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
           <Filter size={20} className="text-blue-500" />
           筛选

@@ -192,7 +192,7 @@ const RadarChart = () => {
   // 渲染加载状态
   if (loadingStatus === 'loading') {
     return (
-      <div className="w-full h-[800px] flex items-center justify-center">
+      <div className="flex aspect-square min-h-[320px] w-full items-center justify-center rounded-2xl bg-slate-900">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
           <p className="text-slate-400 text-lg">加载中...</p>
@@ -204,7 +204,7 @@ const RadarChart = () => {
   // 渲染空状态
   if (filteredBooks().length === 0) {
     return (
-      <div className="w-full h-[800px] flex items-center justify-center">
+      <div className="flex aspect-square min-h-[320px] w-full items-center justify-center rounded-2xl bg-slate-900">
         <div className="text-center">
           <p className="text-slate-400 text-lg">无符合条件的书籍</p>
         </div>
@@ -213,11 +213,12 @@ const RadarChart = () => {
   }
 
   return (
-    <div className="relative w-full h-[800px] overflow-hidden bg-slate-900 rounded-2xl">
+    <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-900">
       <svg
-        width={width}
-        height={height}
+        width="100%"
+        height="100%"
         viewBox={`0 0 ${width} ${height}`}
+        className="block h-full w-full"
       >
         {/* 背景 */}
         <rect x={0} y={0} width={width} height={height} fill="#0F172A" />
