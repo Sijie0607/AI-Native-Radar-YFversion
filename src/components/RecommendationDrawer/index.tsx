@@ -1,4 +1,9 @@
-import { BookPlus, ChevronRight, FileText, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { BookPlus, FileText, X } from 'lucide-react';
+import DraftConfirmModal from '../DraftConfirmModal';
+import RecommendationForm from '../RecommendationForm';
+import { useRecommendationStore } from '../../store/useRecommendationStore';
+import { BookRecommendationDraft, RecommendationDraftErrors } from '../../types';
 
 interface RecommendationDrawerProps {
   isOpen: boolean;
@@ -6,6 +11,69 @@ interface RecommendationDrawerProps {
 }
 
 const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) => {
+  const { draft, setDraftField, resetDraft } = useRecommendationStore();
+  const [showDraftConfirm, setShowDraftConfirm] = useState(false);
+  const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BookRecommendationDraft, boolean>>>({});
+
+  const allValidationErrors = useMemo<RecommendationDraftErrors>(() => {
+    const errors: RecommendationDraftErrors = {};
+
+    if (!draft.title.trim()) errors.title = '请输入书名';
+    if (!draft.author.trim()) errors.author = '请输入作者';
+    if (!draft.domain) errors.domain = '请选择所属领域';
+    if (!draft.reason.trim()) errors.reason = '请填写推荐理由';
+    if (draft.score === null) errors.score = '请选择推荐指数';
+
+    return errors;
+  }, [draft]);
+
+  const visibleValidationErrors = useMemo<RecommendationDraftErrors>(() => {
+    const errors: RecommendationDraftErrors = {};
+
+    (Object.keys(touchedFields) as Array<keyof BookRecommendationDraft>).forEach((field) => {
+      if (touchedFields[field] && allValidationErrors[field]) {
+        errors[field] = allValidationErrors[field];
+      }
+    });
+
+    return errors;
+  }, [allValidationErrors, touchedFields]);
+
+  const hasDraftContent = useMemo(
+    () =>
+      Boolean(
+        draft.title.trim() ||
+          draft.author.trim() ||
+          draft.domain ||
+          draft.reason.trim() ||
+          draft.score !== null
+      ),
+    [draft]
+  );
+
+  const handleFieldChange = <K extends keyof BookRecommendationDraft>(
+    field: K,
+    value: BookRecommendationDraft[K]
+  ) => {
+    setDraftField(field, value);
+  };
+
+  const handleFieldBlur = (field: keyof BookRecommendationDraft) => {
+    setTouchedFields((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
+  };
+
+  const handleRequestClose = () => {
+    if (hasDraftContent) {
+      setShowDraftConfirm(true);
+      return;
+    }
+
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -14,7 +82,7 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
         type="button"
         aria-label="关闭推荐抽屉"
         className="absolute inset-0 bg-slate-950/45"
-        onClick={onClose}
+        onClick={handleRequestClose}
       />
 
       <aside className="absolute inset-y-0 right-0 w-full max-w-[440px] border-l border-slate-700 bg-slate-800 shadow-2xl">
@@ -26,14 +94,12 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
               </div>
               <h2 className="text-2xl font-bold text-slate-50">书籍推荐</h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                你可以在这里填写推荐信息，并查看本次推荐的后续结果。
-                <br />
-                目前仅支持提交书籍，暂不支持课程、博客或视频。
+                分享一本你认为值得推荐的 AI 领域书籍，帮助从业者快速找到适合自己的高质量学习参考用书。
               </p>
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200"
             >
               <X size={20} />
@@ -46,48 +112,36 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
                 <FileText size={16} />
                 推荐说明
               </div>
-              <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-300">
-                <li>仅支持提交书籍，不支持课程、博客或视频。</li>
-                <li>提交后会收到处理结果反馈，推荐内容不会自动进入正式雷达。</li>
-                <li>你可以在这里填写推荐信息，并查看本次推荐的后续结果。</li>
-              </ul>
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                你可以在这里填写推荐信息，并查看本次推荐的后续结果。
+                <br />
+                目前仅支持提交书籍，暂不支持课程、博客或视频。
+              </p>
             </section>
 
-            <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-50">推荐表单</h3>
-                  <p className="mt-1 text-sm text-slate-400">
-                    这里将填写书名、作者、领域、推荐理由和推荐指数。
-                  </p>
-                </div>
-                <ChevronRight size={18} className="text-slate-500" />
-              </div>
-            </section>
-
-            <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-50">结果与记录</h3>
-                  <p className="mt-1 text-sm text-slate-400">
-                    提交后可查看处理结果，以及当前会话内的推荐记录。
-                  </p>
-                </div>
-                <ChevronRight size={18} className="text-slate-500" />
-              </div>
-            </section>
-          </div>
-
-          <div className="border-t border-slate-700 p-6">
-            <button
-              type="button"
-              disabled
-              className="w-full cursor-not-allowed rounded-xl bg-slate-700 px-4 py-3 text-sm font-medium text-slate-400"
-            >
-              表单功能即将开放
-            </button>
+            <RecommendationForm
+              draft={draft}
+              errors={visibleValidationErrors}
+              onFieldChange={handleFieldChange}
+              onFieldBlur={handleFieldBlur}
+            />
           </div>
         </div>
+
+        <DraftConfirmModal
+          isOpen={showDraftConfirm}
+          onKeepDraft={() => {
+            setShowDraftConfirm(false);
+            onClose();
+          }}
+          onDiscardDraft={() => {
+            resetDraft();
+            setTouchedFields({});
+            setShowDraftConfirm(false);
+            onClose();
+          }}
+          onContinueEditing={() => setShowDraftConfirm(false)}
+        />
       </aside>
     </div>
   );

@@ -82,6 +82,18 @@ export interface DifficultyConfig {
   radius: number;
 }
 
+export type RecommendationScore = 3 | 4 | 5;
+
+export interface BookRecommendationDraft {
+  title: string;
+  author: string;
+  domain: Domain | '';
+  reason: string;
+  score: RecommendationScore | null;
+}
+
+export type RecommendationDraftErrors = Partial<Record<keyof BookRecommendationDraft, string>>;
+
 // 兼容性类型 - 为了让旧代码继续工作
 export type Resource = Book & {
   difficulty: string;
