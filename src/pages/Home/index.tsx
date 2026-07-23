@@ -115,7 +115,9 @@ const Home = () => {
 
             {/* 右侧：雷达图 */}
             <div className="min-w-0 flex-1">
-              <RadarChart />
+              <div className="mx-auto w-full max-w-[720px] xl:max-w-[760px]">
+                <RadarChart />
+              </div>
             </div>
           </div>
         </div>

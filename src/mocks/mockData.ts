@@ -1,5 +1,15 @@
-import { Book, Domain } from '../types';
+import { Book, DifficultyLevel, Domain, Recommendation } from '../types';
 import { DOMAINS } from '../constants';
+
+interface ImportedBookSeed {
+  title: string;
+  author: string;
+  themes: string[];
+  degree: string;
+  reason: string;
+  link?: string;
+  recommenders: string[];
+}
 
 const DOMAIN_BOOK_METADATA: Record<
   Domain,
@@ -56,6 +66,300 @@ function getStructuredBookMetadata(domain: Domain): Pick<Book, 'fitFor' | 'takea
   };
 }
 
+const IMPORTED_BOOKS: ImportedBookSeed[] = [
+  {
+    title: '《AI Engineering: Building Applications with Foundation Models》',
+    author: 'Chip Huyen',
+    themes: [
+      '【全员通用】通用AI素养与AI Fluency 4D框架',
+      '【技术-应用】AI辅助开发(架构设计,  编码与代码审查等)',
+      '【技术-应用】LLM应用技术选型与架构设计',
+      '【技术-平台】LLMOps平台设计与模型全生命周期管理',
+      '【技术-平台】模型推理优化与加速（量化/推理服务）',
+      '【FDE】AI应用生产部署与交付实施',
+    ],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Designing Large Language Model Applications》',
+    author: 'Suhas Pai',
+    themes: ['【全员通用】Prompt工程基础与进阶', '【技术-应用】LLM应用技术选型与架构设计'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Building a Second Brain》',
+    author: 'Tiago Forte',
+    themes: ['【全员通用】知识工程与Context管理'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《AI Agents in Action, Second Edition》',
+    author: 'Michael Lanham',
+    themes: ['【技术-应用】Agent系统设计与多智能体架构', '【技术-平台】AgentOS平台搭建与Agent运行时'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Evals for AI Engineers》',
+    author: '作者待补充',
+    themes: ['【技术-应用】AI系统与Agent评估监测', '【测试】AI辅助测试工程与LLM/Agent测试评估'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《A Simple Guide to Retrieval Augmented Generation》',
+    author: 'Abhinav Kimothi',
+    themes: ['【技术-数据】语义检索系统设计与RAG'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Designing Data-Intensive Applications》',
+    author: 'Martin Kleppmann',
+    themes: ['【技术-数据】实时数据流与AI集成'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《DAMA-DMBOK: Data Management Body of Knowledge》',
+    author: 'DAMA International',
+    themes: ['【技术-数据】面向AI的数据治理'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Site Reliability Engineering》',
+    author: 'Betsy Beyer / Chris Jones / Jennifer Petoff / Niall Richard Murphy',
+    themes: ['【技术-平台】AI基础设施运维与可观测性（SRE for AI）'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《AI Risk Management Framework》',
+    author: 'NIST',
+    themes: ['【技术-平台】AI安全治理与AI Governance'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《AI Product Management》',
+    author: '作者待补充',
+    themes: ['【产品】AI产品需求分析与场景探索', '【产品】AI产品设计与人机协作交互设计', '【产品】快速原型验证与Vibe Coding'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《People + AI Guidebook》',
+    author: 'Google PAIR',
+    themes: ['【测试】AI系统专项质量验证（对抗测试/偏见检测/可解释性）'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《BPMN Method and Style》',
+    author: 'Bruce Silver',
+    themes: ['【FDE】业务流程建模与重构（价值流/业务本体/知识管理等)'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '《Leading Change》',
+    author: 'John P. Kotter',
+    themes: ['【FDE】流程变革推动与变革管理'],
+    degree: '⭐⭐⭐',
+    reason: '来自AI-Native能力模型_学习进阶路径与参考资料库的官方推荐',
+    recommenders: [],
+  },
+  {
+    title: '本体驱动的AI数据管理',
+    author: '作者待补充',
+    themes: ['【技术-数据】面向AI的数据治理'],
+    degree: '⭐⭐⭐',
+    reason: 'AI时代，数据管理已发生重大变化，基于本体驱动的AI数据管理将是未来的主要方向之一',
+    link: 'https://baike.baidu.com/item/%E6%9C%AC%E4%BD%93%E9%A9%B1%E5%8A%A8%E7%9A%84AI%E6%95%B0%E6%8D%AE%E7%AE%A1%E7%90%86/67865910',
+    recommenders: ['张为普'],
+  },
+  {
+    title: '《Hands-On Large Language Models》',
+    author: 'Jay Alammar / Maarten Grootendorst',
+    themes: ['【全员通用】通用AI素养与AI Fluency 4D框架'],
+    degree: '⭐⭐⭐⭐',
+    reason: '构建对transformers与embeddings如何处理文本的"可视直觉"。Jay Alammar以机器学习可视化指南闻名，本书把这种可视方法贯穿LLM全生命周期，把抽象数学讲得很"落地"。',
+    link: 'https://www.oreilly.com/library/view/hands-on-large-language/9781098150969/',
+    recommenders: ['张娜'],
+  },
+  {
+    title: "《LLM Engineer's Handbook》",
+    author: 'Paul Iusztin / Maxime Labonne',
+    themes: ['【技术-应用】AI辅助开发(架构设计,  编码与代码审查等)'],
+    degree: '⭐⭐⭐⭐',
+    reason: '动手实现完整的数据与fine-tuning生命周期。手把手带你构建开源系统LLM Twin，从数据收集到模型部署的完整生命周期。你会学到SFT与preference alignment的实用差异，以及parameter-efficient fine-tuning。',
+    link: 'https://www.packtpub.com/en-US/product/llm-engineers-handbook-9781836200079',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《Designing Multi-Agent Systems》',
+    author: 'Victor Dibia',
+    themes: ['【技术-应用】Agent系统设计与多智能体架构'],
+    degree: '⭐⭐⭐⭐',
+    reason: '从零学习agent architecture的第一性原理。Victor Dibia是微软首席研究员、AutoGen Studio作者，本书走first-principles路子：从零实现feature-complete的agent库。覆盖collaboration、observability、interruptibility等模式。',
+    link: 'https://www.manning.com/books/designing-multi-agent-systems',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《Building Agentic AI》',
+    author: 'Sinan Ozdemir',
+    themes: ['【技术-应用】Agent系统设计与多智能体架构'],
+    degree: '⭐⭐⭐⭐',
+    reason: '为企业环境优化agent workflows。Sinan Ozdemir带你超越基本chatbots，构建能产生可量化业务价值的autonomous agents。覆盖multimodal AI、quantization、speculative decoding等优化。',
+    link: 'https://www.informit.com/store/building-agentic-ai-workflows-fine-tuning-optimization-9780135489772',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《Agentic AI Engineering》',
+    author: 'Yi Zhou',
+    themes: ['【技术-应用】AI系统与Agent评估监测'],
+    degree: '⭐⭐⭐⭐',
+    reason: '让agents扛住真实世界与合规审计。Yi Zhou提出Agentic Stack、Agentic Maturity Ladder、Trust Envelope。你会为"运动中的信任"而工程化——让系统在不确定中推理、又能负责任地自适应。',
+    link: 'https://argolong.com/agentic-engineering-book',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《LLMOps: Managing Large Language Models in Production》',
+    author: 'Abi Aryan',
+    themes: ['【技术-平台】LLMOps平台设计与模型全生命周期管理'],
+    degree: '⭐⭐⭐⭐',
+    reason: '在真金白银场景下让LLM systems平稳运行。Abi Aryan讲清新的LLMOps学科：如何处理prompt drift、如何运行automated regression tests。传统MLOps面对generative AI会"土崩瓦解"。',
+    link: 'https://www.oreilly.com/library/view/llmops/9781098154165/',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《AI Systems Performance Engineering》',
+    author: 'Chris Fregly',
+    themes: ['【技术-平台】模型推理优化与加速（量化/推理服务）'],
+    degree: '⭐⭐⭐⭐',
+    reason: '在hardware、software、algorithms三层做硬核优化。Chris Fregly深入GPU memory management、CUDA kernels与基于PyTorch的算法。你会学会profile、诊断并清除复杂AI pipelines的performance bottlenecks。',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《Generative AI Design Patterns》',
+    author: 'Valliappa Lakshmanan / Hannes Hapke',
+    themes: ['【技术-应用】LLM应用技术选型与架构设计'],
+    degree: '⭐⭐⭐⭐',
+    reason: '32个成熟的设计模式，直击你每天遇到的挑战：hallucinations、nondeterministic responses、knowledge cutoffs。每个pattern都描述特定问题、给出带代码的验证解，并讨论取舍。你和团队会拥有共享词汇。',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《Mastering Retrieval-Augmented Generation》',
+    author: 'Ranajoy Bose',
+    themes: ['【技术-数据】语义检索系统设计与RAG'],
+    degree: '⭐⭐⭐⭐',
+    reason: '把RAG从周末原型扩到企业级生产系统。Ranajoy Bose系统讲解document processing与vector optimization的成熟技巧，覆盖graph-based approaches与multi-modal systems等高级检索策略。你会学到如何fine-tune embedding models。',
+    recommenders: ['张娜'],
+  },
+  {
+    title: '《System Design For Large Language Models》',
+    author: 'Marc Rolland',
+    themes: ['【技术-应用】LLM应用技术选型与架构设计'],
+    degree: '⭐⭐⭐⭐',
+    reason: '把prompts当成"严肃的系统边界"，而非"文案活儿"。Marc Rolland构建严谨的systems框架，汲取systems engineering、safety analysis、control theory的方法。你会打造让failure"可被观测"的observability mechanisms。',
+    recommenders: ['张娜'],
+  },
+];
+
+function mapThemeToDomain(theme: string): Domain {
+  if (theme.includes('Agent系统设计') || theme.includes('AgentOS') || theme.includes('Agent评估')) {
+    return 'agent-and-intelligent-systems';
+  }
+  if (
+    theme.includes('知识工程') ||
+    theme.includes('语义检索') ||
+    theme.includes('实时数据流') ||
+    theme.includes('数据治理')
+  ) {
+    return 'data-intelligence-and-knowledge';
+  }
+  if (theme.includes('AI安全治理') || theme.includes('Governance') || theme.includes('质量验证')) {
+    return 'ai-ethics-and-governance';
+  }
+  if (theme.includes('流程变革') || theme.includes('变革管理')) {
+    return 'ai-organizational-transformation';
+  }
+  if (theme.includes('业务流程建模') || theme.includes('交付实施')) {
+    return 'ai-business-implementation';
+  }
+  if (theme.includes('产品') || theme.includes('Vibe Coding')) {
+    return 'ai-product-design';
+  }
+  if (theme.includes('AI Fluency') || theme.includes('通用AI素养')) {
+    return 'ai-frontier-trends';
+  }
+  return 'ai-engineering';
+}
+
+function mapThemeToDifficulty(theme: string): DifficultyLevel {
+  if (theme.includes('通用AI素养') || theme.includes('Prompt工程') || theme.includes('知识工程')) {
+    return 1;
+  }
+  if (
+    theme.includes('技术-平台') ||
+    theme.includes('Agent系统设计') ||
+    theme.includes('AgentOS') ||
+    theme.includes('Agent评估')
+  ) {
+    return 3;
+  }
+  return 2;
+}
+
+function scoreFromDegree(degree: string): number {
+  if (degree.includes('⭐⭐⭐⭐')) {
+    return 4;
+  }
+  return 3;
+}
+
+function buildReasonShort(reason: string): string {
+  if (reason.includes('官方推荐')) {
+    return 'AI-Native 官方资料库推荐';
+  }
+  const normalized = reason.replace(/。+/g, '。').trim();
+  const firstSentence = normalized.split('。')[0]?.trim() || normalized;
+  return firstSentence.length > 30 ? `${firstSentence.slice(0, 30)}...` : firstSentence;
+}
+
+function buildImportedRecommendations(
+  seed: ImportedBookSeed,
+  score: number,
+  recommendationIdStart: number,
+): Recommendation[] {
+  const recommenders = seed.recommenders.length > 0 ? seed.recommenders : ['AI-Native 官方资料库'];
+  return recommenders.map((recommender, index) => ({
+    id: `import-rec-${recommendationIdStart + index}`,
+    recommender,
+    isAnonymous: false,
+    reason: seed.reason,
+    score,
+    recommendedAt: '2026-07-18',
+  }));
+}
+
 // 计算书籍在雷达图上的位置
 function calculatePosition(
   sectorIndex: number,
@@ -79,168 +383,7 @@ function calculatePosition(
   };
 }
 
-export const MOCK_BOOKS: Book[] = [
-  {
-    id: '1',
-    title: '深度学习入门',
-    subtitle: '基于 Python 的理论与实现',
-    author: '斋藤康毅',
-    cover: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=200&h=300&fit=crop',
-    domain: 'ai-engineering',
-    difficultyLevel: 1,
-    sectorIndex: 0,
-    ringIndex: 0,
-    x: calculatePosition(0, 0).x,
-    y: calculatePosition(0, 0).y,
-    recommendationScore: 4.5,
-    reasonShort: 'AI 入门必读，通俗易懂',
-    reasonFull: '这本书是深度学习入门的最佳选择，从基础的神经网络概念讲起，配有大量 Python 代码示例。不需要深厚的数学背景也能理解。',
-    fitFor: ['AI 初学者', '应用开发者', '技术产品经理'],
-    takeaways: ['理解神经网络基本原理', '掌握深度学习入门路径', '建立 AI 工程基础认知'],
-    contentType: '书籍',
-    tags: ['深度学习', '工程入门', 'Python', '神经网络'],
-    votesCount: 128,
-    competenceThemes: ['全员通用 - 通用AI素养'],
-    recommendations: [
-      {
-        id: 'r1',
-        recommender: '张明',
-        isAnonymous: false,
-        reason: '深度学习领域的经典入门教材，系统全面。',
-        score: 5,
-        recommendedAt: '2024-01-15',
-      },
-    ],
-  },
-  {
-    id: '2',
-    title: 'AI 产品经理实战手册',
-    subtitle: '',
-    author: '王曦',
-    cover: 'https://images.unsplash.com/photo-1589998059171-988d887dfdf5?w=200&h=300&fit=crop',
-    domain: 'ai-product-design',
-    difficultyLevel: 2,
-    sectorIndex: 1,
-    ringIndex: 1,
-    x: calculatePosition(1, 1).x,
-    y: calculatePosition(1, 1).y,
-    recommendationScore: 4.2,
-    reasonShort: 'AI PM 必备，系统性强',
-    reasonFull: '从产品视角讲解 AI 产品设计，包含大量实战案例，帮助产品经理理解技术边界和设计原则。',
-    fitFor: ['AI 产品经理', '产品设计师', '转型 PM'],
-    takeaways: ['掌握 AI 产品设计方法', '理解技术协作边界', '建立 AI 落地判断框架'],
-    contentType: '书籍',
-    tags: ['AI 产品', '产品设计', '方法论', '场景落地'],
-    votesCount: 95,
-    competenceThemes: ['产品 - AI产品需求分析'],
-    recommendations: [
-      {
-        id: 'r2',
-        recommender: '李华',
-        isAnonymous: false,
-        reason: '非常适合AI产品经理入门，案例丰富。',
-        score: 4,
-        recommendedAt: '2024-02-01',
-      },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Building Intelligent Agents',
-    subtitle: '',
-    author: 'Stuart Russell',
-    cover: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=200&h=300&fit=crop',
-    domain: 'agent-and-intelligent-systems',
-    difficultyLevel: 3,
-    sectorIndex: 2,
-    ringIndex: 2,
-    x: calculatePosition(2, 2).x,
-    y: calculatePosition(2, 2).y,
-    recommendationScore: 4.8,
-    reasonShort: 'Agent 领域权威著作',
-    reasonFull: '全面讲解智能体系统设计，从理论到实践，是 Agent 开发的必读之作。',
-    fitFor: ['AI 工程师', '智能体开发者', '系统架构师'],
-    takeaways: ['理解智能体架构设计', '掌握多智能体协作思路', '建立任务决策认知'],
-    contentType: '书籍',
-    tags: ['Agent', '智能体', '多智能体', '任务规划'],
-    votesCount: 156,
-    competenceThemes: ['技术-应用 - Agent系统设计'],
-    recommendations: [
-      {
-        id: 'r3',
-        recommender: '王芳',
-        isAnonymous: false,
-        reason: '当前最实用的Agent设计指南。',
-        score: 5,
-        recommendedAt: '2024-02-10',
-      },
-    ],
-  },
-  {
-    id: '4',
-    title: 'AI 时代的组织变革',
-    subtitle: '',
-    author: '陈春花',
-    cover: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=200&h=300&fit=crop',
-    domain: 'ai-organizational-transformation',
-    difficultyLevel: 2,
-    sectorIndex: 3,
-    ringIndex: 1,
-    x: calculatePosition(3, 1).x,
-    y: calculatePosition(3, 1).y,
-    recommendationScore: 4.0,
-    reasonShort: '组织 AI 转型必读',
-    reasonFull: '从管理学角度讲解企业如何在 AI 时代进行组织变革和能力升级。',
-    fitFor: ['业务管理者', '组织发展负责人', '转型项目负责人'],
-    takeaways: ['理解组织转型关键机制', '建立 AI 时代组织认知', '掌握变革推进基本方法'],
-    contentType: '书籍',
-    tags: ['组织变革', 'AI 转型', '管理升级', '变革管理'],
-    votesCount: 78,
-    competenceThemes: ['FDE - 业务流程建模'],
-    recommendations: [
-      {
-        id: 'r4',
-        recommender: '赵强',
-        isAnonymous: false,
-        reason: '从组织角度理解AI变革。',
-        score: 4,
-        recommendedAt: '2024-02-15',
-      },
-    ],
-  },
-  {
-    id: '5',
-    title: '知识图谱与语义检索',
-    subtitle: '',
-    author: '刘知远',
-    cover: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=200&h=300&fit=crop',
-    domain: 'data-intelligence-and-knowledge',
-    difficultyLevel: 2,
-    sectorIndex: 4,
-    ringIndex: 1,
-    x: calculatePosition(4, 1).x,
-    y: calculatePosition(4, 1).y,
-    recommendationScore: 4.6,
-    reasonShort: 'RAG 系统必备知识',
-    reasonFull: '系统讲解知识图谱构建和语义检索技术，是学习 RAG 系统的必备参考书。',
-    fitFor: ['算法工程师', '数据工程师', 'AI 应用开发者'],
-    takeaways: ['理解知识组织基本方法', '掌握语义检索核心原理', '建立 RAG 设计认知'],
-    contentType: '书籍',
-    tags: ['知识图谱', '语义检索', 'RAG', '数据智能'],
-    votesCount: 112,
-    competenceThemes: ['技术-数据 - 语义检索系统设计'],
-    recommendations: [
-      {
-        id: 'r5',
-        recommender: '孙丽',
-        isAnonymous: false,
-        reason: 'RAG系统必备的基础知识。',
-        score: 5,
-        recommendedAt: '2024-02-20',
-      },
-    ],
-  },
-];
+export const MOCK_BOOKS: Book[] = [];
 
 // 生成更多模拟书籍
 export function generateMockBooks(): Book[] {
@@ -252,51 +395,46 @@ export function generateMockBooks(): Book[] {
     slotCountMap.set(key, (slotCountMap.get(key) || 0) + 1);
   });
   
-  // 添加更多模拟书籍
-  for (let i = 6; i <= 20; i++) {
-    const sectorIndex = (i - 1) % 8;
-    const ringIndex = (i - 1) % 3;
-    const domain = DOMAINS[sectorIndex].id as Domain;
+  // 添加 Excel 导入的真实书籍数据
+  IMPORTED_BOOKS.forEach((seed, index) => {
+    const primaryTheme = seed.themes[0] || '';
+    const domain = mapThemeToDomain(primaryTheme);
+    const difficultyLevel = mapThemeToDifficulty(primaryTheme);
+    const ringIndex = difficultyLevel - 1;
+    const sectorIndex = DOMAINS.findIndex((item) => item.id === domain);
     const key = `${sectorIndex}-${ringIndex}`;
     const slotIndex = slotCountMap.get(key) || 0;
     const pos = calculatePosition(sectorIndex, ringIndex, slotIndex);
     const structuredMetadata = getStructuredBookMetadata(domain);
+    const recommendationScore = scoreFromDegree(seed.degree);
+    const recommendations = buildImportedRecommendations(seed, recommendationScore, index * 10);
     slotCountMap.set(key, slotIndex + 1);
-    
+
     books.push({
-      id: String(i),
-      title: `AI 相关书籍 ${i}`,
+      id: `imported-${index + 1}`,
+      title: seed.title,
       subtitle: '',
-      author: `作者 ${i}`,
-      cover: `https://images.unsplash.com/photo-${1500000000000 + i * 1000}?w=200&h=300&fit=crop`,
+      author: seed.author,
       domain,
-      difficultyLevel: (ringIndex + 1) as any,
+      difficultyLevel,
       sectorIndex,
       ringIndex,
       x: pos.x,
       y: pos.y,
-      recommendationScore: 3 + Math.random() * 2,
-      reasonShort: '这是一本值得阅读的 AI 书籍',
-      reasonFull: '这本书详细讲解了 AI 相关的重要概念和实践方法，适合相关领域的从业者阅读。',
+      recommendationScore,
+      reasonShort: buildReasonShort(seed.reason),
+      reasonFull: seed.reason,
       fitFor: structuredMetadata.fitFor,
       takeaways: structuredMetadata.takeaways,
       contentType: '书籍',
       tags: structuredMetadata.tags,
-      votesCount: Math.floor(Math.random() * 100),
-      competenceThemes: [DOMAINS[sectorIndex].name],
-      recommendations: [
-        {
-          id: `r${i}`,
-          recommender: `推荐人 ${i}`,
-          isAnonymous: Math.random() > 0.5,
-          reason: '这本书很有价值，推荐阅读。',
-          score: 3 + Math.floor(Math.random() * 3),
-          recommendedAt: '2024-01-01',
-        },
-      ],
+      votesCount: recommendations.length,
+      sourceNote: seed.link || '来源：AI-Native读书雷达资料共建表',
+      competenceThemes: seed.themes,
+      recommendations,
     });
-  }
-  
+  });
+
   return books;
 }
 
