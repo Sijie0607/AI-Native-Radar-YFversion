@@ -1,7 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
 import { DOMAINS, DIFFICULTIES, getDomainConfig } from '../../constants';
-import { Book } from '../../types';
+import { Book, Domain } from '../../types';
 
 const RadarChart = () => {
   const { loadingStatus, viewState, setHoveredBook, selectBook, filteredBooks } = useResourceStore();
@@ -12,11 +12,45 @@ const RadarChart = () => {
     book: null,
   });
 
-  const width = 800;
-  const height = 800;
+  const width = 900;
+  const height = 900;
   const centerX = width / 2;
   const centerY = height / 2;
   const maxRadius = 350;
+  const bookLabelRadius = maxRadius + 55;
+  const anglePerSector = (Math.PI * 2) / 8;
+
+  // 按领域分组并编号
+  const { booksByDomain, numberByBookId } = useMemo(() => {
+    const visible = filteredBooks();
+    const grouped = new Map<Domain, Book[]>();
+    const numbers = new Map<string, string>();
+
+    visible.forEach((book) => {
+      const list = grouped.get(book.domain) ?? [];
+      list.push(book);
+      grouped.set(book.domain, list);
+    });
+
+    grouped.forEach((list) => {
+      list.sort((a, b) => {
+        if (a.ringIndex !== b.ringIndex) {
+          return a.ringIndex - b.ringIndex;
+        }
+        return a.title.localeCompare(b.title, 'zh-CN');
+      });
+      list.forEach((book, index) => {
+        numbers.set(book.id, String(index + 1));
+      });
+    });
+
+    return { booksByDomain: grouped, numberByBookId: numbers };
+  }, [filteredBooks]);
+
+  const truncateTitle = (title: string, maxLength = 18) => {
+    if (title.length <= maxLength) return title;
+    return `${title.slice(0, maxLength)}…`;
+  };
 
   const renderDomainLabel = (name: string, x: number, y: number, key: string) => {
     if (name === 'Agent 与智能体') {
@@ -27,7 +61,7 @@ const RadarChart = () => {
           y={y}
           textAnchor="middle"
           fill="#94A3B8"
-          fontSize={13}
+          fontSize={15}
           fontWeight="500"
         >
           <tspan x={x} dy="-0.35em">Agent</tspan>
@@ -44,7 +78,7 @@ const RadarChart = () => {
         textAnchor="middle"
         dominantBaseline="middle"
         fill="#94A3B8"
-        fontSize={13}
+        fontSize={15}
         fontWeight="500"
       >
         {name}
@@ -55,7 +89,6 @@ const RadarChart = () => {
   // 渲染扇形区域
   const renderSectors = () => {
     const sectors = [];
-    const anglePerSector = (Math.PI * 2) / 8;
 
     for (let i = 0; i < 8; i++) {
       const startAngle = i * anglePerSector - Math.PI / 2;
@@ -132,6 +165,8 @@ const RadarChart = () => {
       const domainConfig = getDomainConfig(book.domain);
       const isHovered = viewState.hoveredBookId === book.id;
       const isSelected = viewState.selectedBookId === book.id;
+      const number = numberByBookId.get(book.id);
+      const numberFontSize = Math.max(7, Math.round(size * 0.5));
 
       points.push(
         <g
@@ -182,11 +217,126 @@ const RadarChart = () => {
               cursor: 'pointer',
             }}
           />
+          {/* 编号 */}
+          {number && (
+            <text
+              x={x}
+              y={y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#F8FAFC"
+              fontSize={numberFontSize}
+              fontWeight="600"
+              pointerEvents="none"
+              style={{ userSelect: 'none' }}
+            >
+              {number}
+            </text>
+          )}
         </g>
       );
     });
 
     return points;
+  };
+
+  // 渲染书籍标签（分布在雷达外围）
+  const renderBookLabels = () => {
+    const labels: ReactNode[] = [];
+    const maxLabelsPerDomain = 7;
+
+    DOMAINS.forEach((domain, sectorIndex) => {
+      const books = booksByDomain.get(domain.id as Domain) ?? [];
+      if (books.length === 0) return;
+
+      const midAngle = (sectorIndex + 0.5) * anglePerSector - Math.PI / 2;
+      const startAngle = sectorIndex * anglePerSector - Math.PI / 2;
+      const endAngle = (sectorIndex + 1) * anglePerSector - Math.PI / 2;
+      const domainConfig = getDomainConfig(domain.id as Domain);
+
+      const visibleBooks = books.slice(0, maxLabelsPerDomain);
+      const moreCount = books.length - visibleBooks.length;
+      const totalItems = visibleBooks.length + (moreCount > 0 ? 1 : 0);
+
+      visibleBooks.forEach((book, index) => {
+        const isHovered = viewState.hoveredBookId === book.id;
+        const isSelected = viewState.selectedBookId === book.id;
+        const number = numberByBookId.get(book.id) ?? String(index + 1);
+
+        let angle: number;
+        if (totalItems === 1) {
+          angle = midAngle;
+        } else {
+          const spread = Math.min(anglePerSector * 0.7, Math.PI / 6);
+          angle = midAngle - spread / 2 + (index / (totalItems - 1)) * spread;
+        }
+
+        // 限制在扇形范围内，避免侵入相邻领域
+        angle = Math.max(startAngle + 0.04, Math.min(endAngle - 0.04, angle));
+
+        const anchorX = centerX + Math.cos(angle) * bookLabelRadius;
+        const anchorY = centerY + Math.sin(angle) * bookLabelRadius;
+        const isRightHalf = Math.cos(angle) >= 0;
+        const textX = anchorX + (isRightHalf ? 6 : -6);
+        const textAnchor = isRightHalf ? 'start' : 'end';
+        const titleColor = isHovered || isSelected ? '#F8FAFC' : '#CBD5E1';
+
+        labels.push(
+          <text
+            key={`book-label-${book.id}`}
+            x={textX}
+            y={anchorY}
+            textAnchor={textAnchor}
+            dominantBaseline="middle"
+            fontSize={11}
+            fontWeight="500"
+            pointerEvents="none"
+            style={{ userSelect: 'none' }}
+          >
+            <tspan fill={domainConfig.color} fontWeight="700">
+              {number}.
+            </tspan>
+            <tspan fill={titleColor}> {truncateTitle(book.title)}</tspan>
+          </text>
+        );
+      });
+
+      if (moreCount > 0) {
+        let angle: number;
+        if (totalItems === 1) {
+          angle = midAngle;
+        } else {
+          const spread = Math.min(anglePerSector * 0.7, Math.PI / 6);
+          angle = midAngle - spread / 2 + ((totalItems - 1) / (totalItems - 1)) * spread;
+        }
+        angle = Math.max(startAngle + 0.04, Math.min(endAngle - 0.04, angle));
+
+        const anchorX = centerX + Math.cos(angle) * bookLabelRadius;
+        const anchorY = centerY + Math.sin(angle) * bookLabelRadius;
+        const isRightHalf = Math.cos(angle) >= 0;
+        const textX = anchorX + (isRightHalf ? 6 : -6);
+        const textAnchor = isRightHalf ? 'start' : 'end';
+
+        labels.push(
+          <text
+            key={`book-label-more-${domain.id}`}
+            x={textX}
+            y={anchorY}
+            textAnchor={textAnchor}
+            dominantBaseline="middle"
+            fontSize={11}
+            fontWeight="500"
+            fill="#94A3B8"
+            pointerEvents="none"
+            style={{ userSelect: 'none' }}
+          >
+            +{moreCount} 更多
+          </text>
+        );
+      }
+    });
+
+    return labels;
   };
 
   // 渲染加载状态
@@ -231,6 +381,9 @@ const RadarChart = () => {
 
         {/* 书籍点 */}
         {renderBookPoints()}
+
+        {/* 书籍标签 */}
+        {renderBookLabels()}
       </svg>
 
       {/* Tooltip */}
