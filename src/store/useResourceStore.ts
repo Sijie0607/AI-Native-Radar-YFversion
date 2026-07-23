@@ -28,7 +28,10 @@ interface RadarStore {
   setHoveredBook: (bookId: string | null) => void;
   selectBook: (bookId: string | null) => void;
   toggleDetailPanel: (open: boolean) => void;
-  
+  toggleSidebarCollapsed: () => void;
+  openRecommendation: () => void;
+  closeRecommendation: () => void;
+
   filteredBooks: () => Book[];
 
   // 兼容旧接口 - 为了让现有代码继续工作
@@ -57,6 +60,8 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
     hoveredBookId: null,
     selectedBookId: null,
     isDetailPanelOpen: false,
+    isSidebarCollapsed: true,
+    isRecommendationOpen: false,
   },
   
   // Actions
@@ -118,7 +123,30 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
       isDetailPanelOpen: open,
     },
   })),
-  
+
+  toggleSidebarCollapsed: () => set(state => ({
+    viewState: {
+      ...state.viewState,
+      isSidebarCollapsed: !state.viewState.isSidebarCollapsed,
+    },
+  })),
+
+  openRecommendation: () => set(state => ({
+    viewState: {
+      ...state.viewState,
+      selectedBookId: null,
+      isDetailPanelOpen: false,
+      isRecommendationOpen: true,
+    },
+  })),
+
+  closeRecommendation: () => set(state => ({
+    viewState: {
+      ...state.viewState,
+      isRecommendationOpen: false,
+    },
+  })),
+
   filteredBooks: () => {
     const { books, filters } = get();
     return books.filter(book => {
