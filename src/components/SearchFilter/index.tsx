@@ -1,10 +1,16 @@
 import { useResourceStore } from '../../store/useResourceStore';
 import { DOMAINS, DIFFICULTIES } from '../../constants';
-import { Search, Filter, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Domain, DifficultyLevel } from '../../types';
 
 const SearchFilter = () => {
-  const { filters, setDomainFilter, setDifficultyFilter, setMinScoreFilter, setSearchQuery, clearFilters } = useResourceStore();
+  const {
+    filters,
+    setDomainFilter,
+    setDifficultyFilter,
+    setMinScoreFilter,
+    setSearchQuery,
+  } = useResourceStore();
 
   const toggleDomain = (domain: Domain) => {
     const newDomains = filters.domains.includes(domain)
@@ -20,26 +26,8 @@ const SearchFilter = () => {
     setDifficultyFilter(newLevels);
   };
 
-  const hasActiveFilters = filters.domains.length > 0 || filters.difficultyLevels.length > 0 || filters.minScore > 3 || filters.searchQuery;
-
   return (
-    <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
-          <Filter size={20} className="text-blue-500" />
-          筛选
-        </h3>
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="flex items-center gap-1 text-sm text-slate-400 hover:text-slate-300 transition-colors"
-          >
-            <X size={16} />
-            清除
-          </button>
-        )}
-      </div>
-
+    <div>
       {/* 搜索 */}
       <div className="mb-6">
         <div className="relative">

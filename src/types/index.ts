@@ -61,6 +61,8 @@ export interface ViewState {
   hoveredBookId: string | null;
   selectedBookId: string | null;
   isDetailPanelOpen: boolean;
+  isSidebarCollapsed: boolean;
+  isRecommendationOpen: boolean;
 }
 
 // 页面加载状态

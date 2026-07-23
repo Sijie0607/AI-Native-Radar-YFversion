@@ -1,12 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, BookPlus, List as ListIcon } from 'lucide-react';
+import { useResourceStore } from '../../store/useResourceStore';
 
-interface NavbarProps {
-  onRecommendClick?: () => void;
-}
-
-const Navbar = ({ onRecommendClick }: NavbarProps) => {
+const Navbar = () => {
   const location = useLocation();
+  const { openRecommendation } = useResourceStore();
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-50">
@@ -43,16 +41,14 @@ const Navbar = ({ onRecommendClick }: NavbarProps) => {
             <span className="hidden sm:inline">书单列表</span>
           </Link>
 
-          {onRecommendClick && (
-            <button
-              type="button"
-              onClick={onRecommendClick}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20 sm:px-4"
-            >
-              <BookPlus size={18} />
-              <span className="hidden sm:inline">书籍推荐</span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={openRecommendation}
+            className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20 sm:px-4"
+          >
+            <BookPlus size={18} />
+            <span className="hidden sm:inline">书籍推荐</span>
+          </button>
         </div>
       </div>
     </nav>
