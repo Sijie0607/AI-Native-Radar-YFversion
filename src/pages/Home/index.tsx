@@ -5,7 +5,7 @@ import SearchFilter from '../../components/SearchFilter';
 import DetailSidebar from '../../components/DetailSidebar';
 import BookScoringDrawer from '../../components/BookScoringDrawer';
 import { useResourceStore } from '../../store/useResourceStore';
-import { mockService } from '../../mocks/mockData';
+import { resourceService } from '../../services/resourceService';
 import { BookPlus, Info, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Book } from '../../types';
 import { buildRadarData } from '../../utils/radarLayout';
@@ -44,7 +44,7 @@ const Home = () => {
     const loadData = async () => {
       setLoadingStatus('loading');
       try {
-        const books = await mockService.fetchBooks();
+        const books = await resourceService.fetchBooks();
         setBooks(books);
         setLoadingStatus('success');
       } catch (error) {

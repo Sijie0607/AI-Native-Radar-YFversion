@@ -3,7 +3,7 @@ import SearchFilter from '../../components/SearchFilter';
 import ResourceList from '../../components/ResourceList';
 import BookScoringDrawer from '../../components/BookScoringDrawer';
 import { useResourceStore } from '../../store/useResourceStore';
-import { mockService } from '../../mocks/mockData';
+import { resourceService } from '../../services/resourceService';
 import { Book } from '../../types';
 
 const List = () => {
@@ -17,7 +17,7 @@ const List = () => {
       const loadData = async () => {
         setLoadingStatus('loading');
         try {
-          const books = await mockService.fetchBooks();
+          const books = await resourceService.fetchBooks();
           setBooks(books);
           setLoadingStatus('success');
         } catch (error) {
