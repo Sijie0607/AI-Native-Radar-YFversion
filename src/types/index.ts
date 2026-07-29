@@ -25,6 +25,7 @@ export interface Recommendation {
 // 书籍数据
 export interface Book {
   id: string;
+  displayNumber: number; // 对应 Excel / 数据库中的书籍编号
   title: string;
   subtitle?: string;
   author: string;
