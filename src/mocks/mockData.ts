@@ -412,6 +412,7 @@ export function generateMockBooks(): Book[] {
 
     books.push({
       id: `imported-${index + 1}`,
+      displayNumber: index + 1,
       title: seed.title,
       subtitle: '',
       author: seed.author,

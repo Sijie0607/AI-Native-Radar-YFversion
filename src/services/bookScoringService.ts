@@ -6,6 +6,8 @@ import {
   Recommendation,
   SessionBookScore,
 } from '../types';
+import { callBackendRpc, getCurrentSessionId, isBackendConfigured } from './backendClient';
+import { BackendRadarBookRow, mapBackendBook } from './bookMapper';
 
 interface SubmitBookScoreParams {
   book: Book;
@@ -16,6 +18,12 @@ interface SubmitBookScoreParams {
 interface SubmitBookScoreResponse {
   result: BookScoringSubmissionResult;
   updatedBook?: Book;
+  sessionScore?: SessionBookScore;
+}
+
+interface BackendBookScoreResponse {
+  result: BookScoringSubmissionResult;
+  updatedBook?: BackendRadarBookRow | null;
   sessionScore?: SessionBookScore;
 }
 
@@ -97,6 +105,33 @@ export const bookScoringService = {
     draft,
     existingSessionScore,
   }: SubmitBookScoreParams): Promise<SubmitBookScoreResponse> {
+    if (isBackendConfigured) {
+      try {
+        const response = await callBackendRpc<BackendBookScoreResponse>('submit_book_score', {
+          p_resource_id: book.id,
+          p_user_session_id: getCurrentSessionId(),
+          p_score: draft.score,
+          p_reason: draft.reason.trim(),
+        });
+
+        return {
+          result: response.result,
+          updatedBook: response.updatedBook ? mapBackendBook(response.updatedBook, book.displayNumber - 1) : undefined,
+          sessionScore: response.sessionScore,
+        };
+      } catch (error) {
+        return {
+          result: {
+            status: 'error',
+            actionType: existingSessionScore ? 'update' : 'create',
+            message: '评分提交失败，后台暂时无法写入，请稍后重试。',
+            submittedAt: new Date().toISOString(),
+            bookId: book.id,
+          },
+        };
+      }
+    }
+
     await delay(450);
 
     if (shouldSimulateFailure(draft)) {

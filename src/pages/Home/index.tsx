@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import RadarChart from '../../components/RadarChart';
+import RadarLegend from '../../components/RadarLegend';
 import SearchFilter from '../../components/SearchFilter';
 import DetailSidebar from '../../components/DetailSidebar';
 import BookScoringDrawer from '../../components/BookScoringDrawer';
 import { useResourceStore } from '../../store/useResourceStore';
-import { mockService } from '../../mocks/mockData';
+import { resourceService } from '../../services/resourceService';
 import { BookPlus, Info, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Book } from '../../types';
+import { buildRadarData } from '../../utils/radarLayout';
 
 const Home = () => {
   const [isScoringOpen, setIsScoringOpen] = useState(false);
@@ -24,10 +26,12 @@ const Home = () => {
 
   const isSidebarCollapsed = viewState.isSidebarCollapsed;
 
+  const radarData = useMemo(() => buildRadarData(books, filters), [books, filters]);
+
   const activeFilterCount =
     filters.domains.length +
     filters.difficultyLevels.length +
-    (filters.minScore > 3 ? 1 : 0) +
+    (filters.minScore !== 4 ? 1 : 0) +
     (filters.searchQuery ? 1 : 0);
 
   const openScoring = (book: Book) => {
@@ -40,7 +44,7 @@ const Home = () => {
     const loadData = async () => {
       setLoadingStatus('loading');
       try {
-        const books = await mockService.fetchBooks();
+        const books = await resourceService.fetchBooks();
         setBooks(books);
         setLoadingStatus('success');
       } catch (error) {
@@ -67,16 +71,18 @@ const Home = () => {
           {/* 图例说明 */}
           <div className="inline-flex flex-wrap items-center justify-center gap-4 rounded-2xl border border-slate-700 bg-slate-800/50 px-5 py-3 sm:gap-6 sm:rounded-full sm:px-6">
             <div className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full bg-slate-500 text-center text-[9px] font-semibold leading-4 text-white">
+                1
+              </div>
+              <span className="text-sm text-slate-400">书籍编号</span>
+            </div>
+            <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-blue-500" />
               <span className="text-slate-400 text-sm">领域</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-8 h-0.5 bg-slate-600" style={{ borderStyle: 'dashed', borderWidth: 1 }} />
               <span className="text-slate-400 text-sm">难度圈</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-full bg-slate-500" />
-              <span className="text-slate-400 text-sm">书籍</span>
             </div>
             <div className="flex items-center gap-2">
               <Info size={16} className="text-slate-500" />
@@ -121,7 +127,7 @@ const Home = () => {
                   <button
                     type="button"
                     onClick={toggleSidebarCollapsed}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition-colors"
+                    className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200"
                     aria-label="收起筛选面板"
                   >
                     <ChevronLeft size={20} />
@@ -131,14 +137,12 @@ const Home = () => {
                 <SearchFilter />
 
                 {/* 统计信息 */}
-                <div className="mt-6 bg-slate-900/50 rounded-xl p-4 border border-slate-700">
+                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-blue-500 mb-1">
+                    <div className="mb-1 text-3xl font-bold text-blue-500">
                       {filteredBooks().length}
                     </div>
-                    <div className="text-slate-400 text-sm">
-                      符合条件的书籍
-                    </div>
+                    <div className="text-sm text-slate-400">符合条件的书籍</div>
                   </div>
                 </div>
 
@@ -154,10 +158,14 @@ const Home = () => {
             )}
           </aside>
 
-          {/* 右侧：雷达图 */}
+          {/* 右侧：雷达图 + 外围书单 */}
           <div className="min-w-0 flex-1">
-            <div className="mx-auto w-full max-w-[720px] xl:max-w-[760px]">
-              <RadarChart />
+            <div className="relative mx-auto aspect-square w-full max-w-[1000px] overflow-visible">
+              <RadarChart
+                points={radarData.points}
+                className="absolute inset-[15%] overflow-hidden rounded-2xl bg-slate-900"
+              />
+              <RadarLegend domainGroups={radarData.domainGroups} />
             </div>
           </div>
         </div>

@@ -51,7 +51,7 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
   filters: {
     domains: [],
     difficultyLevels: [],
-    minScore: 3,
+    minScore: 4,
     searchQuery: '',
   },
   
@@ -100,7 +100,7 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
     filters: {
       domains: [],
       difficultyLevels: [],
-      minScore: 3,
+      minScore: 4,
       searchQuery: '',
     },
   }),
