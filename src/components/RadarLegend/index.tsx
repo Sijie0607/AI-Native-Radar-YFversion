@@ -64,7 +64,7 @@ const RadarLegend = ({ domainGroups, className }: RadarLegendProps) => {
                 transform: 'translate(-50%, -50%)',
               }}
             >
-              <div className="rounded-lg border border-slate-700 bg-slate-800/95 p-3 shadow-xl backdrop-blur-sm">
+              <div className="paper-card rounded-lg border border-slate-700 bg-slate-800/95 p-3 shadow-xl backdrop-blur-sm">
                 <div className="mb-2 flex items-center gap-2">
                   <div className="h-4 w-1 rounded-full" style={{ backgroundColor: domain.color }} />
                   <span className="text-xs font-semibold text-slate-200">{domain.name}</span>
@@ -83,7 +83,7 @@ const RadarLegend = ({ domainGroups, className }: RadarLegendProps) => {
         {DOMAINS.map((domain) => {
           const items = domainGroups[domain.id] || [];
           return (
-            <div key={domain.id} className="rounded-lg border border-slate-700 bg-slate-800 p-4">
+            <div key={domain.id} className="paper-card rounded-lg border border-slate-700 bg-slate-800 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <div className="h-4 w-1 rounded-full" style={{ backgroundColor: domain.color }} />
                 <span className="text-sm font-semibold text-slate-200">{domain.name}</span>

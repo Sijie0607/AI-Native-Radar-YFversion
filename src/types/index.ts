@@ -44,7 +44,12 @@ export interface Book {
   contentType: string;
   tags: string[];
   votesCount: number;
+  recommendationCount?: number;
+  ratingCount?: number;
   sourceNote?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  lastRecommendedAt?: string;
   competenceThemes: string[];
   recommendations: Recommendation[];
 }

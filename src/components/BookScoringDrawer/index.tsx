@@ -248,7 +248,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
         onClick={handleRequestClose}
       />
 
-      <aside className="absolute inset-y-0 right-0 w-full max-w-[440px] border-l border-slate-700 bg-slate-800 shadow-2xl">
+      <aside className="paper-drawer absolute inset-y-0 right-0 w-full max-w-[440px] border-l border-slate-700 bg-slate-800 shadow-2xl">
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-6">
             <div className="pr-4">
@@ -272,7 +272,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-            <section className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
+            <section className="paper-card rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-200">
                 <FileText size={16} />
                 评分说明

@@ -30,7 +30,7 @@ const BookScoringForm = ({
   const isEditMode = draft.mode === 'edit';
 
   return (
-    <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <div className="mb-5">
         <h3 className="text-lg font-semibold text-slate-50">
           {isEditMode ? '修改评分' : '评分表单'}
@@ -92,7 +92,7 @@ const BookScoringForm = ({
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
+      <div className="paper-card mt-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
         <p className="text-sm leading-6 text-slate-400">
           提交后，推荐指数会实时更新；当前会话内，同一本书只保留你的一条有效评分。本轮不会改变雷达展示。
         </p>

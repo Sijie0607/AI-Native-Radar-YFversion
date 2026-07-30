@@ -30,7 +30,12 @@ export interface BackendRadarBookRow {
   content_type: string | null;
   tags: string[] | null;
   votes_count: number | null;
+  recommendation_count?: number | null;
+  rating_count?: number | null;
   source_note: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  last_recommended_at?: string | null;
   competence_themes: string[] | null;
   recommendations: BackendRecommendationRow[] | null;
 }
@@ -65,7 +70,12 @@ export const mapBackendBook = (row: BackendRadarBookRow, index: number): Book =>
   contentType: row.content_type ?? '书籍',
   tags: row.tags ?? [],
   votesCount: row.votes_count ?? 0,
+  recommendationCount: row.recommendation_count ?? undefined,
+  ratingCount: row.rating_count ?? undefined,
   sourceNote: row.source_note ?? undefined,
+  createdAt: row.created_at ?? undefined,
+  updatedAt: row.updated_at ?? undefined,
+  lastRecommendedAt: row.last_recommended_at ?? undefined,
   competenceThemes: row.competence_themes ?? [],
   recommendations: (row.recommendations ?? []).map(mapRecommendation),
 });

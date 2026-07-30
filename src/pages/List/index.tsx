@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import SearchFilter from '../../components/SearchFilter';
 import ResourceList from '../../components/ResourceList';
 import BookScoringDrawer from '../../components/BookScoringDrawer';
+import ListRecommendationShelf from '../../components/ListRecommendationShelf';
 import { useResourceStore } from '../../store/useResourceStore';
 import { resourceService } from '../../services/resourceService';
 import { Book } from '../../types';
@@ -35,10 +36,11 @@ const List = () => {
         <h1 className="text-4xl font-bold text-slate-50 mb-8">
           书单列表
         </h1>
-        <div className="mb-8 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
+        <div className="paper-panel mb-8 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
           <h3 className="mb-4 text-lg font-semibold text-slate-50">筛选</h3>
           <SearchFilter />
         </div>
+        <ListRecommendationShelf books={books} />
         <ResourceList
           onScoreClick={(book) => {
             setActiveScoringBook(book);
