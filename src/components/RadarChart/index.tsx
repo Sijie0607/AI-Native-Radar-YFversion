@@ -43,11 +43,45 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
     book: null,
   });
 
-  const width = 800;
-  const height = 800;
+  const width = 900;
+  const height = 900;
   const centerX = width / 2;
   const centerY = height / 2;
   const maxRadius = 350;
+  const bookLabelRadius = maxRadius + 55;
+  const anglePerSector = (Math.PI * 2) / 8;
+
+  // 按领域分组并编号
+  const { booksByDomain, numberByBookId } = useMemo(() => {
+    const visible = filteredBooks();
+    const grouped = new Map<Domain, Book[]>();
+    const numbers = new Map<string, string>();
+
+    visible.forEach((book) => {
+      const list = grouped.get(book.domain) ?? [];
+      list.push(book);
+      grouped.set(book.domain, list);
+    });
+
+    grouped.forEach((list) => {
+      list.sort((a, b) => {
+        if (a.ringIndex !== b.ringIndex) {
+          return a.ringIndex - b.ringIndex;
+        }
+        return a.title.localeCompare(b.title, 'zh-CN');
+      });
+      list.forEach((book, index) => {
+        numbers.set(book.id, String(index + 1));
+      });
+    });
+
+    return { booksByDomain: grouped, numberByBookId: numbers };
+  }, [filteredBooks]);
+
+  const truncateTitle = (title: string, maxLength = 18) => {
+    if (title.length <= maxLength) return title;
+    return `${title.slice(0, maxLength)}…`;
+  };
 
   const outerClassName =
     className || 'paper-radar-frame relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-900';
@@ -112,8 +146,6 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
 
   const renderSectors = () => {
     const sectors = [];
-    const anglePerSector = (Math.PI * 2) / 8;
-    const angleGap = anglePerSector * 0.035;
 
     for (let i = 0; i < 8; i++) {
       const domain = DOMAINS[i];
@@ -396,6 +428,9 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
         {renderCenterTarget()}
         {renderDomainLabels()}
         {renderBookPoints()}
+
+        {/* 书籍标签 */}
+        {renderBookLabels()}
       </svg>
 
       {tooltip.visible && tooltip.book && (
