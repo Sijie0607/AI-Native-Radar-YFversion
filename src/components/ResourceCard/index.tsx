@@ -18,7 +18,7 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
   return (
     <div
       onClick={() => navigate(`/detail/${resource.id}`)}
-      className="bg-slate-800 rounded-xl border border-slate-700 p-6 cursor-pointer hover:border-blue-500 hover:-translate-y-1 transition-all"
+      className="paper-card bg-slate-800 rounded-xl border border-slate-700 p-6 cursor-pointer hover:border-blue-500 hover:-translate-y-1 transition-all"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">

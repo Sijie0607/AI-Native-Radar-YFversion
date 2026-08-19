@@ -35,7 +35,7 @@ const BookScoringRecords = ({
   onEditRecord,
 }: BookScoringRecordsProps) => {
   return (
-    <section className="space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-slate-50">
@@ -59,13 +59,13 @@ const BookScoringRecords = ({
       </div>
 
       {records.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-800/40 px-4 py-8 text-center">
+        <div className="paper-card rounded-xl border border-dashed border-slate-700 bg-slate-800/40 px-4 py-8 text-center">
           <p className="text-sm text-slate-400">当前会话还没有评分记录。</p>
         </div>
       ) : (
         <div className="space-y-3">
           {records.map((record) => (
-            <article key={record.id} className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
+            <article key={record.id} className="paper-card rounded-xl border border-slate-700 bg-slate-800/70 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

@@ -7,7 +7,7 @@ const Navbar = () => {
   const { openRecommendation } = useResourceStore();
 
   return (
-    <nav className="fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-50">
+    <nav className="paper-nav fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-50">
       <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4">
         <Link
           to="/"

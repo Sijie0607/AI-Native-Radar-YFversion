@@ -7,7 +7,7 @@ const Layout = () => {
   const { viewState, closeRecommendation } = useResourceStore();
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="paper-app min-h-screen bg-slate-900">
       <Navbar />
       <Outlet />
       <RecommendationDrawer

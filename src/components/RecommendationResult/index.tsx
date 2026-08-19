@@ -73,7 +73,7 @@ const RecommendationResult = ({
   const Icon = meta.icon;
 
   return (
-    <section className="space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <div className={`rounded-xl border p-4 ${meta.panelBorderClass}`}>
         <div className="flex items-start gap-3">
           <div
@@ -90,7 +90,7 @@ const RecommendationResult = ({
       </div>
 
       {result.existingBook && (
-        <section className="rounded-xl border border-slate-700 bg-slate-800/70 p-4">
+        <section className="paper-card rounded-xl border border-slate-700 bg-slate-800/70 p-4">
           <div className="mb-3 text-sm font-medium text-slate-200">已存在书籍信息</div>
           <div className="space-y-2 text-sm text-slate-300">
             <p>

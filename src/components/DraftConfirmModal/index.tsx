@@ -15,7 +15,7 @@ const DraftConfirmModal = ({
 
   return (
     <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/60 p-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+      <div className="paper-panel w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
         <h3 className="text-xl font-semibold text-slate-50">保留草稿吗？</h3>
         <p className="mt-3 text-sm leading-6 text-slate-400">
           你还有未提交的推荐内容。关闭前可以选择保留为草稿，稍后继续编辑。

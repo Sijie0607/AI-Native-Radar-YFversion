@@ -344,10 +344,18 @@ function buildReasonShort(reason: string): string {
   return firstSentence.length > 30 ? `${firstSentence.slice(0, 30)}...` : firstSentence;
 }
 
+function buildMockIsoDate(daysAgo: number): string {
+  const date = new Date();
+  date.setHours(9, 0, 0, 0);
+  date.setDate(date.getDate() - daysAgo);
+  return date.toISOString();
+}
+
 function buildImportedRecommendations(
   seed: ImportedBookSeed,
   score: number,
   recommendationIdStart: number,
+  bookIndex: number,
 ): Recommendation[] {
   const recommenders = seed.recommenders.length > 0 ? seed.recommenders : ['AI-Native 官方资料库'];
   return recommenders.map((recommender, index) => ({
@@ -356,7 +364,7 @@ function buildImportedRecommendations(
     isAnonymous: false,
     reason: seed.reason,
     score,
-    recommendedAt: '2026-07-18',
+    recommendedAt: buildMockIsoDate(bookIndex % 12),
   }));
 }
 
@@ -407,7 +415,9 @@ export function generateMockBooks(): Book[] {
     const pos = calculatePosition(sectorIndex, ringIndex, slotIndex);
     const structuredMetadata = getStructuredBookMetadata(domain);
     const recommendationScore = scoreFromDegree(seed.degree);
-    const recommendations = buildImportedRecommendations(seed, recommendationScore, index * 10);
+    const recommendations = buildImportedRecommendations(seed, recommendationScore, index * 10, index);
+    const createdAt = buildMockIsoDate(index % 9);
+    const lastRecommendedAt = recommendations[0]?.recommendedAt;
     slotCountMap.set(key, slotIndex + 1);
 
     books.push({
@@ -430,7 +440,12 @@ export function generateMockBooks(): Book[] {
       contentType: '书籍',
       tags: structuredMetadata.tags,
       votesCount: recommendations.length,
+      recommendationCount: recommendations.length,
+      ratingCount: 0,
       sourceNote: seed.link || '来源：AI-Native读书雷达资料共建表',
+      createdAt,
+      updatedAt: lastRecommendedAt ?? createdAt,
+      lastRecommendedAt,
       competenceThemes: seed.themes,
       recommendations,
     });

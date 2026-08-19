@@ -45,7 +45,7 @@ const Detail = () => {
           返回
         </button>
 
-        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8">
+        <div className="paper-panel bg-slate-800 rounded-2xl border border-slate-700 p-8">
           <div className="flex flex-col lg:flex-row items-start gap-8">
             {book.cover && (
               <div className="flex-shrink-0">
@@ -107,7 +107,7 @@ const Detail = () => {
                   <MessageSquare size={20} className="text-blue-500" />
                   推荐理由
                 </h3>
-                <div className="p-6 bg-slate-700/50 rounded-xl border-l-4 border-blue-500">
+                <div className="paper-card p-6 bg-slate-700/50 rounded-xl border-l-4 border-blue-500">
                   <p className="text-slate-300 leading-relaxed">{book.reasonFull}</p>
                 </div>
               </div>
@@ -192,7 +192,7 @@ const Detail = () => {
                   {book.recommendations.map((rec) => (
                     <div
                       key={rec.id}
-                      className="p-4 bg-slate-700/50 rounded-xl border-l-4 border-pink-500"
+                      className="paper-card p-4 bg-slate-700/50 rounded-xl border-l-4 border-pink-500"
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-slate-200">

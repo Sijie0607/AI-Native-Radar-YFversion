@@ -36,7 +36,7 @@ const RecommendationForm = ({
   );
 
   return (
-    <section className="rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel rounded-xl border border-slate-700 bg-slate-900/40 p-5">
       <div className="mb-5">
         <h3 className="text-lg font-semibold text-slate-50">推荐表单</h3>
         <p className="mt-1 text-sm text-slate-400">
@@ -158,7 +158,7 @@ const RecommendationForm = ({
         </div>
       </div>
 
-      <div className="mt-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
+      <div className="paper-card mt-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
         <p className="text-sm leading-6 text-slate-400">
           推荐内容不会自动进入正式雷达。提交后你会收到明确结果反馈。
         </p>

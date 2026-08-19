@@ -69,7 +69,7 @@ const Home = () => {
           </p>
 
           {/* 图例说明 */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-4 rounded-2xl border border-slate-700 bg-slate-800/50 px-5 py-3 sm:gap-6 sm:rounded-full sm:px-6">
+          <div className="paper-panel inline-flex flex-wrap items-center justify-center gap-4 rounded-2xl border border-slate-700 bg-slate-800/50 px-5 py-3 sm:gap-6 sm:rounded-full sm:px-6">
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded-full bg-slate-500 text-center text-[9px] font-semibold leading-4 text-white">
                 1
@@ -102,7 +102,7 @@ const Home = () => {
               <button
                 type="button"
                 onClick={toggleSidebarCollapsed}
-                className="relative flex w-full items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200 xl:justify-center xl:px-3"
+                className="paper-card relative flex w-full items-center justify-between gap-3 rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200 xl:justify-center xl:px-3"
                 aria-label="展开筛选面板"
               >
                 <span className="flex items-center gap-2 xl:hidden">
@@ -118,7 +118,7 @@ const Home = () => {
                 )}
               </button>
             ) : (
-              <div className="rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
+              <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
                     <Filter size={20} className="text-blue-500" />
@@ -137,7 +137,7 @@ const Home = () => {
                 <SearchFilter />
 
                 {/* 统计信息 */}
-                <div className="mt-6 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+                <div className="paper-card mt-6 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
                   <div className="text-center">
                     <div className="mb-1 text-3xl font-bold text-blue-500">
                       {filteredBooks().length}
@@ -163,7 +163,8 @@ const Home = () => {
             <div className="relative mx-auto aspect-square w-full max-w-[1000px] overflow-visible">
               <RadarChart
                 points={radarData.points}
-                className="absolute inset-[15%] overflow-hidden rounded-2xl bg-slate-900"
+                domainGroups={radarData.domainGroups}
+                className="paper-radar-frame absolute inset-[15%] overflow-hidden rounded-2xl bg-slate-900"
               />
               <RadarLegend domainGroups={radarData.domainGroups} />
             </div>

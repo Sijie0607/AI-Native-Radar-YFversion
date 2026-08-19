@@ -19,7 +19,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
   const hasSessionScore = Boolean(sessionScores[selectedBook.id]);
 
   return (
-    <div className="fixed inset-y-0 right-0 z-50 w-full border-l border-slate-700 bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 sm:w-[450px]">
+    <div className="paper-drawer fixed inset-y-0 right-0 z-50 w-full border-l border-slate-700 bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 sm:w-[450px]">
       {/* 头部 */}
       <div className="border-b border-slate-700 p-4 sm:p-6">
         <div className="flex items-start justify-between">
@@ -61,7 +61,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
         {/* 基本信息 */}
         <div className="space-y-4 mb-6">
           {/* 推荐指数 */}
-          <div className="flex items-center gap-3 p-4 bg-slate-700/50 rounded-lg">
+          <div className="paper-card flex items-center gap-3 p-4 bg-slate-700/50 rounded-lg">
             <div className="flex items-center gap-1">
               {[...Array(5)].map((_, i) => (
                 <Star
@@ -90,7 +90,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
 
           {/* 领域和难度 */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="p-4 bg-slate-700/50 rounded-lg">
+            <div className="paper-card p-4 bg-slate-700/50 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <BookOpen size={16} className="text-slate-400" />
                 <span className="text-slate-400 text-sm">领域</span>
@@ -99,7 +99,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
                 {domainConfig.name}
               </div>
             </div>
-            <div className="p-4 bg-slate-700/50 rounded-lg">
+            <div className="paper-card p-4 bg-slate-700/50 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
                 <BookMarked size={16} className="text-slate-400" />
                 <span className="text-slate-400 text-sm">难度</span>
@@ -115,7 +115,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
             <MessageSquare size={20} className="text-blue-500" />
             推荐理由
           </h3>
-          <div className="p-4 bg-slate-700/30 rounded-lg border-l-4 border-blue-500">
+          <div className="paper-card p-4 bg-slate-700/30 rounded-lg border-l-4 border-blue-500">
             <p className="text-slate-300 leading-relaxed">{selectedBook.reasonFull}</p>
           </div>
         </div>
@@ -201,7 +201,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
             </h3>
             <div className="space-y-4">
               {selectedBook.recommendations.map((rec) => (
-                <div key={rec.id} className="p-4 bg-slate-700/30 rounded-lg">
+                <div key={rec.id} className="paper-card p-4 bg-slate-700/30 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium text-slate-200">
                       {rec.isAnonymous ? '匿名用户' : rec.recommender}
