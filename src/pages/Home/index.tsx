@@ -1,18 +1,37 @@
 import { useEffect, useMemo, useState } from 'react';
 import RadarChart from '../../components/RadarChart';
-import RadarLegend from '../../components/RadarLegend';
+import DomainBookCard from '../../components/RadarLegend';
+import { DOMAINS } from '../../constants';
 import SearchFilter from '../../components/SearchFilter';
 import DetailSidebar from '../../components/DetailSidebar';
 import BookScoringDrawer from '../../components/BookScoringDrawer';
 import { useResourceStore } from '../../store/useResourceStore';
 import { resourceService } from '../../services/resourceService';
-import { BookPlus, Info, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { versionCompareService } from '../../services/versionCompareService';
+import { computeVersionCompareData } from '../../utils/versionCompare';
+import {
+  BookPlus,
+  Info,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  History,
+  X,
+} from 'lucide-react';
 import { Book } from '../../types';
+import { VersionDiff } from '../../types/versionCompare';
 import { buildRadarData } from '../../utils/radarLayout';
 
 const Home = () => {
   const [isScoringOpen, setIsScoringOpen] = useState(false);
   const [activeScoringBook, setActiveScoringBook] = useState<Book | null>(null);
+  // 历史版本对比（本地态，不进 store）：diff 拉取一次后缓存复用
+  const [versionCompare, setVersionCompare] = useState<{
+    active: boolean;
+    loading: boolean;
+    notice: string | null;
+    diff: VersionDiff | null;
+  }>({ active: false, loading: false, notice: null, diff: null });
   const {
     books,
     filters,
@@ -31,12 +50,79 @@ const Home = () => {
   const activeFilterCount =
     filters.domains.length +
     filters.difficultyLevels.length +
-    (filters.minScore !== 4 ? 1 : 0) +
+    (filters.minScore !== 3 ? 1 : 0) +
     (filters.searchQuery ? 1 : 0);
 
   const openScoring = (book: Book) => {
     setActiveScoringBook(book);
     setIsScoringOpen(true);
+  };
+
+  // 进入/退出"本周更新"对比；diff 已缓存则直接激活，否则拉取（null=真无上一版，不兜底 mock）
+  const handleToggleCompare = async () => {
+    if (versionCompare.active) {
+      setVersionCompare((prev) => ({ ...prev, active: false, notice: null }));
+      return;
+    }
+    if (versionCompare.diff) {
+      setVersionCompare((prev) => ({ ...prev, active: true, notice: null }));
+      return;
+    }
+    setVersionCompare((prev) => ({ ...prev, loading: true, notice: null }));
+    try {
+      const diff = await versionCompareService.fetchVersionDiff(books);
+      if (!diff) {
+        setVersionCompare((prev) => ({
+          ...prev,
+          loading: false,
+          notice: '暂无上一版本可对比',
+        }));
+        return;
+      }
+      setVersionCompare((prev) => ({ ...prev, loading: false, active: true, diff }));
+    } catch (error) {
+      setVersionCompare((prev) => ({
+        ...prev,
+        loading: false,
+        notice: '版本数据加载失败，请稍后重试',
+      }));
+    }
+  };
+
+  // 当前 vs 上一版 的变化数据（仅 active 且有上一版快照时计算）
+  const versionCompareData = useMemo(() => {
+    if (!versionCompare.active || !versionCompare.diff) return null;
+    if (!versionCompare.diff.previousBooks.length) return null;
+    return computeVersionCompareData(books, versionCompare.diff.previousBooks);
+  }, [versionCompare.active, versionCompare.diff, books]);
+
+  // 面板计数：基于全量 books（含被筛选隐藏的书），removed 来自上一版残影
+  const compareCounts = useMemo(() => {
+    if (!versionCompareData) {
+      return { added: 0, removed: 0, scoreUp: 0, scoreDown: 0 };
+    }
+    let added = 0;
+    let scoreUp = 0;
+    let scoreDown = 0;
+    Object.values(versionCompareData.changesByBookId).forEach((change) => {
+      if (change.type === 'added') added += 1;
+      else if (change.type === 'score_up') scoreUp += 1;
+      else if (change.type === 'score_down') scoreDown += 1;
+    });
+    return {
+      added,
+      removed: versionCompareData.removedBooks.length,
+      scoreUp,
+      scoreDown,
+    };
+  }, [versionCompareData]);
+
+  // 周次日期展示：'2026-08-13' → '8月13日'
+  const fmtDate = (value?: string | null) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return value.slice(0, 10);
+    return `${d.getMonth() + 1}月${d.getDate()}日`;
   };
 
   // 加载数据
@@ -88,6 +174,28 @@ const Home = () => {
               <Info size={16} className="text-slate-500" />
               <span className="text-slate-400 text-sm">悬停查看详情</span>
             </div>
+          </div>
+
+          {/* 历史版本对比入口 */}
+          <div className="mt-5 flex flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleCompare}
+              disabled={versionCompare.loading}
+              className={`inline-flex items-center gap-2 rounded-full border border-[var(--paper-border)] bg-[var(--paper-panel)] px-5 py-2 text-sm font-medium text-[var(--paper-ink)] shadow-sm transition-all hover:bg-[var(--paper-card)] disabled:cursor-not-allowed disabled:opacity-60 ${
+                versionCompare.active ? 'ring-2 ring-[var(--paper-accent)]' : ''
+              }`}
+            >
+              <History size={16} />
+              {versionCompare.loading
+                ? '加载中...'
+                : versionCompare.active
+                  ? '退出对比'
+                  : '本周更新'}
+            </button>
+            {versionCompare.notice && (
+              <p className="text-sm text-[var(--paper-muted)]">{versionCompare.notice}</p>
+            )}
           </div>
         </div>
 
@@ -158,15 +266,171 @@ const Home = () => {
             )}
           </aside>
 
-          {/* 右侧：雷达图 + 外围书单 */}
+          {/* 右侧：雷达 + 书名九宫格 */}
           <div className="min-w-0 flex-1">
-            <div className="relative mx-auto aspect-square w-full max-w-[1000px] overflow-visible">
-              <RadarChart
-                points={radarData.points}
-                domainGroups={radarData.domainGroups}
-                className="paper-radar-frame absolute inset-[15%] overflow-hidden rounded-2xl bg-slate-900"
-              />
-              <RadarLegend domainGroups={radarData.domainGroups} />
+            <div className="mx-auto w-full max-w-[1200px]">
+              {/* 雷达为主体：占满右侧宽度、上限 1000px，与调整书名框布局之前的大小一致 */}
+              <div className="relative mx-auto aspect-square w-full max-w-[1000px]">
+                  <RadarChart
+                    points={radarData.points}
+                    domainGroups={radarData.domainGroups}
+                    versionChanges={versionCompareData}
+                    className="absolute inset-0"
+                  />
+
+              {/* 版本对比浮层面板（左上角） */}
+              {versionCompare.active && versionCompare.diff && (
+                <div className="absolute left-4 top-4 z-30 w-52 rounded-xl border border-[var(--paper-border)] bg-[var(--paper-panel)] p-4 text-[var(--paper-ink)] shadow-lg">
+                  <div className="mb-1 flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold">
+                        第 {versionCompare.diff.currentVersion?.versionNumber ?? '?'} 期
+                        vs 第 {versionCompare.diff.previousVersion?.versionNumber ?? '?'} 期
+                      </h3>
+                      <p className="text-xs text-[var(--paper-muted)]">
+                        {versionCompare.diff.currentVersion
+                          ? `${fmtDate(versionCompare.diff.currentVersion.weekStart)} 起`
+                          : ''}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleCompare}
+                      className="rounded-md p-1 text-[var(--paper-muted)] transition-colors hover:bg-[var(--paper-card)] hover:text-[var(--paper-ink)]"
+                      aria-label="退出对比"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 space-y-1.5 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#3f6b4f' }} />
+                        <span className="text-[var(--paper-muted)]">新增</span>
+                      </span>
+                      <span className="font-semibold">{compareCounts.added}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full border border-dashed" style={{ borderColor: '#6f6252' }} />
+                        <span className="text-[var(--paper-muted)]">删除</span>
+                      </span>
+                      <span className="font-semibold">{compareCounts.removed}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-bold text-[var(--paper-accent)]">↑</span>
+                        <span className="text-[var(--paper-muted)]">指数升</span>
+                      </span>
+                      <span className="font-semibold">{compareCounts.scoreUp}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-bold" style={{ color: '#9c5a30' }}>↓</span>
+                        <span className="text-[var(--paper-muted)]">指数降</span>
+                      </span>
+                      <span className="font-semibold">{compareCounts.scoreDown}</span>
+                    </div>
+                  </div>
+
+                  {compareCounts.added +
+                    compareCounts.removed +
+                    compareCounts.scoreUp +
+                    compareCounts.scoreDown ===
+                    0 && (
+                    <p className="mt-2 text-center text-xs text-[var(--paper-muted)]">
+                      本周无变化
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* 8 个领域书名框：lg+ 环绕雷达、各自贴近对应领域扇形方位（上/右上/右/右下/下/左下/左/左上）；<lg 隐藏 */}
+              <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
+                {/* 上：AI 前沿趋势 */}
+                <div className="pointer-events-auto absolute left-1/2 top-1 w-[36%] -translate-x-1/2">
+                  <DomainBookCard
+                    domain={DOMAINS[7]}
+                    items={radarData.domainGroups[DOMAINS[7].id] || []}
+                    listMaxHeight="max-h-[120px]"
+                  />
+                </div>
+                {/* 右上：AI 工程 */}
+                <div className="pointer-events-auto absolute right-1 top-1 w-[24%]">
+                  <DomainBookCard
+                    domain={DOMAINS[0]}
+                    items={radarData.domainGroups[DOMAINS[0].id] || []}
+                    listMaxHeight="max-h-[170px]"
+                  />
+                </div>
+                {/* 右：AI 产品设计 */}
+                <div className="pointer-events-auto absolute right-1 top-1/2 w-[18%] -translate-y-1/2">
+                  <DomainBookCard
+                    domain={DOMAINS[1]}
+                    items={radarData.domainGroups[DOMAINS[1].id] || []}
+                    listMaxHeight="max-h-[220px]"
+                    itemTextClass="text-[10px]"
+                    stripTagPrefix
+                  />
+                </div>
+                {/* 右下：Agent 与智能体 */}
+                <div className="pointer-events-auto absolute right-1 bottom-1 w-[24%]">
+                  <DomainBookCard
+                    domain={DOMAINS[2]}
+                    items={radarData.domainGroups[DOMAINS[2].id] || []}
+                    listMaxHeight="max-h-[170px]"
+                  />
+                </div>
+                {/* 下：AI 组织变革 */}
+                <div className="pointer-events-auto absolute bottom-1 left-1/2 w-[36%] -translate-x-1/2">
+                  <DomainBookCard
+                    domain={DOMAINS[3]}
+                    items={radarData.domainGroups[DOMAINS[3].id] || []}
+                    listMaxHeight="max-h-[120px]"
+                  />
+                </div>
+                {/* 左下：数据智能与知识 */}
+                <div className="pointer-events-auto absolute bottom-1 left-1 w-[24%]">
+                  <DomainBookCard
+                    domain={DOMAINS[4]}
+                    items={radarData.domainGroups[DOMAINS[4].id] || []}
+                    listMaxHeight="max-h-[170px]"
+                  />
+                </div>
+                {/* 左：AI 商业落地 */}
+                <div className="pointer-events-auto absolute left-1 top-1/2 w-[18%] -translate-y-1/2">
+                  <DomainBookCard
+                    domain={DOMAINS[5]}
+                    items={radarData.domainGroups[DOMAINS[5].id] || []}
+                    listMaxHeight="max-h-[220px]"
+                    itemTextClass="text-[10px]"
+                    stripTagPrefix
+                  />
+                </div>
+                {/* 左上：AI 伦理治理 */}
+                <div className="pointer-events-auto absolute left-1 top-1 w-[24%]">
+                  <DomainBookCard
+                    domain={DOMAINS[6]}
+                    items={radarData.domainGroups[DOMAINS[6].id] || []}
+                    listMaxHeight="max-h-[170px]"
+                  />
+                </div>
+              </div>
+
+              </div>
+
+              {/* 8 个领域书名卡：次要、紧凑，两行四列排开，与雷达零重叠（仅 <lg 显示） */}
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:hidden">
+                <DomainBookCard domain={DOMAINS[0]} items={radarData.domainGroups[DOMAINS[0].id] || []} />
+                <DomainBookCard domain={DOMAINS[1]} items={radarData.domainGroups[DOMAINS[1].id] || []} />
+                <DomainBookCard domain={DOMAINS[2]} items={radarData.domainGroups[DOMAINS[2].id] || []} />
+                <DomainBookCard domain={DOMAINS[3]} items={radarData.domainGroups[DOMAINS[3].id] || []} />
+                <DomainBookCard domain={DOMAINS[4]} items={radarData.domainGroups[DOMAINS[4].id] || []} />
+                <DomainBookCard domain={DOMAINS[5]} items={radarData.domainGroups[DOMAINS[5].id] || []} />
+                <DomainBookCard domain={DOMAINS[6]} items={radarData.domainGroups[DOMAINS[6].id] || []} />
+                <DomainBookCard domain={DOMAINS[7]} items={radarData.domainGroups[DOMAINS[7].id] || []} />
+              </div>
             </div>
           </div>
         </div>

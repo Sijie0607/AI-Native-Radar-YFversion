@@ -2,18 +2,29 @@ import { useMemo, useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
 import { DOMAINS, DIFFICULTIES, getDomainConfig } from '../../constants';
 import { Book, Domain } from '../../types';
-import { RadarBookItem } from '../../utils/radarLayout';
+import { getDomainRadarPosition, RadarBookItem } from '../../utils/radarLayout';
+import { VersionCompareData } from '../../types/versionCompare';
 
 interface RadarChartProps {
   points: RadarBookItem[];
   domainGroups?: Record<Domain, RadarBookItem[]>;
   className?: string;
+  versionChanges?: VersionCompareData | null;
 }
 
 const PAPER_BG = '#e8e2d5';
 const PAPER_LIGHT = '#f4efe4';
 const INK = '#1a1a1a';
 const BORDER_FAINT = 'rgba(26, 26, 26, 0.14)';
+
+// 版本对比态的配色（贴合纸感主题）：新增/升 = 莫兰迪森林绿，降 = 焦赭，残影 = INK 低透明度虚线
+const COMPARE_COLORS = {
+  added: '#3f6b4f',
+  scoreUp: '#3f6b4f',
+  scoreDown: '#9c5a30',
+  removedStroke: 'rgba(26, 26, 26, 0.35)',
+  removedLabel: '#6f6252',
+};
 
 const MORANDI_DOMAIN_COLORS: Record<Domain, string> = {
   'ai-engineering': '#4a5d4e',
@@ -28,7 +39,7 @@ const MORANDI_DOMAIN_COLORS: Record<Domain, string> = {
 
 const getMorandiDomainColor = (domain: Domain) => MORANDI_DOMAIN_COLORS[domain];
 
-const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
+const RadarChart = ({ points, domainGroups, className, versionChanges = null }: RadarChartProps) => {
   const { loadingStatus, viewState, setHoveredBook, selectBook } = useResourceStore();
   const [hoveredDomain, setHoveredDomain] = useState<Domain | null>(null);
   const [tooltip, setTooltip] = useState<{
@@ -47,44 +58,11 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
   const height = 900;
   const centerX = width / 2;
   const centerY = height / 2;
-  const maxRadius = 350;
-  const bookLabelRadius = maxRadius + 55;
+  const maxRadius = 280;
   const anglePerSector = (Math.PI * 2) / 8;
+  const angleGap = 0.06;
 
-  // 按领域分组并编号
-  const { booksByDomain, numberByBookId } = useMemo(() => {
-    const visible = filteredBooks();
-    const grouped = new Map<Domain, Book[]>();
-    const numbers = new Map<string, string>();
-
-    visible.forEach((book) => {
-      const list = grouped.get(book.domain) ?? [];
-      list.push(book);
-      grouped.set(book.domain, list);
-    });
-
-    grouped.forEach((list) => {
-      list.sort((a, b) => {
-        if (a.ringIndex !== b.ringIndex) {
-          return a.ringIndex - b.ringIndex;
-        }
-        return a.title.localeCompare(b.title, 'zh-CN');
-      });
-      list.forEach((book, index) => {
-        numbers.set(book.id, String(index + 1));
-      });
-    });
-
-    return { booksByDomain: grouped, numberByBookId: numbers };
-  }, [filteredBooks]);
-
-  const truncateTitle = (title: string, maxLength = 18) => {
-    if (title.length <= maxLength) return title;
-    return `${title.slice(0, maxLength)}…`;
-  };
-
-  const outerClassName =
-    className || 'paper-radar-frame relative aspect-square w-full overflow-hidden rounded-2xl bg-slate-900';
+  const outerClassName = className || 'relative aspect-square w-full';
 
   const domainCounts = useMemo(() => {
     const counts = {} as Record<Domain, number>;
@@ -267,12 +245,114 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
     });
   };
 
+  // 渲染"上版有、当前无"的删除残影（虚线圆圈 + 删字，不占点位、不挡交互）
+  const renderRemovedGhosts = () => {
+    if (!versionChanges) return null;
+    return versionChanges.removedBooks.map((snapshot) => {
+      const hasCoords = snapshot.x !== 0 && snapshot.y !== 0;
+      let sx = snapshot.x;
+      let sy = snapshot.y;
+      if (!hasCoords) {
+        // 快照坐标可能为 0（radar_display_state 未填充），回退到领域布局
+        const pos = getDomainRadarPosition(snapshot.sectorIndex, snapshot.ringIndex ?? 0);
+        sx = pos.x;
+        sy = pos.y;
+      }
+      const x = centerX + sx * maxRadius;
+      const y = centerY + sy * maxRadius;
+      return (
+        <g key={`ghost-${snapshot.resourceId}`} pointerEvents="none">
+          <circle
+            cx={x}
+            cy={y}
+            r={18}
+            fill="none"
+            stroke={COMPARE_COLORS.removedStroke}
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            opacity={0.5}
+          />
+          <text
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={COMPARE_COLORS.removedLabel}
+            fontSize={12}
+            fontWeight={600}
+            opacity={0.75}
+          >
+            删
+          </text>
+        </g>
+      );
+    });
+  };
+
+  // 渲染"有版本变化但被筛选隐藏（不在雷达 points 上）"的书：迷你虚线标记，
+  // 确保面板计数（基于全量 books）在雷达上都有对应可视化。
+  const renderOffRadarChanges = () => {
+    if (!versionChanges) return null;
+    const pointIds = new Set(points.map((item) => item.book.id));
+    const markers = versionChanges.changedBooks.filter((snap) => {
+      const change = versionChanges.changesByBookId[snap.resourceId];
+      return change && change.type !== 'unchanged' && !pointIds.has(snap.resourceId);
+    });
+    if (markers.length === 0) return null;
+
+    return markers.map((snap) => {
+      const change = versionChanges.changesByBookId[snap.resourceId];
+      const hasCoords = snap.x !== 0 && snap.y !== 0;
+      let sx = snap.x;
+      let sy = snap.y;
+      if (!hasCoords) {
+        const pos = getDomainRadarPosition(snap.sectorIndex, snap.ringIndex ?? 0);
+        sx = pos.x;
+        sy = pos.y;
+      }
+      const x = centerX + sx * maxRadius;
+      const y = centerY + sy * maxRadius;
+      const color =
+        change?.type === 'score_down' ? COMPARE_COLORS.scoreDown : COMPARE_COLORS.added;
+      const symbol =
+        change?.type === 'added' ? '新' : change?.type === 'score_up' ? '↑' : '↓';
+      return (
+        <g key={`off-radar-${snap.resourceId}`} pointerEvents="none">
+          <circle
+            cx={x}
+            cy={y}
+            r={18}
+            fill="none"
+            stroke={color}
+            strokeWidth={2}
+            strokeDasharray="4 3"
+            opacity={0.7}
+          />
+          <text
+            x={x}
+            y={y}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={color}
+            fontSize={12}
+            fontWeight={700}
+            stroke={PAPER_LIGHT}
+            strokeWidth={3}
+            paintOrder="stroke"
+          >
+            {symbol}
+          </text>
+        </g>
+      );
+    });
+  };
+
   const renderCenterTarget = () => (
     <g>
       <circle
         cx={centerX}
         cy={centerY}
-        r={68}
+        r={40}
         fill={PAPER_BG}
         stroke={BORDER_FAINT}
         strokeWidth={1}
@@ -280,16 +360,16 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
       <circle
         cx={centerX}
         cy={centerY}
-        r={13}
+        r={8}
         fill={PAPER_LIGHT}
         stroke={INK}
         strokeWidth={1.6}
       />
-      <circle cx={centerX} cy={centerY} r={4.5} fill={INK} />
-      <line x1={centerX - 26} y1={centerY} x2={centerX - 15} y2={centerY} stroke={INK} strokeWidth={1.5} />
-      <line x1={centerX + 15} y1={centerY} x2={centerX + 26} y2={centerY} stroke={INK} strokeWidth={1.5} />
-      <line x1={centerX} y1={centerY - 26} x2={centerX} y2={centerY - 15} stroke={INK} strokeWidth={1.5} />
-      <line x1={centerX} y1={centerY + 15} x2={centerX} y2={centerY + 26} stroke={INK} strokeWidth={1.5} />
+      <circle cx={centerX} cy={centerY} r={3} fill={INK} />
+      <line x1={centerX - 16} y1={centerY} x2={centerX - 9} y2={centerY} stroke={INK} strokeWidth={1.5} />
+      <line x1={centerX + 9} y1={centerY} x2={centerX + 16} y2={centerY} stroke={INK} strokeWidth={1.5} />
+      <line x1={centerX} y1={centerY - 16} x2={centerX} y2={centerY - 9} stroke={INK} strokeWidth={1.5} />
+      <line x1={centerX} y1={centerY + 9} x2={centerX} y2={centerY + 16} stroke={INK} strokeWidth={1.5} />
     </g>
   );
 
@@ -300,8 +380,20 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
       const domainColor = getMorandiDomainColor(item.book.domain);
       const isHovered = viewState.hoveredBookId === item.book.id;
       const isSelected = viewState.selectedBookId === item.book.id;
+      const change = versionChanges?.changesByBookId[item.book.id];
+      // 状态优先级：selected > hover > 对比态 > 默认
+      const showCompare = Boolean(versionChanges && change && !isHovered && !isSelected);
+      const compareMultiplier =
+        showCompare && change
+          ? change.type === 'added'
+            ? 1.2
+            : change.type === 'score_up'
+              ? 1.1
+              : 1
+          : 1;
       const baseRadius = 18;
-      const radius = baseRadius * (isHovered || isSelected ? 1.4 : 1);
+      const radius = baseRadius * (isHovered || isSelected ? 1.4 : 1) * compareMultiplier;
+      const isDown = showCompare && change?.type === 'score_down';
       const label = String(item.displayNumber);
       const fontSize = label.length > 2 ? 10 : 12;
 
@@ -339,13 +431,14 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
             cy={y}
             r={radius * 1.5}
             fill={domainColor}
-            opacity={0.18}
+            opacity={isDown ? 0.08 : 0.18}
           />
           <circle
             cx={x}
             cy={y}
             r={radius}
             fill={domainColor}
+            fillOpacity={isDown ? 0.55 : undefined}
             stroke={PAPER_LIGHT}
             strokeWidth={isSelected ? 3 : 2}
             style={{ transition: 'r 0.2s ease-out' }}
@@ -364,6 +457,40 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
           >
             {label}
           </text>
+          {showCompare &&
+            change &&
+            (change.type === 'added' ||
+              change.type === 'score_up' ||
+              change.type === 'score_down') && (
+              <>
+                {change.type === 'added' && (
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={radius * 1.45}
+                    fill="none"
+                    stroke={COMPARE_COLORS.added}
+                    strokeWidth={2.5}
+                    strokeDasharray="4 3"
+                    opacity={0.8}
+                  />
+                )}
+                <text
+                  x={x}
+                  y={y - radius - 8}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill={change.type === 'score_down' ? COMPARE_COLORS.scoreDown : COMPARE_COLORS.added}
+                  fontSize={change.type === 'added' ? 13 : 14}
+                  fontWeight={700}
+                  stroke={PAPER_LIGHT}
+                  strokeWidth={3}
+                  paintOrder="stroke"
+                >
+                  {change.type === 'added' ? '新' : change.type === 'score_up' ? '↑' : '↓'}
+                </text>
+              </>
+            )}
         </g>
       );
     });
@@ -371,10 +498,10 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
 
   if (loadingStatus === 'loading') {
     return (
-      <div className="paper-radar-frame relative flex aspect-square min-h-[320px] w-full items-center justify-center rounded-2xl bg-slate-900">
+      <div className="relative flex aspect-square min-h-[320px] w-full items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
-          <p className="text-lg text-slate-400">加载中...</p>
+          <p className="text-lg text-[var(--paper-muted)]">加载中...</p>
         </div>
       </div>
     );
@@ -382,9 +509,9 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
 
   if (points.length === 0) {
     return (
-      <div className="paper-radar-frame relative flex aspect-square min-h-[320px] w-full items-center justify-center rounded-2xl bg-slate-900">
+      <div className="relative flex aspect-square min-h-[320px] w-full items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-slate-400">无符合条件的书籍</p>
+          <p className="text-lg text-[var(--paper-muted)]">无符合条件的书籍</p>
         </div>
       </div>
     );
@@ -411,8 +538,11 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
               <feFuncA type="table" tableValues="0 0.08" />
             </feComponentTransfer>
           </filter>
+          {/* 纸纹只作用于雷达圆内，圆外四角保持透明，露出底层书名 */}
+          <clipPath id="radar-circle-clip">
+            <circle cx={centerX} cy={centerY} r={maxRadius} />
+          </clipPath>
         </defs>
-        <rect x={0} y={0} width={width} height={height} fill={PAPER_BG} />
         <circle
           cx={centerX}
           cy={centerY}
@@ -421,16 +551,23 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
           stroke={BORDER_FAINT}
           strokeWidth={1}
         />
-        <rect x={0} y={0} width={width} height={height} filter="url(#paper-grain)" opacity={0.35} />
+        <rect
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+          filter="url(#paper-grain)"
+          opacity={0.35}
+          clipPath="url(#radar-circle-clip)"
+        />
         {renderSectors()}
         {renderCompassLines()}
         {renderRings()}
+        {renderRemovedGhosts()}
+        {renderOffRadarChanges()}
         {renderCenterTarget()}
         {renderDomainLabels()}
         {renderBookPoints()}
-
-        {/* 书籍标签 */}
-        {renderBookLabels()}
       </svg>
 
       {tooltip.visible && tooltip.book && (
@@ -456,6 +593,29 @@ const RadarChart = ({ points, domainGroups, className }: RadarChartProps) => {
             </span>
           </div>
           <p className="text-sm text-slate-300">{tooltip.book.reasonShort}</p>
+          {versionChanges &&
+            (() => {
+              const change = versionChanges.changesByBookId[tooltip.book.id];
+              if (!change) return null;
+              if (change.type === 'added') {
+                return (
+                  <p className="mt-2 text-sm font-medium text-emerald-400">
+                    上周不在雷达 · 本周新增
+                  </p>
+                );
+              }
+              if (change.type === 'score_up' || change.type === 'score_down') {
+                const arrow = change.type === 'score_up' ? '↑' : '↓';
+                const color = change.type === 'score_up' ? 'text-emerald-400' : 'text-orange-400';
+                return (
+                  <p className={`mt-2 text-sm font-medium ${color}`}>
+                    上周 {change.previousScore?.toFixed(1)} → {change.currentScore?.toFixed(1)}{' '}
+                    {arrow} {Math.abs(change.scoreDelta ?? 0).toFixed(1)}
+                  </p>
+                );
+              }
+              return null;
+            })()}
         </div>
       )}
     </div>
