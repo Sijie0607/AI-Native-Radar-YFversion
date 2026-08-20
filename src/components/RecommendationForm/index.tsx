@@ -56,7 +56,7 @@ const RecommendationForm = ({
             onChange={(e) => onFieldChange('title', e.target.value)}
             onBlur={() => onFieldBlur('title')}
             placeholder="例如：深度学习入门"
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-50 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-50 placeholder:text-slate-500 focus:border-[#4a5d4e] focus:outline-none"
           />
           {errors.title && <p className="mt-2 text-sm text-rose-400">{errors.title}</p>}
         </div>
@@ -72,7 +72,7 @@ const RecommendationForm = ({
             onChange={(e) => onFieldChange('author', e.target.value)}
             onBlur={() => onFieldBlur('author')}
             placeholder="例如：斋藤康毅"
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-50 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-50 placeholder:text-slate-500 focus:border-[#4a5d4e] focus:outline-none"
           />
           {errors.author && <p className="mt-2 text-sm text-rose-400">{errors.author}</p>}
         </div>
@@ -118,7 +118,7 @@ const RecommendationForm = ({
             onBlur={() => onFieldBlur('reason')}
             placeholder="请阐述清楚推荐理由，例如这本书为什么值得读、适合什么水平的人读等。"
             rows={5}
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-[#4a5d4e] focus:outline-none"
           />
           <div className="mt-2 flex items-center justify-between">
             {errors.reason ? (
@@ -172,7 +172,7 @@ const RecommendationForm = ({
           type="button"
           onClick={onSubmit}
           disabled={!isComplete || isSubmitting}
-          className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
         >
           {isSubmitting ? '提交中...' : submitLabel}
         </button>

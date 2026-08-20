@@ -3,6 +3,10 @@ import { DOMAINS } from '../constants';
 
 export const MAX_RADAR_POINTS_PER_DOMAIN = 8;
 
+// 全局编号的领域遍历顺序：与主页九宫格一致，从左上角按逆时针方向。
+// 格位映射 [0][1][2] / [3]雷达[4] / [5][6][7] → 逆时针 0,1,2,4,7,6,5,3
+const NUMBER_DOMAIN_ORDER = [0, 1, 2, 4, 7, 6, 5, 3] as const;
+
 export interface RadarBookItem {
   book: Book;
   displayNumber: number;
@@ -104,6 +108,23 @@ export function buildRadarData(
       item.y = Math.sin(angle) * radius;
       item.isOnRadar = true;
       points.push(item);
+    });
+  });
+
+  // 全局连续编号：按九宫格逆时针顺序遍历领域，每个领域内按推荐分降序（最高分在前）。
+  // 编号跨领域连续递增、不重复；同一份 item 同时驱动雷达点标签与卡片列表。
+  // 注意：仅重排卡片展示顺序并改写 displayNumber，雷达点的难度环位置不受影响。
+  let sequence = 1;
+  NUMBER_DOMAIN_ORDER.forEach((domainIndex) => {
+    const items = domainGroups[DOMAINS[domainIndex].id];
+    items.sort((a, b) => {
+      if (b.book.recommendationScore !== a.book.recommendationScore) {
+        return b.book.recommendationScore - a.book.recommendationScore;
+      }
+      return a.book.displayNumber - b.book.displayNumber;
+    });
+    items.forEach((item) => {
+      item.displayNumber = sequence++;
     });
   });
 

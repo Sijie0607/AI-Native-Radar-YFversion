@@ -252,7 +252,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-6">
             <div className="pr-4">
-              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300">
+              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-800">
                 <Star size={22} />
               </div>
               <h2 className="text-2xl font-bold text-slate-50">
@@ -273,7 +273,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
 
           <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
             <section className="paper-card rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-amber-200">
+              <div className="flex items-center gap-2 text-sm font-medium text-amber-800">
                 <FileText size={16} />
                 评分说明
               </div>

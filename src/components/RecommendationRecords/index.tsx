@@ -109,7 +109,7 @@ const RecommendationRecords = ({
         <button
           type="button"
           onClick={onReturnBrowse}
-          className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400"
+          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
         >
           返回浏览
         </button>

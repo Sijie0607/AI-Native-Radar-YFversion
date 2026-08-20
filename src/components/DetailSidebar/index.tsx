@@ -67,13 +67,13 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
                 <Star
                   key={i}
                   size={20}
-                  fill={i < Math.floor(selectedBook.recommendationScore) ? '#F59E0B' : 'none'}
-                  className={i < Math.floor(selectedBook.recommendationScore) ? 'text-yellow-500' : 'text-slate-600'}
+                  fill={i < Math.floor(selectedBook.recommendationScore) ? '#92400e' : 'none'}
+                  className={i < Math.floor(selectedBook.recommendationScore) ? 'text-amber-800' : 'text-slate-600'}
                 />
               ))}
             </div>
             <div>
-              <div className="text-2xl font-bold text-yellow-500">{selectedBook.recommendationScore.toFixed(1)}</div>
+              <div className="text-2xl font-bold text-amber-800">{selectedBook.recommendationScore.toFixed(1)}</div>
               <div className="text-xs text-slate-400">{selectedBook.votesCount} 人推荐</div>
             </div>
           </div>
@@ -112,10 +112,10 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
         {/* 推荐理由 */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-slate-50 mb-3 flex items-center gap-2">
-            <MessageSquare size={20} className="text-blue-500" />
+            <MessageSquare size={20} className="text-[#4a5d4e]" />
             推荐理由
           </h3>
-          <div className="paper-card p-4 bg-slate-700/30 rounded-lg border-l-4 border-blue-500">
+          <div className="paper-card p-4 bg-slate-700/30 rounded-lg border-l-4 border-[#4a5d4e]">
             <p className="text-slate-300 leading-relaxed">{selectedBook.reasonFull}</p>
           </div>
         </div>
@@ -123,14 +123,14 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
         {/* 适合人群 */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-slate-50 mb-3 flex items-center gap-2">
-            <User size={20} className="text-green-500" />
+            <User size={20} className="text-green-800" />
             适合人群
           </h3>
           <div className="flex flex-wrap gap-2">
             {selectedBook.fitFor.map((person, idx) => (
               <span
                 key={idx}
-                className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm"
+                className="px-3 py-1 bg-green-500/20 text-green-800 rounded-full text-sm"
               >
                 {person}
               </span>
@@ -176,14 +176,14 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
         {selectedBook.competenceThemes.length > 0 && (
           <div className="mb-6">
             <h3 className="text-lg font-semibold text-slate-50 mb-3 flex items-center gap-2">
-              <Target size={20} className="text-orange-500" />
+              <Target size={20} className="text-orange-800" />
               能力主题
             </h3>
             <div className="flex flex-wrap gap-2">
               {selectedBook.competenceThemes.map((theme, idx) => (
                 <span
                   key={idx}
-                  className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm"
+                  className="px-3 py-1 bg-orange-500/20 text-orange-800 rounded-full text-sm"
                 >
                   {theme}
                 </span>
@@ -211,8 +211,8 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
                         <Star
                           key={i}
                           size={14}
-                          fill={i < rec.score ? '#F59E0B' : 'none'}
-                          className={i < rec.score ? 'text-yellow-500' : 'text-slate-600'}
+                          fill={i < rec.score ? '#92400e' : 'none'}
+                          className={i < rec.score ? 'text-amber-800' : 'text-slate-600'}
                         />
                       ))}
                     </div>

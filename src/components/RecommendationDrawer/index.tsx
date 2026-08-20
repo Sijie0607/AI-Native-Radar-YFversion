@@ -197,7 +197,7 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
         <div className="flex h-full flex-col">
           <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-6">
             <div className="pr-4">
-              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
+              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#4a5d4e]/15 text-[#4a5d4e]">
                 <BookPlus size={22} />
               </div>
               <h2 className="text-2xl font-bold text-slate-50">书籍推荐</h2>
@@ -215,8 +215,8 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
           </div>
 
           <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-            <section className="paper-card rounded-xl border border-blue-500/20 bg-blue-500/8 p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-blue-300">
+            <section className="paper-card rounded-xl border border-[#4a5d4e]/20 bg-[#4a5d4e]/8 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-[#4a5d4e]">
                 <FileText size={16} />
                 推荐说明
               </div>

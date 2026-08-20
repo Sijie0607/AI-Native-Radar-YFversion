@@ -21,7 +21,7 @@ const Detail = () => {
           <h1 className="text-2xl font-bold text-slate-50">书籍未找到</h1>
           <button
             onClick={() => navigate('/')}
-            className="mt-4 text-blue-500 hover:underline"
+            className="mt-4 text-[#4a5d4e] hover:underline"
           >
             返回首页
           </button>
@@ -38,7 +38,7 @@ const Detail = () => {
     <main className="pt-16">
       <div className="container mx-auto px-4 py-8">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/list'))}
           className="flex items-center gap-2 text-slate-400 hover:text-slate-50 mb-6"
         >
           <ArrowLeft size={20} />
@@ -77,9 +77,9 @@ const Detail = () => {
                 >
                   {domainConfig.name}
                 </span>
-                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/20 rounded-full">
-                  <Star size={18} className="text-yellow-500 fill-current" />
-                  <span className="font-semibold text-yellow-400">{book.recommendationScore.toFixed(1)}</span>
+                <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/20 rounded-full">
+                  <Star size={18} className="text-amber-800 fill-current" />
+                  <span className="font-semibold text-amber-800">{book.recommendationScore.toFixed(1)}</span>
                   <span className="text-slate-400 text-sm">({book.votesCount} 人推荐)</span>
                 </div>
                 <span className="px-4 py-2 bg-slate-700 text-slate-300 rounded-full">
@@ -92,7 +92,7 @@ const Detail = () => {
                 <button
                   type="button"
                   onClick={() => setIsScoringOpen(true)}
-                  className="rounded-xl bg-amber-500 px-4 py-3 text-sm font-medium text-slate-950 transition-colors hover:bg-amber-400"
+                  className="rounded-xl border border-[#4a5d4e]/40 bg-[#4a5d4e]/10 px-4 py-3 text-sm font-medium text-[#4a5d4e] transition-colors hover:border-[#4a5d4e]/60 hover:bg-[#4a5d4e]/20"
                 >
                   {hasSessionScore ? '修改我的评分' : '评分投票'}
                 </button>
@@ -104,10 +104,10 @@ const Detail = () => {
               {/* 推荐理由 */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                  <MessageSquare size={20} className="text-blue-500" />
+                  <MessageSquare size={20} className="text-[#4a5d4e]" />
                   推荐理由
                 </h3>
-                <div className="paper-card p-6 bg-slate-700/50 rounded-xl border-l-4 border-blue-500">
+                <div className="paper-card p-6 bg-slate-700/50 rounded-xl border-l-4 border-[#4a5d4e]">
                   <p className="text-slate-300 leading-relaxed">{book.reasonFull}</p>
                 </div>
               </div>
@@ -115,14 +115,14 @@ const Detail = () => {
               {/* 适合人群 */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                  <User size={20} className="text-green-500" />
+                  <User size={20} className="text-green-800" />
                   适合人群
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {book.fitFor.map((person, index) => (
                     <span
                       key={index}
-                      className="px-4 py-2 bg-green-500/20 text-green-400 rounded-full"
+                      className="px-4 py-2 bg-green-500/20 text-green-800 rounded-full"
                     >
                       {person}
                     </span>
@@ -149,14 +149,14 @@ const Detail = () => {
               {/* 能力主题 */}
               <div className="mb-8">
                 <h3 className="text-lg font-semibold text-slate-50 mb-4 flex items-center gap-2">
-                  <Target size={20} className="text-orange-500" />
+                  <Target size={20} className="text-orange-800" />
                   能力主题
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {book.competenceThemes.map((theme, index) => (
                     <span
                       key={index}
-                      className="px-3 py-1 bg-orange-500/20 text-orange-400 rounded-full text-sm"
+                      className="px-3 py-1 bg-orange-500/20 text-orange-800 rounded-full text-sm"
                     >
                       {theme}
                     </span>
@@ -203,8 +203,8 @@ const Detail = () => {
                             <Star
                               key={i}
                               size={14}
-                              fill={i < rec.score ? '#F59E0B' : 'none'}
-                              className={i < rec.score ? 'text-yellow-500' : 'text-slate-600'}
+                              fill={i < rec.score ? '#92400e' : 'none'}
+                              className={i < rec.score ? 'text-amber-800' : 'text-slate-600'}
                             />
                           ))}
                           <span className="text-sm text-slate-400 ml-1">{rec.score}</span>

@@ -60,7 +60,7 @@ const BookScoringResult = ({
         <section className="paper-card rounded-xl border border-slate-700 bg-slate-800/70 p-4 text-sm leading-6 text-slate-300">
           <p>
             最新推荐指数：
-            <span className="ml-1 font-semibold text-amber-300">
+            <span className="ml-1 font-semibold text-amber-800">
               {result.updatedRecommendationScore?.toFixed(2) ?? '--'} 星
             </span>
           </p>
@@ -91,7 +91,7 @@ const BookScoringResult = ({
           <button
             type="button"
             onClick={onReturnBrowse}
-            className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400"
+            className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
           >
             返回浏览
           </button>

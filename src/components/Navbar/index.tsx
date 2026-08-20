@@ -13,7 +13,7 @@ const Navbar = () => {
           to="/"
           className="min-w-0 flex items-center gap-2 text-slate-50"
         >
-          <BookOpen size={24} className="flex-shrink-0 text-blue-500" />
+          <BookOpen size={24} className="flex-shrink-0 text-[#4a5d4e]" />
           <span className="truncate text-base font-bold sm:text-xl">AI-Native 读书雷达</span>
         </Link>
 
@@ -22,7 +22,7 @@ const Navbar = () => {
             to="/"
             className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors sm:px-0 sm:py-0 ${
               location.pathname === '/'
-                ? 'text-blue-500'
+                ? 'text-[#8fb09e]'
                 : 'text-slate-400 hover:text-slate-50'
             }`}
           >
@@ -33,7 +33,7 @@ const Navbar = () => {
             to="/list"
             className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors sm:px-0 sm:py-0 ${
               location.pathname === '/list'
-                ? 'text-blue-500'
+                ? 'text-[#8fb09e]'
                 : 'text-slate-400 hover:text-slate-50'
             }`}
           >
@@ -44,7 +44,7 @@ const Navbar = () => {
           <button
             type="button"
             onClick={openRecommendation}
-            className="inline-flex items-center gap-2 rounded-full bg-blue-500 px-3 py-2 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20 sm:px-4"
+            className="inline-flex items-center gap-2 rounded-full bg-[#4a5d4e] px-3 py-2 text-sm font-medium text-white transition-all hover:bg-[#55685a] hover:shadow-lg hover:shadow-[#4a5d4e]/25 sm:px-4"
           >
             <BookPlus size={18} />
             <span className="hidden sm:inline">书籍推荐</span>

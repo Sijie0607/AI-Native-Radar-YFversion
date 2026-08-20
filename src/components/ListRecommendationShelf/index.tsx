@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BookOpen, ChevronDown, Clock3, MessageSquare, Star, TrendingUp, X } from 'lucide-react';
 import { DIFFICULTIES, DOMAIN_COLORS, DOMAIN_LABELS, DOMAINS } from '../../constants';
 import { Book, DifficultyLevel, Domain, Recommendation } from '../../types';
+import { useResourceStore } from '../../store/useResourceStore';
 
 interface ListRecommendationShelfProps {
   books: Book[];
@@ -138,8 +140,10 @@ const getPathStrength = (path: LearningPath): number =>
   path.steps.reduce((total, step) => total + (step.book ? step.book.recommendationScore : 0), 0);
 
 const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
+  const navigate = useNavigate();
+  const activePathDomain = useResourceStore((state) => state.viewState.activePathDomain);
+  const setActivePathDomain = useResourceStore((state) => state.setActivePathDomain);
   const [expandedBookId, setExpandedBookId] = useState<string | null>(null);
-  const [activePath, setActivePath] = useState<LearningPath | null>(null);
 
   const weekStart = useMemo(() => getWeekStart(), []);
 
@@ -214,6 +218,10 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
     }).sort((a, b) => getPathStrength(b) - getPathStrength(a) || b.booksCount - a.booksCount),
   [books]);
 
+  const activePath = activePathDomain
+    ? learningPaths.find((path) => path.domain === activePathDomain) ?? null
+    : null;
+
   if (books.length === 0) {
     return null;
   }
@@ -224,7 +232,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
         <span className="text-sm font-medium text-slate-200">
           {recommendation.isAnonymous ? '匿名推荐' : recommendation.recommender}
         </span>
-        <span className="flex items-center gap-1 text-xs text-amber-200">
+        <span className="flex items-center gap-1 text-xs text-amber-800">
           <Star size={12} className="fill-current" />
           {recommendation.score.toFixed(1)}
         </span>
@@ -238,7 +246,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
     <div className="paper-card rounded-lg border border-slate-700/70 bg-slate-950/35 p-3">
       <div className="mb-2 flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-slate-200">资料推荐摘要</span>
-        <span className="flex items-center gap-1 text-xs text-amber-200">
+        <span className="flex items-center gap-1 text-xs text-amber-800">
           <Star size={12} className="fill-current" />
           {book.recommendationScore.toFixed(1)}
         </span>
@@ -253,16 +261,16 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
         <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-blue-300">本周热度</p>
+              <p className="text-sm font-medium text-[#7a5f33]">本周热度</p>
               <h2 className="mt-1 text-2xl font-bold text-slate-50">推荐量最多书籍榜</h2>
             </div>
-            <div className="rounded-full border border-blue-400/30 bg-blue-500/10 p-3 text-blue-200">
+            <div className="rounded-full border border-[#7a5f33]/30 bg-[#7a5f33]/10 p-3 text-[#7a5f33]">
               <TrendingUp size={20} />
             </div>
           </div>
 
           {!hasWeeklyRecommendation && (
-            <div className="mb-4 rounded-lg border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-100">
+            <div className="mb-4 rounded-lg border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-sm text-amber-800">
               本周暂无新的推荐记录，当前展示累计推荐量最高的书籍。
             </div>
           )}
@@ -277,7 +285,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
                   <button
                     type="button"
                     onClick={() => setExpandedBookId(isExpanded ? null : book.id)}
-                    className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-slate-800/80"
+                    className="flex w-full items-center gap-4 p-4 text-left transition-colors hover:bg-slate-800"
                   >
                     <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-lg font-bold text-slate-200">
                       {index + 1}
@@ -308,7 +316,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
                         <span className="rounded-full border border-slate-600 px-2.5 py-1 text-xs text-slate-300">
                           {getDifficultyName(book.difficultyLevel)}
                         </span>
-                        <span className="flex items-center gap-1 rounded-full border border-amber-400/30 px-2.5 py-1 text-xs text-amber-200">
+                        <span className="flex items-center gap-1 rounded-full border border-amber-400/30 px-2.5 py-1 text-xs text-amber-800">
                           <Star size={12} className="fill-current" />
                           {book.recommendationScore.toFixed(1)}
                         </span>
@@ -327,10 +335,10 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
         <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-cyan-300">新增资料</p>
+              <p className="text-sm font-medium text-[#3f6b6b]">新增资料</p>
               <h2 className="mt-1 text-2xl font-bold text-slate-50">本周上新推荐书籍</h2>
             </div>
-            <div className="rounded-full border border-cyan-400/30 bg-cyan-500/10 p-3 text-cyan-200">
+            <div className="rounded-full border border-[#3f6b6b]/30 bg-[#3f6b6b]/10 p-3 text-[#3f6b6b]">
               <Clock3 size={20} />
             </div>
           </div>
@@ -344,7 +352,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
                       <h3 className="truncate text-base font-semibold text-slate-50">{book.title}</h3>
                       <p className="mt-1 truncate text-sm text-slate-400">{book.author}</p>
                     </div>
-                    <span className="shrink-0 rounded-full bg-cyan-500/10 px-2.5 py-1 text-xs font-medium text-cyan-200">
+                    <span className="shrink-0 rounded-full bg-[#3f6b6b]/10 px-2.5 py-1 text-xs font-medium text-[#3f6b6b]">
                       {formatDate(date)}
                     </span>
                   </div>
@@ -358,7 +366,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
                     <span className="rounded-full border border-slate-600 px-2.5 py-1 text-xs text-slate-300">
                       {source === 'created' ? '新入库' : '新推荐'}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-amber-200">
+                    <span className="flex items-center gap-1 text-xs text-amber-800">
                       <Star size={12} className="fill-current" />
                       {book.recommendationScore.toFixed(1)}
                     </span>
@@ -377,10 +385,10 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
       <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-5 sm:p-6">
         <div className="mb-5 flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-emerald-300">长期高分</p>
+            <p className="text-sm font-medium text-[#74586a]">长期高分</p>
             <h2 className="mt-1 text-2xl font-bold text-slate-50">领域学习路径</h2>
           </div>
-          <div className="rounded-full border border-emerald-400/30 bg-emerald-500/10 p-3 text-emerald-200">
+          <div className="rounded-full border border-[#74586a]/30 bg-[#74586a]/10 p-3 text-[#74586a]">
             <BookOpen size={20} />
           </div>
         </div>
@@ -393,8 +401,8 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
               <button
                 key={path.domain}
                 type="button"
-                onClick={() => setActivePath(path)}
-                className="paper-card rounded-xl border border-slate-700 bg-slate-900/45 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-emerald-400/60 hover:bg-slate-900"
+                onClick={() => setActivePathDomain(path.domain)}
+                className="paper-card rounded-xl border border-slate-700 bg-slate-900/45 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-[#74586a]/60 hover:bg-slate-900"
               >
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <span
@@ -408,7 +416,7 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
                 <div className="space-y-2">
                   {path.steps.map((step) => (
                     <div key={step.level} className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                      <span className="h-2 w-2 rounded-full bg-[#74586a]" />
                       <span className="min-w-0 flex-1 truncate text-sm text-slate-300">
                         {step.book?.title ?? `${getDifficultyName(step.level)} 待补充`}
                       </span>
@@ -426,17 +434,17 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
       </div>
 
       {activePath && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/40">
           <div className="paper-drawer flex h-full w-full max-w-2xl flex-col border-l border-slate-700 bg-slate-900 shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-slate-700 p-6">
               <div>
-                <p className="text-sm font-medium text-emerald-300">领域学习路径</p>
+                <p className="text-sm font-medium text-[#74586a]">领域学习路径</p>
                 <h2 className="mt-1 text-2xl font-bold text-slate-50">{DOMAIN_LABELS[activePath.domain]}</h2>
               </div>
               <button
                 type="button"
                 aria-label="关闭学习路径"
-                onClick={() => setActivePath(null)}
+                onClick={() => setActivePathDomain(null)}
                 className="rounded-lg border border-slate-700 p-2 text-slate-300 transition-colors hover:border-slate-500 hover:bg-slate-800"
               >
                 <X size={18} />
@@ -445,43 +453,58 @@ const ListRecommendationShelf = ({ books }: ListRecommendationShelfProps) => {
 
             <div className="flex-1 overflow-y-auto p-6">
               <div className="space-y-4">
-                {activePath.steps.map((step, index) => (
-                  <div key={step.level} className="paper-card rounded-xl border border-slate-700 bg-slate-800 p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-slate-400">阶段 {index + 1}</p>
-                        <h3 className="text-lg font-semibold text-slate-50">{getDifficultyName(step.level)}</h3>
+                {activePath.steps.map((step, index) => {
+                  const book = step.book;
+
+                  return (
+                    <div key={step.level} className="paper-card rounded-xl border border-slate-700 bg-slate-800 p-5">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-slate-400">阶段 {index + 1}</p>
+                          <h3 className="text-lg font-semibold text-slate-50">{getDifficultyName(step.level)}</h3>
+                        </div>
+                        {book && (
+                          <span className="flex items-center gap-1 rounded-full border border-amber-400/30 px-2.5 py-1 text-xs text-amber-800">
+                            <Star size={12} className="fill-current" />
+                            {book.recommendationScore.toFixed(1)}
+                          </span>
+                        )}
                       </div>
-                      {step.book && (
-                        <span className="flex items-center gap-1 rounded-full border border-amber-400/30 px-2.5 py-1 text-xs text-amber-200">
-                          <Star size={12} className="fill-current" />
-                          {step.book.recommendationScore.toFixed(1)}
-                        </span>
+
+                      {book ? (
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/detail/${book.id}`)}
+                          className="group block w-full rounded-lg text-left transition-colors"
+                        >
+                          <div className="flex items-baseline justify-between gap-3">
+                            <h4 className="text-xl font-bold text-slate-50 transition-colors group-hover:text-[#74586a]">
+                              {book.title}
+                            </h4>
+                            <span className="shrink-0 text-xs text-slate-500 transition-colors group-hover:text-[#74586a]">
+                              查看详情 →
+                            </span>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-400">{book.author}</p>
+                          <p className="mt-4 text-sm leading-6 text-slate-300">
+                            {book.reasonShort || book.reasonFull}
+                          </p>
+                          <div className="mt-4 flex flex-wrap gap-2">
+                            {book.tags.slice(0, 4).map((tag) => (
+                              <span key={tag} className="rounded-full bg-slate-700 px-2.5 py-1 text-xs text-slate-300">
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-slate-600 p-4 text-sm text-slate-400">
+                          当前领域还没有该难度的长期高分书籍。
+                        </div>
                       )}
                     </div>
-
-                    {step.book ? (
-                      <div>
-                        <h4 className="text-xl font-bold text-slate-50">{step.book.title}</h4>
-                        <p className="mt-1 text-sm text-slate-400">{step.book.author}</p>
-                        <p className="mt-4 text-sm leading-6 text-slate-300">
-                          {step.book.reasonShort || step.book.reasonFull}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {step.book.tags.slice(0, 4).map((tag) => (
-                            <span key={tag} className="rounded-full bg-slate-700 px-2.5 py-1 text-xs text-slate-300">
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-slate-600 p-4 text-sm text-slate-400">
-                        当前领域还没有该难度的长期高分书籍。
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

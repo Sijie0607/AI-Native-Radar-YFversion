@@ -56,7 +56,7 @@ const BookScoringForm = ({
                   }}
                   className={`rounded-xl border px-4 py-3 text-sm font-medium transition-colors ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-500/15 text-amber-300'
+                      ? 'border-amber-800 bg-amber-800 text-white'
                       : 'border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500 hover:bg-slate-700'
                   }`}
                 >
@@ -79,7 +79,7 @@ const BookScoringForm = ({
             onBlur={() => onFieldBlur('reason')}
             placeholder="请说明这本书为什么值得读、适合什么人、与你的实际判断依据是什么。"
             rows={6}
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-[#4a5d4e] focus:outline-none"
           />
           <div className="mt-2 flex items-center justify-between">
             {errors.reason ? (
@@ -106,7 +106,7 @@ const BookScoringForm = ({
           type="button"
           onClick={onSubmit}
           disabled={!isComplete || isSubmitting}
-          className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
         >
           {isSubmitting ? '提交中...' : isEditMode ? '更新评分' : '提交评分'}
         </button>

@@ -18,7 +18,7 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
   return (
     <div
       onClick={() => navigate(`/detail/${resource.id}`)}
-      className="paper-card bg-slate-800 rounded-xl border border-slate-700 p-6 cursor-pointer hover:border-blue-500 hover:-translate-y-1 transition-all"
+      className="paper-card bg-slate-800 rounded-xl border border-slate-700 p-6 cursor-pointer hover:border-[#4a5d4e] hover:-translate-y-1 transition-all"
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -37,8 +37,8 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
           {DOMAIN_LABELS[resource.domain]}
         </span>
         <div className="flex items-center gap-1">
-          <Star size={14} className="text-yellow-500 fill-current" />
-          <span className="text-sm font-medium text-yellow-400">{resource.recommendationScore.toFixed(1)}</span>
+          <Star size={14} className="text-amber-800 fill-current" />
+          <span className="text-sm font-medium text-amber-800">{resource.recommendationScore.toFixed(1)}</span>
         </div>
         <span className="text-xs text-slate-500">
           {difficultyConfig.name}
@@ -69,7 +69,7 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
               event.stopPropagation();
               onScoreClick(resource);
             }}
-            className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition-colors hover:border-amber-400/50 hover:bg-amber-500/15"
+            className="rounded-xl border border-[#4a5d4e]/40 bg-[#4a5d4e]/10 px-3 py-2 text-sm font-medium text-[#4a5d4e] transition-colors hover:border-[#4a5d4e]/60 hover:bg-[#4a5d4e]/20"
           >
             {hasSessionScore ? '修改评分' : '评分投票'}
           </button>

@@ -405,7 +405,7 @@
       </div>
     </section>
 
-    <h2>0.1 三条核心功能链路</h2>
+    <h2>0.1 核心功能链路</h2>
     <section class="route-grid" aria-label="核心功能链路脑图">
       <article class="route-card">
         <h3>首页雷达展示链路</h3>
@@ -487,6 +487,33 @@
         <div class="route-step">
           <strong>radar_display_state / 榜单</strong>
           <span>更新点大小、光晕、最近更新态，并影响热门/高推荐榜单。</span>
+        </div>
+      </article>
+
+      <article class="route-card">
+        <h3>历史版本对比链路（本周更新）</h3>
+        <div class="route-step">
+          <strong>generate_weekly_version()</strong>
+          <span>对当前雷达全量做快照，生成新版本（版本号 +1）。</span>
+        </div>
+        <div class="route-step">
+          <strong>radar_versions / radar_version_books</strong>
+          <div class="field-chip-row">
+            <span class="field-chip">versionNumber</span>
+            <span class="field-chip">weekStart</span>
+            <span class="field-chip">resource_id</span>
+            <span class="field-chip">score</span>
+            <span class="field-chip">votesCount</span>
+            <span class="field-chip">visualWeight</span>
+          </div>
+        </div>
+        <div class="route-step">
+          <strong>get_version_diff()</strong>
+          <span>返回最近两版元数据 + 上一版书目快照。</span>
+        </div>
+        <div class="route-step">
+          <strong>首页「本周更新」</strong>
+          <span>computeVersionCompareData 以 resourceId 匹配出 added / score_up / score_down / unchanged，雷达叠加对比态渲染 + 左上角计数面板；跌出雷达的书不单独标注。</span>
         </div>
       </article>
     </section>
@@ -624,7 +651,19 @@
           <td><code>ai_evaluations</code></td>
           <td>AI 辅助评估表，保存领域、难度、质量分和判断依据</td>
           <td>后台审核、AI 评分解释、能力主题校正、质量判断</td>
-          <td>否，属于后续新增能力</td>
+          <td>表已建（migration 001），当前无流程写入</td>
+        </tr>
+        <tr>
+          <td><code>radar_versions</code></td>
+          <td>周版本元数据表，保存版本号、周区间、生成时间</td>
+          <td>首页「本周更新」对比面板（第 N 期 vs 第 M 期）</td>
+          <td>已实现（migration 003），前端 RPC <code>get_version_diff</code> 读取</td>
+        </tr>
+        <tr>
+          <td><code>radar_version_books</code></td>
+          <td>版本内书目快照，保存每本书 score / votesCount / 坐标 / 视觉权重；<code>resource_id</code> 不加外键以支持幽灵书</td>
+          <td>版本对比中「上一版书目」数据源（新增/升降判定；跌出雷达的书不单独标注）</td>
+          <td>已实现（migration 003），含可删除的演示差异数据 <code>ghost-demo-1</code></td>
         </tr>
       </tbody>
     </table>
@@ -1222,10 +1261,54 @@
       </p>
     </div>
 
+    <h2>13. 版本对比（本周更新）新增表与前端映射</h2>
+    <div class="summary">
+      <p>
+        <strong>版本对比链路</strong>由 <code>supabase/migrations/003_radar_versions.sql</code> 新增落地（产品 Brief 见
+        <a href="./radar-version-compare.md">radar-version-compare.md</a>），只读快照、不写回 <code>resources</code>，
+        不改变现有表结构语义。
+      </p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>表 / RPC</th>
+          <th>字段</th>
+          <th>前端用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>radar_versions</code></td>
+          <td><code>id</code>、<code>version_number</code>、<code>week_start</code>、<code>week_end</code>、<code>generated_at</code>、<code>note</code></td>
+          <td>对比面板标题「第 N 期 vs 第 M 期」与周次文案（如「8月13日 起」）</td>
+        </tr>
+        <tr>
+          <td><code>radar_version_books</code></td>
+          <td><code>resource_id</code>（无外键，支持幽灵书）、<code>title</code>、<code>author</code>、<code>domain</code>、<code>difficulty_level</code>、<code>sector_index</code>、<code>ring_index</code>、<code>x</code>、<code>y</code>、<code>recommendation_score</code>、<code>votes_count</code>、<code>point_radius</code>、<code>halo_radius</code>、<code>halo_opacity</code>、<code>stroke_width</code>、<code>fill_opacity</code>、<code>radar_visible</code></td>
+          <td>上一版书目快照 → <code>computeVersionCompareData</code> 与当前 <code>books</code> 按 <code>resourceId</code> 匹配，判定 <code>added / score_up / score_down / unchanged</code>；跌出雷达的书不单独标注。<strong>视觉权重字段已存储但本轮不参与渲染</strong>，仅随快照保留</td>
+        </tr>
+        <tr>
+          <td><code>generate_weekly_version()</code></td>
+          <td>返回新版本 <code>jsonb</code>（版本号 +1）</td>
+          <td>对当前雷达（<code>radar_books</code> 视图）全量做快照生成新版本；当前为简化实现（不含 AI 审核 / 成员重排），供后续周更定时触发使用</td>
+        </tr>
+        <tr>
+          <td><code>get_version_diff()</code></td>
+          <td>返回 <code>currentVersion</code> / <code>previousVersion</code> / <code>previousBooks</code>（含演示幽灵书）</td>
+          <td><code>versionCompareService.fetchVersionDiff</code> 读取；后端未配置或 RPC 失败时回退本地演示数据；确无上一版时返回 <code>null</code>（不兜底）</td>
+        </tr>
+      </tbody>
+    </table>
+
     <div class="warning">
-      当前代码里的 <code>mockData.ts</code> 已经模拟了 <code>resources</code>、部分 <code>recommendations</code> 和基础雷达坐标。
-      但还没有真正拆出 <code>resource_metrics</code>、<code>radar_display_state</code>、<code>ai_evaluations</code>。
-      如果后续要做评分后雷达视觉权重自动更新、推荐榜单和 AI 严谨评分依据，这三类数据需要补上。
+      本文档主体撰写于版本对比落地之前。当前实现中，<code>resources</code>、<code>recommendations</code>、<code>ratings</code>、
+      <code>rating_events</code>、<code>resource_metrics</code>、<code>radar_display_state</code>、<code>ai_evaluations</code> 已在
+      <code>supabase/migrations/001_initial_schema.sql</code> 建表，并提供
+      <code>refresh_resource_metrics</code>、<code>refresh_radar_display_state</code>、<code>submit_recommendation</code>、
+      <code>submit_book_score</code> 等 RPC；前端在未配置 Supabase 或请求失败时回退 <code>mockData.ts</code>。
+      雷达视觉权重字段（<code>point_radius</code> 等）已随快照存储，但渲染仍由实时数据驱动，视觉权重参与渲染与 AI 评估写入待后续迭代。
     </div>
   </main>
 </body>
