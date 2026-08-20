@@ -1,5 +1,13 @@
 # 评分投票功能 Brief
 
+> **实现现状（2026-08 更新）**：本功能已按 Brief 落地为原型。
+> - 组件：`BookScoringDrawer`（form/result/records）、`BookScoringForm`（半星 `SCORE_OPTIONS = [3, 3.5, 4, 4.5, 5]` + 必填理由）、`BookScoringResult`、`BookScoringRecords`；入口为列表卡片评分按钮、详情页评分按钮、首页详情侧栏评分按钮。
+> - 数据：`useBookScoringStore`（草稿/记录/会话有效评分快照），持久化 `sessionStorage`（key `ai-native-radar:book-scoring-records`、`ai-native-radar:book-scoring-session-scores`）。
+> - 后端：新增 RPC `submit_book_score` + `ratings` / `rating_events` 表（`supabase/migrations/001_initial_schema.sql`）；后端未配置/失败时回退 mock service，按「平均分实时更新」计算推荐指数。
+> - 推荐指数：提交后按**平均分实时更新**（首次：新总分/新人数；修改：总分减旧加新再平均），本轮不改变雷达点位分布（符合 Brief）。
+> - **与原 Brief 的主要差异**：Brief §3.2/§13.3.1 约定「不做真实后端」，实现时改为「RPC 优先 + mock 兜底」。
+> - **未按 Brief 基线落实的点**：Brief §12.5/§13.6.4 建议「打开评分抽屉时关闭当前详情侧栏」，当前首页实现为评分抽屉与详情侧栏**并存**（同为 `fixed z-50` 右侧抽屉，评分抽屉在 DOM 中更靠后而浮于其上），未自动关闭侧栏。
+
 ## 1. 功能背景
 
 AI-Native 读书雷达当前已支持用户浏览书籍、查看详情、查看推荐指数，并支持用户推荐新书。
@@ -654,6 +662,7 @@ AI-Native 读书雷达当前已支持用户浏览书籍、查看详情、查看�
 #### 13.6.4 层级冲突约束
 - 打开评分抽屉时，应关闭当前详情侧栏
 - 否则会出现两个右侧容器的层级冲突
+- *实现现状：当前原型（`src/pages/Home/index.tsx`）打开评分抽屉时**未自动关闭**详情侧栏，两者同为 `fixed z-50` 右侧抽屉、评分抽屉浮于其上。若需收紧体验，可在 `openScoring` 中联动关闭详情侧栏。*
 
 ### 13.7 改变 / 不变 / 复用
 

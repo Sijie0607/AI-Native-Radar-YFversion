@@ -42,7 +42,8 @@ const mapDiff = (raw: any): VersionDiff => ({
 
 /**
  * 无后端/后端不可用时的本地演示数据：
- * 从当前书籍合成"上一版"，覆盖新增/升/降/删除残影 4 种状态。
+ * 从当前书籍合成"上一版"，覆盖新增/升/降 3 种状态。
+ * 注：跌出雷达的书不参与演示——成员按 Top 8 + ≥3.0 每周变动，前端不标注未在榜的书。
  */
 const buildMockDiff = (currentBooks: Book[]): VersionDiff => {
   const now = new Date();
@@ -80,21 +81,6 @@ const buildMockDiff = (currentBooks: Book[]): VersionDiff => {
     } else {
       previous.push(base);
     }
-  });
-
-  // 上周有、本周无 → 删除残影（幽灵书）
-  previous.push({
-    resourceId: 'ghost-mock-1',
-    title: '《Ghost Demo Book》',
-    author: 'Ghost Author',
-    domain: 'ai-frontier-trends',
-    difficultyLevel: 2,
-    sectorIndex: 7,
-    ringIndex: 1,
-    x: Math.cos(((7 + 0.5) * Math.PI * 2) / 8 - Math.PI / 2) * 0.5,
-    y: Math.sin(((7 + 0.5) * Math.PI * 2) / 8 - Math.PI / 2) * 0.5,
-    recommendationScore: 4.3,
-    votesCount: 12,
   });
 
   return {

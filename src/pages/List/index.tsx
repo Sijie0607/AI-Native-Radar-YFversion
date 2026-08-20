@@ -40,13 +40,13 @@ const List = () => {
           <h3 className="mb-4 text-lg font-semibold text-slate-50">筛选</h3>
           <SearchFilter />
         </div>
-        <ListRecommendationShelf books={books} />
         <ResourceList
           onScoreClick={(book) => {
             setActiveScoringBook(book);
             setIsScoringOpen(true);
           }}
         />
+        <ListRecommendationShelf books={books} />
       </div>
 
       <BookScoringDrawer

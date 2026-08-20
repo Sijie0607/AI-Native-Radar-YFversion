@@ -5,49 +5,57 @@ export const DOMAINS: DomainConfig[] = [
   {
     id: 'ai-engineering',
     name: 'AI 工程',
-    color: '#3B82F6',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#4a5d4e',
     description: 'AI 系统开发与工程实践',
   },
   {
     id: 'ai-product-design',
     name: 'AI 产品设计',
-    color: '#06B6D4',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#5d4a4a',
     description: 'AI 产品设计与方法论',
   },
   {
     id: 'agent-and-intelligent-systems',
     name: 'Agent 与智能体',
-    color: '#10B981',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#4a4d5d',
     description: '智能体系统设计与多智能体架构',
   },
   {
     id: 'ai-organizational-transformation',
     name: 'AI 组织变革',
-    color: '#F59E0B',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#5d584a',
     description: '组织 AI 转型与变革管理',
   },
   {
     id: 'data-intelligence-and-knowledge',
     name: '数据智能与知识',
-    color: '#8B5CF6',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#4a5d5d',
     description: '数据治理与知识图谱构建',
   },
   {
     id: 'ai-business-implementation',
     name: 'AI 商业落地',
-    color: '#EC4899',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#5d4a56',
     description: 'AI 商业应用与落地实践',
   },
   {
     id: 'ai-ethics-and-governance',
     name: 'AI 伦理治理',
-    color: '#6366F1',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#3d3d3d',
     description: 'AI 安全治理与伦理规范',
   },
   {
     id: 'ai-frontier-trends',
     name: 'AI 前沿趋势',
-    color: '#F43F5E',
+    // 莫兰迪色（与雷达扇区一致，全站以雷达颜色为准）
+    color: '#6b4f3b',
     description: 'AI 前沿技术与趋势',
   },
 ];

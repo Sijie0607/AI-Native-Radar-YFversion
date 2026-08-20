@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
-import { DOMAINS, DIFFICULTIES, getDomainConfig } from '../../constants';
+import { DOMAINS, DIFFICULTIES, DOMAIN_COLORS, getDomainConfig } from '../../constants';
 import { Book, Domain } from '../../types';
 import { getDomainRadarPosition, RadarBookItem } from '../../utils/radarLayout';
 import { VersionCompareData } from '../../types/versionCompare';
@@ -17,27 +17,14 @@ const PAPER_LIGHT = '#f4efe4';
 const INK = '#1a1a1a';
 const BORDER_FAINT = 'rgba(26, 26, 26, 0.14)';
 
-// 版本对比态的配色（贴合纸感主题）：新增/升 = 莫兰迪森林绿，降 = 焦赭，残影 = INK 低透明度虚线
+// 版本对比态的配色（贴合纸感主题）：新增/升 = 莫兰迪森林绿，降 = 焦赭
 const COMPARE_COLORS = {
   added: '#3f6b4f',
   scoreUp: '#3f6b4f',
   scoreDown: '#9c5a30',
-  removedStroke: 'rgba(26, 26, 26, 0.35)',
-  removedLabel: '#6f6252',
 };
 
-const MORANDI_DOMAIN_COLORS: Record<Domain, string> = {
-  'ai-engineering': '#4a5d4e',
-  'ai-product-design': '#5d4a4a',
-  'agent-and-intelligent-systems': '#4a4d5d',
-  'ai-organizational-transformation': '#5d584a',
-  'data-intelligence-and-knowledge': '#4a5d5d',
-  'ai-business-implementation': '#5d4a56',
-  'ai-ethics-and-governance': '#3d3d3d',
-  'ai-frontier-trends': '#6b4f3b',
-};
-
-const getMorandiDomainColor = (domain: Domain) => MORANDI_DOMAIN_COLORS[domain];
+// 领域色统一取 constants 的 DOMAIN_COLORS（莫兰迪色，与全站一致，雷达不再自持一份）
 
 const RadarChart = ({ points, domainGroups, className, versionChanges = null }: RadarChartProps) => {
   const { loadingStatus, viewState, setHoveredBook, selectBook } = useResourceStore();
@@ -135,7 +122,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
       const startY = centerY + Math.sin(startAngle) * petalRadius;
       const endX = centerX + Math.cos(endAngle) * petalRadius;
       const endY = centerY + Math.sin(endAngle) * petalRadius;
-      const domainColor = getMorandiDomainColor(domain.id);
+      const domainColor = DOMAIN_COLORS[domain.id];
 
       const pathData = [
         `M ${centerX} ${centerY}`,
@@ -231,7 +218,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           y={y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill={isActive ? getMorandiDomainColor(domain.id) : INK}
+          fill={isActive ? DOMAIN_COLORS[domain.id] : INK}
           fontSize={12}
           fontStyle="italic"
           fontWeight={isActive ? 700 : 500}
@@ -241,50 +228,6 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
         >
           {domain.name}
         </text>
-      );
-    });
-  };
-
-  // 渲染"上版有、当前无"的删除残影（虚线圆圈 + 删字，不占点位、不挡交互）
-  const renderRemovedGhosts = () => {
-    if (!versionChanges) return null;
-    return versionChanges.removedBooks.map((snapshot) => {
-      const hasCoords = snapshot.x !== 0 && snapshot.y !== 0;
-      let sx = snapshot.x;
-      let sy = snapshot.y;
-      if (!hasCoords) {
-        // 快照坐标可能为 0（radar_display_state 未填充），回退到领域布局
-        const pos = getDomainRadarPosition(snapshot.sectorIndex, snapshot.ringIndex ?? 0);
-        sx = pos.x;
-        sy = pos.y;
-      }
-      const x = centerX + sx * maxRadius;
-      const y = centerY + sy * maxRadius;
-      return (
-        <g key={`ghost-${snapshot.resourceId}`} pointerEvents="none">
-          <circle
-            cx={x}
-            cy={y}
-            r={18}
-            fill="none"
-            stroke={COMPARE_COLORS.removedStroke}
-            strokeWidth={2}
-            strokeDasharray="4 4"
-            opacity={0.5}
-          />
-          <text
-            x={x}
-            y={y}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fill={COMPARE_COLORS.removedLabel}
-            fontSize={12}
-            fontWeight={600}
-            opacity={0.75}
-          >
-            删
-          </text>
-        </g>
       );
     });
   };
@@ -377,7 +320,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
     return points.map((item) => {
       const x = centerX + item.x * maxRadius;
       const y = centerY + item.y * maxRadius;
-      const domainColor = getMorandiDomainColor(item.book.domain);
+      const domainColor = DOMAIN_COLORS[item.book.domain];
       const isHovered = viewState.hoveredBookId === item.book.id;
       const isSelected = viewState.selectedBookId === item.book.id;
       const change = versionChanges?.changesByBookId[item.book.id];
@@ -457,40 +400,67 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           >
             {label}
           </text>
-          {showCompare &&
-            change &&
-            (change.type === 'added' ||
-              change.type === 'score_up' ||
-              change.type === 'score_down') && (
-              <>
-                {change.type === 'added' && (
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={radius * 1.45}
-                    fill="none"
-                    stroke={COMPARE_COLORS.added}
-                    strokeWidth={2.5}
-                    strokeDasharray="4 3"
-                    opacity={0.8}
-                  />
-                )}
-                <text
-                  x={x}
-                  y={y - radius - 8}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill={change.type === 'score_down' ? COMPARE_COLORS.scoreDown : COMPARE_COLORS.added}
-                  fontSize={change.type === 'added' ? 13 : 14}
-                  fontWeight={700}
-                  stroke={PAPER_LIGHT}
-                  strokeWidth={3}
-                  paintOrder="stroke"
-                >
-                  {change.type === 'added' ? '新' : change.type === 'score_up' ? '↑' : '↓'}
-                </text>
-              </>
-            )}
+        </g>
+      );
+    });
+  };
+
+  // 对比态标记（新增虚线框 + 新/↑/↓ 徽标）单独一层渲染，置于所有圆点之上，
+  // 避免被相邻书籍圆点遮挡（对比标记不拦截鼠标事件，悬停/点击仍落在圆点上）。
+  const renderCompareMarkers = () => {
+    if (!versionChanges) return null;
+    const baseRadius = 18;
+
+    return points.map((item) => {
+      const change = versionChanges.changesByBookId[item.book.id];
+      if (!change) return null;
+      if (
+        change.type !== 'added' &&
+        change.type !== 'score_up' &&
+        change.type !== 'score_down'
+      ) {
+        return null;
+      }
+      const isHovered = viewState.hoveredBookId === item.book.id;
+      const isSelected = viewState.selectedBookId === item.book.id;
+      if (isHovered || isSelected) return null;
+
+      const x = centerX + item.x * maxRadius;
+      const y = centerY + item.y * maxRadius;
+      const multiplier =
+        change.type === 'added' ? 1.2 : change.type === 'score_up' ? 1.1 : 1;
+      const radius = baseRadius * multiplier;
+      const color =
+        change.type === 'score_down' ? COMPARE_COLORS.scoreDown : COMPARE_COLORS.added;
+
+      return (
+        <g key={`compare-marker-${item.book.id}`} pointerEvents="none">
+          {change.type === 'added' && (
+            <circle
+              cx={x}
+              cy={y}
+              r={radius * 1.45}
+              fill="none"
+              stroke={COMPARE_COLORS.added}
+              strokeWidth={2.5}
+              strokeDasharray="4 3"
+              opacity={0.9}
+            />
+          )}
+          <text
+            x={x}
+            y={y - radius - 8}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill={color}
+            fontSize={change.type === 'added' ? 13 : 14}
+            fontWeight={700}
+            stroke={PAPER_LIGHT}
+            strokeWidth={3}
+            paintOrder="stroke"
+          >
+            {change.type === 'added' ? '新' : change.type === 'score_up' ? '↑' : '↓'}
+          </text>
         </g>
       );
     });
@@ -500,7 +470,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
     return (
       <div className="relative flex aspect-square min-h-[320px] w-full items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-slate-700 border-t-blue-500" />
+          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-slate-700 border-t-[#4a5d4e]" />
           <p className="text-lg text-[var(--paper-muted)]">加载中...</p>
         </div>
       </div>
@@ -563,11 +533,11 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
         {renderSectors()}
         {renderCompassLines()}
         {renderRings()}
-        {renderRemovedGhosts()}
-        {renderOffRadarChanges()}
         {renderCenterTarget()}
         {renderDomainLabels()}
         {renderBookPoints()}
+        {renderOffRadarChanges()}
+        {renderCompareMarkers()}
       </svg>
 
       {tooltip.visible && tooltip.book && (
@@ -582,7 +552,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           <h4 className="mb-1 font-bold text-slate-50">{tooltip.book.title}</h4>
           <p className="mb-2 text-sm text-slate-400">{tooltip.book.author}</p>
           <div className="mb-2 flex items-center gap-2">
-            <span className="text-sm text-yellow-500">
+            <span className="text-sm text-amber-800">
               ★ {tooltip.book.recommendationScore.toFixed(1)}
             </span>
             <span className="text-xs text-slate-500">

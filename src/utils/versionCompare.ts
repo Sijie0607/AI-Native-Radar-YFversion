@@ -13,7 +13,9 @@ const roundDelta = (value: number) => Math.round(value * 100) / 100;
  * 以 resourceId（== Book.id，即 resources.id）匹配：
  * - 当前有、上版无 → added
  * - 两版都有 → 按 recommendationScore 差值定 score_up / score_down / unchanged
- * - 上版有、当前无 → 进入 removedBooks（用于渲染残影，不占点位）
+ *
+ * 注：跌出雷达的书（上版有、本版无）不参与变化计算——雷达成员按
+ * "每领域 Top 8 且指数 ≥3.0"每周变动，前端不单独标注未在榜的书。
  */
 export function computeVersionCompareData(
   currentBooks: Book[],
@@ -22,7 +24,6 @@ export function computeVersionCompareData(
   const previousById = new Map<string, VersionBookSnapshot>();
   previousBooks.forEach((snapshot) => previousById.set(snapshot.resourceId, snapshot));
 
-  const currentById = new Set<string>(currentBooks.map((book) => book.id));
   const changesByBookId: Record<string, BookChange> = {};
 
   currentBooks.forEach((book) => {
@@ -47,8 +48,6 @@ export function computeVersionCompareData(
     };
   });
 
-  const removedBooks = previousBooks.filter((snapshot) => !currentById.has(snapshot.resourceId));
-
   // 有变化（非 unchanged）的当前书快照，含坐标，供离屏标记渲染
   const changedBooks: VersionBookSnapshot[] = [];
   currentBooks.forEach((book) => {
@@ -70,5 +69,5 @@ export function computeVersionCompareData(
     }
   });
 
-  return { changesByBookId, removedBooks, changedBooks };
+  return { changesByBookId, changedBooks };
 }

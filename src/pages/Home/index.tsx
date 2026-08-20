@@ -99,7 +99,7 @@ const Home = () => {
   // 面板计数：基于全量 books（含被筛选隐藏的书），removed 来自上一版残影
   const compareCounts = useMemo(() => {
     if (!versionCompareData) {
-      return { added: 0, removed: 0, scoreUp: 0, scoreDown: 0 };
+      return { added: 0, scoreUp: 0, scoreDown: 0 };
     }
     let added = 0;
     let scoreUp = 0;
@@ -111,7 +111,6 @@ const Home = () => {
     });
     return {
       added,
-      removed: versionCompareData.removedBooks.length,
       scoreUp,
       scoreDown,
     };
@@ -163,7 +162,7 @@ const Home = () => {
               <span className="text-sm text-slate-400">书籍编号</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-500" />
+              <div className="w-3 h-3 rounded-full bg-[#4a5d4e]" />
               <span className="text-slate-400 text-sm">领域</span>
             </div>
             <div className="flex items-center gap-2">
@@ -220,7 +219,7 @@ const Home = () => {
                 <Filter size={20} className="hidden xl:block" />
                 <ChevronRight size={20} className="xl:hidden" />
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-medium text-white xl:absolute xl:-right-2 xl:-top-2">
+                  <span className="rounded-full bg-[#4a5d4e] px-2 py-0.5 text-xs font-medium text-white xl:absolute xl:-right-2 xl:-top-2">
                     {activeFilterCount}
                   </span>
                 )}
@@ -229,7 +228,7 @@ const Home = () => {
               <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
-                    <Filter size={20} className="text-blue-500" />
+                    <Filter size={20} className="text-[#4a5d4e]" />
                     筛选面板
                   </h3>
                   <button
@@ -247,7 +246,7 @@ const Home = () => {
                 {/* 统计信息 */}
                 <div className="paper-card mt-6 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
                   <div className="text-center">
-                    <div className="mb-1 text-3xl font-bold text-blue-500">
+                    <div className="mb-1 text-3xl font-bold text-[#4a5d4e]">
                       {filteredBooks().length}
                     </div>
                     <div className="text-sm text-slate-400">符合条件的书籍</div>
@@ -257,7 +256,7 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={openRecommendation}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-blue-400 hover:shadow-lg hover:shadow-blue-500/20"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-all hover:bg-[#55685a] hover:shadow-lg hover:shadow-[#4a5d4e]/25"
                 >
                   <BookPlus size={18} />
                   书籍推荐
@@ -313,13 +312,6 @@ const Home = () => {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-1.5">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full border border-dashed" style={{ borderColor: '#6f6252' }} />
-                        <span className="text-[var(--paper-muted)]">删除</span>
-                      </span>
-                      <span className="font-semibold">{compareCounts.removed}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
                         <span className="font-bold text-[var(--paper-accent)]">↑</span>
                         <span className="text-[var(--paper-muted)]">指数升</span>
                       </span>
@@ -334,15 +326,16 @@ const Home = () => {
                     </div>
                   </div>
 
-                  {compareCounts.added +
-                    compareCounts.removed +
-                    compareCounts.scoreUp +
-                    compareCounts.scoreDown ===
-                    0 && (
+                  {compareCounts.added + compareCounts.scoreUp + compareCounts.scoreDown === 0 && (
                     <p className="mt-2 text-center text-xs text-[var(--paper-muted)]">
                       本周无变化
                     </p>
                   )}
+
+                  {/* 全局提示：交代雷达成员变动规则，解释"书不见了"不代表被删除 */}
+                  <p className="mt-3 border-t border-[var(--paper-border)] pt-2 text-xs leading-5 text-[var(--paper-muted)]">
+                    雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注。
+                  </p>
                 </div>
               )}
 

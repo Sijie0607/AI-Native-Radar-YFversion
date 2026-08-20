@@ -29,6 +29,7 @@ interface RadarStore {
   selectBook: (bookId: string | null) => void;
   toggleDetailPanel: (open: boolean) => void;
   toggleSidebarCollapsed: () => void;
+  setActivePathDomain: (domain: Domain | null) => void;
   openRecommendation: () => void;
   closeRecommendation: () => void;
 
@@ -62,6 +63,7 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
     isDetailPanelOpen: false,
     isSidebarCollapsed: true,
     isRecommendationOpen: false,
+    activePathDomain: null,
   },
   
   // Actions
@@ -128,6 +130,13 @@ export const useResourceStore = create<RadarStore>((set, get) => ({
     viewState: {
       ...state.viewState,
       isSidebarCollapsed: !state.viewState.isSidebarCollapsed,
+    },
+  })),
+
+  setActivePathDomain: (domain) => set(state => ({
+    viewState: {
+      ...state.viewState,
+      activePathDomain: domain,
     },
   })),
 

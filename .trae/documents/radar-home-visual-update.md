@@ -16,7 +16,7 @@
 ### 2.1 纸感主题雷达视觉改版
 
 **布局（src/pages/Home/index.tsx）**
-- 雷达为主体：右侧区域 `max-w-[1000px]`、`aspect-square`，`RadarChart` 撑满整个雷达区，恢复「调整书名框布局之前」的大小。
+- 雷达为主体：右侧区域外层容器 `max-w-[1200px]`，雷达容器本身 `max-w-[1000px]`、`aspect-square`，`RadarChart` 撑满整个雷达区，恢复「调整书名框布局之前」的大小。
 - 8 个领域书名框**环绕雷达**（lg 及以上）：按上/右上/右/右下/下/左下/左/左上 8 个罗盘点位摆放，各自贴近对应领域扇形方位。
   - 对应关系来自扇区几何：sector i 中心角 = `(i+0.5)*45° - 90°`（SVG y 向下坐标）→ 0=右上、1=右、2=右下、3=下、4=左下、5=左、6=左上、7=上。
 - 窄屏（<lg）降级为雷达下方「两行四列」网格，与雷达零重叠。
@@ -47,13 +47,13 @@
 **后端（supabase/migrations/003_radar_versions.sql）**
 - 新增表：`radar_versions`（版本元数据）、`radar_version_books`（版本内每本书快照，`resource_id` 故意不加外键以支持幽灵书）。
 - 新增 RPC：`generate_weekly_version()`（当前雷达全量快照生成新版本）、`get_version_diff()`（返回最近两版的元数据 + 上一版书目快照）。
-- 含可删除的演示数据：构造「上周 vs 本周」假差异，使首次调用即有 新增/升/降/删除残影 4 种状态。
+- 含可删除的演示数据：构造「上周 vs 本周」假差异，使首次调用即有 新增/升/降 3 种状态。
 
 **前端（src/types/versionCompare.ts、utils/versionCompare.ts、services/versionCompareService.ts）**
-- `computeVersionCompareData()`：以 resourceId 匹配，产出 `changesByBookId`（added / score_up / score_down / unchanged）、`removedBooks`、`changedBooks`。
+- `computeVersionCompareData()`：以 resourceId 匹配，产出 `changesByBookId`（added / score_up / score_down / unchanged）、`changedBooks`。
 - `versionCompareService.fetchVersionDiff()`：后端未配置 / RPC 失败时回退本地演示数据；后端可用但「确无上一版」时不兜底（真实无对比）。
-- `RadarChart` 对比态渲染：删除书渲染虚线残影（「删」字、不占点位）、被筛选隐藏但有变化的书渲染离屏迷你标记、雷达点位上叠加「新 / ↑ / ↓」徽标（selected > hover > 对比态 > 默认）。
-- `Home`：左侧「本周更新」入口按钮 + 左上角浮层面板（新增 / 删除 / 指数升 / 指数降 计数），diff 拉取一次后本地缓存复用。
+- `RadarChart` 对比态渲染：被筛选隐藏但有变化的书渲染离屏迷你标记、雷达点位上叠加「新 / ↑ / ↓」徽标（selected > hover > 对比态 > 默认）。**跌出雷达的书不渲染残影、不单独标注**。
+- `Home`：左侧「本周更新」入口按钮 + 左上角浮层面板（新增 / 指数升 / 指数降 计数，附全局提示「雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注」），diff 拉取一次后本地缓存复用。
 
 ### 2.4 雷达默认显示阈值 4.0 → 3.0
 
@@ -67,7 +67,7 @@
 - `npx tsc --noEmit` 通过。
 - `npm run build` 通过。
 - 本地 dev server（:5173）HTTP 200。
-- 回归点：hover / 点击选中 / 筛选 / 详情侧栏 / 版本对比（新增、删除残影、指数升降标记）均不受影响。
+- 回归点：hover / 点击选中 / 筛选 / 详情侧栏 / 版本对比（新增、指数升降标记、离屏迷你标记）均不受影响。
 
 ## 4. 相关文档
 

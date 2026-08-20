@@ -69,6 +69,8 @@ export interface ViewState {
   isDetailPanelOpen: boolean;
   isSidebarCollapsed: boolean;
   isRecommendationOpen: boolean;
+  /** 学习路径抽屉当前打开的领域，跳转详情页后返回列表时用于恢复抽屉 */
+  activePathDomain: Domain | null;
 }
 
 // 页面加载状态

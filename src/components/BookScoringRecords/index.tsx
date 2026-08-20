@@ -16,7 +16,7 @@ const ACTION_LABELS: Record<BookScoringRecord['actionType'], string> = {
 
 const ACTION_CLASSES: Record<BookScoringRecord['actionType'], string> = {
   create: 'border-emerald-500/20 bg-emerald-500/8 text-emerald-300',
-  update: 'border-amber-500/20 bg-amber-500/8 text-amber-300',
+  update: 'border-amber-500/20 bg-amber-500/8 text-amber-800',
 };
 
 const formatRecordTime = (submittedAt: string) =>
@@ -97,7 +97,7 @@ const BookScoringRecords = ({
                 <button
                   type="button"
                   onClick={() => onEditRecord(record)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition-colors hover:border-amber-400/50 hover:bg-amber-500/15"
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-800 transition-colors hover:border-amber-400/50 hover:bg-amber-500/15"
                 >
                   <PencilLine size={16} />
                   再次编辑
@@ -119,7 +119,7 @@ const BookScoringRecords = ({
         <button
           type="button"
           onClick={onReturnBrowse}
-          className="rounded-xl bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400"
+          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
         >
           返回浏览
         </button>

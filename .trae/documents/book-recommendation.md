@@ -1,5 +1,12 @@
 # 书籍推荐功能 Brief
 
+> **实现现状（2026-08 更新）**：本功能已按 Brief 落地为原型。
+> - 组件：`RecommendationDrawer`（form/result/records 三态）、`RecommendationForm`、`RecommendationResult`、`RecommendationRecords`、`DraftConfirmModal`；入口为导航栏 + 首页筛选面板「书籍推荐」按钮。
+> - 数据：`useRecommendationStore` 管理草稿/会话记录，持久化 `sessionStorage`（key `ai-native-radar:recommendation-records`）。
+> - 后端：新增 RPC `submit_recommendation`（`supabase/migrations/001_initial_schema.sql`），后端未配置/失败时回退 mock service（输入含「失败测试」关键词可模拟失败态）；重复判定按「书名 + 作者」在 service 层完成。
+> - **与原 Brief 的主要差异**：Brief §3.2/§9.4/§12.3 曾约定「不做真实后端」，实现时改为「RPC 优先 + mock 兜底」；「推荐指数是否允许半星」已确认为**不允许（整星 3/4/5）**，半星仅用于「评分投票」（见 §12.8）。
+> - 记录与草稿仍仅限当前会话，推荐不会自动进入正式雷达（后端 `submit_recommendation` 写入 `recommendations` 表并置 pending，`radar_books` 视图只取 `status = 'published'`）。
+
 ## 1. 功能背景
 
 AI-Native 读书雷达当前主要帮助用户浏览和发现值得阅读的 AI 书籍。现有书籍内容由系统预置，用户只能浏览、筛选和查看详情，尚不具备主动推荐新书的能力。
@@ -30,7 +37,7 @@ AI-Native 读书雷达当前主要帮助用户浏览和发现值得阅读的 AI 
 - 审核后台
 - 自动收录进正式雷达
 - 社区互动
-- 真实后端
+- 真实后端（*注：Brief 阶段约定不做，实现阶段改为「RPC 优先 + mock 兜底」，见文首「实现现状」*）
 - 现有雷达主流程重构
 
 ## 4. To-Be Journey
@@ -637,8 +644,9 @@ AI-Native 读书雷达当前主要帮助用户浏览和发现值得阅读的 AI 
 #### 待确认项
 
 1. **推荐指数是否允许半星**
-   - 建议：允许
-   - 理由：与现有展示和筛选表达保持一致
+   - **已确认：不允许**。推荐提交的推荐指数使用整星 `3 / 4 / 5`（`RecommendationScore = 3|4|5`，`RecommendationForm` 的 `SCORE_OPTIONS = [3,4,5]`）。
+   - 理由：半星（`3 / 3.5 / 4 / 4.5 / 5`）是「评分投票」（对已有书籍）的粒度；两者刻意区分，避免用户混淆「推荐一本书」与「给已有书打分」。
+   - 与「评分投票」的区分见 [book-scoring.md](./book-scoring.md)。
 
 2. **草稿是否也仅限当前会话**
    - 建议：是
