@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Native 读书雷达 · Showcase</title>
+<style>
+/* ============================================================
+   AI-Native 读书雷达 · Showcase 幻灯片
+   莫兰迪纸感主题 · 自包含 · 零外部依赖
+   ============================================================ */
+:root{
+  --paper-bg:#e8e2d5;      /* 纸面 */
+  --paper-panel:#f3eddf;   /* 面板 */
+  --paper-card:#ede5d6;    /* 卡片 */
+  --paper-card-soft:#f8f2e8;
+  --paper-border:rgba(97,80,50,.28);
+  --paper-ink:#211b14;
+  --paper-muted:#6f6252;
+  --paper-faint:#9b8f7f;
+  --paper-accent:#4a5d4e;  /* 强调 */
+  --accent-hi:#5d8a7a;
+  --radar-1:#4a5d4e; --radar-2:#5d4a4a; --radar-3:#4a4d5d; --radar-4:#5d584a;
+  --radar-5:#4a5d5d; --radar-6:#5d4a56; --radar-7:#3d3d3d; --radar-8:#6b4f3b;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ width:100%; height:100%; overflow:hidden; background:#14130f; }
+body{ font-family:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
+
+/* ---------- deck 布局：固定 1280×720，按窗口等比缩放 ---------- */
+#stage{ position:fixed; inset:0; display:grid; place-items:center; cursor:default; }
+#deck{ width:1280px; height:720px; position:relative; transform-origin:center center;
+  background:var(--paper-bg); color:var(--paper-ink); overflow:hidden;
+  box-shadow:0 24px 80px rgba(0,0,0,.5); }
+
+.slide{ position:absolute; inset:0; opacity:0; pointer-events:none;
+  transition:opacity .45s ease; padding:56px 72px 88px; }
+.slide.active{ opacity:1; pointer-events:auto; }
+
+/* ---------- 通用元素 ---------- */
+.kick{ font-size:20px; letter-spacing:.28em; color:var(--paper-accent); font-weight:700; }
+.slide h2{ font-size:52px; margin:10px 0 6px; letter-spacing:.02em; line-height:1.15; }
+.slide h3{ font-size:26px; color:var(--paper-ink); }
+.sub{ font-size:22px; color:var(--paper-muted); line-height:1.6; }
+.accent{ color:var(--paper-accent); }
+.muted{ color:var(--paper-muted); }
+.card{ background:var(--paper-card); border:1px solid var(--paper-border); border-radius:16px;
+  box-shadow:0 10px 24px rgba(60,45,20,.10); padding:20px 24px; }
+.strong{ font-weight:700; }
+.slide ul{ list-style:none; padding:0; margin-top:8px; }
+.slide li{ font-size:18px; color:var(--paper-muted); line-height:1.5; margin:7px 0; padding-left:20px; position:relative; }
+.slide li::before{ content:"·"; position:absolute; left:2px; color:var(--paper-accent); font-weight:700; font-size:20px; }
+.slide li b{ color:var(--paper-ink); }
+
+/* 交错入场：data-rise + --d 控制延迟 */
+.slide.active [data-rise]{ animation:rise .55s cubic-bezier(.2,.7,.3,1) both; animation-delay:var(--d,0s); }
+@keyframes rise{ from{ opacity:0; transform:translateY(26px); } to{ opacity:1; transform:none; } }
+@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes pop{ 0%{ opacity:0; transform:scale(.35) translateY(20px); } 60%{ transform:scale(1.06) translateY(-4px); } 100%{ opacity:1; transform:none; } }
+@keyframes flipIn{ from{ opacity:0; transform:perspective(900px) rotateY(-24deg) translateY(14px); } to{ opacity:1; transform:none; } }
+@keyframes floatY{ 0%,100%{ transform:translateY(0) rotate(var(--rot,0deg)); } 50%{ transform:translateY(-14px) rotate(var(--rot,0deg)); } }
+@keyframes blink{ 0%,91%,100%{ transform:scaleY(.06); } 95%{ transform:scaleY(1); } }
+@keyframes tap{ 0%,100%{ transform:translateY(0); } 45%{ transform:translateY(-11px); } }
+@keyframes bob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
+@keyframes tilt{ 0%,100%{ transform:rotate(0); } 50%{ transform:rotate(-4deg); } }
+@keyframes wobble{ 0%,100%{ transform:rotate(-1.5deg); } 50%{ transform:rotate(1.5deg); } }
+@keyframes radarPulse{ 0%,100%{ opacity:.8; } 50%{ opacity:.98; } }
+
+/* ---------- 装饰迷你雷达 ---------- */
+.mini-radar{ width:230px; height:230px; filter:drop-shadow(0 6px 14px rgba(60,45,20,.18)); }
+.radar-card{ width:250px; height:250px; }
+.radar-sweep{ transform-box:view-box; transform-origin:100px 100px; animation:radarSweep 7s linear infinite; }
+@keyframes radarSweep{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+
+/* ============================================================
+   封面
+   ============================================================ */
+.cover{ display:grid; place-items:center; text-align:center; padding:0 120px; }
+.cover .cover-inner{ position:relative; z-index:2; }
+.cover .cover-inner *{ text-shadow:0 1px 2px rgba(232,226,213,.9), 0 2px 14px rgba(232,226,213,.8); }
+.cover h1{ font-size:84px; letter-spacing:.06em; }
+.cover .cover-sub{ font-size:38px; margin-top:14px; color:#3c4f42; font-weight:700; letter-spacing:.1em; }
+.cover .cover-tag{ margin-top:30px; font-size:24px; color:#3a322a; font-weight:600; line-height:1.7; max-width:760px; }
+.cover .cover-foot{ margin-top:44px; font-size:18px; letter-spacing:.3em; color:var(--paper-muted); }
+
+/* ============================================================
+   开场故事场景
+   ============================================================ */
+.story{ padding:0; }
+.story .kick{ position:absolute; top:30px; left:56px; z-index:6; }
+.story h2{ position:absolute; top:56px; left:56px; z-index:6; }
+.scene{ position:absolute; inset:0; z-index:1; }
+.scene-svg{ position:absolute; inset:0; width:100%; height:100%; transform:translateX(-100px); }
+
+/* 人物表情分组：默认全部隐藏，按 data-expr 显示 */
+.person [class*="expr-"]{ opacity:0; transition:opacity .25s; }
+.person[data-expr="neutral"]    .expr-neutral{ opacity:1; }
+.person[data-expr="confused"]   .expr-confused{ opacity:1; }
+.person[data-expr="thinking"]   .expr-thinking{ opacity:1; }
+.person[data-expr="frustrated"] .expr-frustrated{ opacity:1; }
+
+/* 打字动画：双臂 / 双手错峰敲击 */
+.arm-front, .arm-back{ transform-box:fill-box; transform-origin:center; }
+.arm-front{ animation:armSway 1.3s ease-in-out infinite; }
+.arm-back{ animation:armSway 1.3s ease-in-out infinite reverse; }
+@keyframes armSway{ 0%,100%{ transform:rotate(0); } 50%{ transform:rotate(1.8deg); } }
+.hand{ transform-box:fill-box; transform-origin:center; }
+.hand-r{ animation:tap .32s ease-in-out infinite; }
+.hand-l{ animation:tap .28s ease-in-out infinite; animation-delay:.14s; }
+
+.person{ animation:bob 2.6s ease-in-out infinite; }
+.person[data-expr="thinking"] .head{ animation:tilt 3s ease-in-out infinite; transform-box:fill-box; transform-origin:center bottom; }
+
+/* 眼睑眨眼 */
+.eyelid{ transform-box:fill-box; transform-origin:center; animation:blink 4.4s infinite; }
+
+/* 屏幕书单（固定，不再滚动） */
+.screen-list text{ font-size:15px; fill:var(--paper-muted); }
+
+/* 心情符号（HTML 覆盖层） */
+.mood{ position:absolute; left:418px; top:118px; font-size:58px; z-index:5; line-height:1;
+  text-shadow:0 6px 18px rgba(60,45,20,.25); }
+.mood.pop{ animation:pop .55s cubic-bezier(.2,.7,.3,1) both; }
+.sweat{ position:absolute; left:482px; top:110px; font-size:36px; z-index:5; opacity:0; transition:opacity .4s; }
+.scene[data-step="4"] .sweat, .scene[data-step="5"] .sweat{ opacity:1; }
+
+/* 漂浮书 */
+.float-book{ position:absolute; z-index:4; font-size:44px; line-height:1; opacity:0;
+  animation:fbIn .8s ease both, floatY 5s ease-in-out infinite; }
+@keyframes fbIn{ from{ opacity:0; transform:translateY(30px) scale(.6); } to{ opacity:.9; transform:none; } }
+.fb1{ left:96px;  top:120px; animation-delay:.3s, 2.1s; --rot:6deg;  }
+.fb2{ left:52px;  top:430px; animation-delay:.6s, 2.6s; --rot:-7deg; }
+.fb3{ left:150px; top:300px; animation-delay:.9s, 3.1s; --rot:-5deg; }
+.fb4{ left:360px; top:420px; animation-delay:1.2s, 2.2s; --rot:8deg; }
+.fb5{ left:150px; top:560px; animation-delay:1.5s, 2.9s; --rot:-4deg; }
+.fb6{ left:220px; top:190px; animation-delay:1.8s, 2.4s; --rot:5deg; }
+
+/* 剧情卡片（右上堆叠出现） */
+.story-card{ position:absolute; z-index:6; background:var(--paper-card-soft);
+  border:1px solid var(--paper-border); border-left:6px solid var(--paper-accent);
+  border-radius:14px; box-shadow:0 12px 30px rgba(60,45,20,.18);
+  padding:11px 15px; font-size:18px; line-height:1.5; opacity:0; transform:translateY(16px);
+  transition:opacity .4s, transform .4s; }
+.story-card .sc-t{ font-size:20px; }
+.story-card .sc-d{ color:var(--paper-muted); font-size:14px; margin-top:2px; }
+.story-card.on{ opacity:1; transform:none; }
+.story-card.pop{ animation:pop .55s cubic-bezier(.2,.7,.3,1) both; }
+#c1{ left:742px; top:80px;  border-color:#4a5d4e; width:252px; }
+#c2{ left:742px; top:162px; border-color:#5d4a56; width:252px; }
+#c3{ left:1044px; top:86px; border-color:#4a4d5d; width:214px; }
+#c3 .bubble{ background:#e4dccb; border:1px solid var(--paper-border); border-radius:10px;
+  padding:5px 9px; margin-top:5px; font-size:14px; color:var(--paper-muted); }
+
+/* 长书单：一卷向下拉（纸卷从顶部逐渐展开） */
+#c5{ left:900px; top:230px; width:304px; border-left-color:var(--paper-ink); padding:0; overflow:hidden; }
+#c5 .scroll-head{ display:flex; align-items:center; gap:8px; font-size:20px;
+  background:var(--paper-card-soft); border-bottom:1px dashed var(--paper-border); padding:12px 16px; }
+#c5 .scroll-body{ padding:6px 16px 12px; overflow:hidden;
+  clip-path:inset(0 0 100% 0); transition:clip-path .95s cubic-bezier(.5,0,.25,1); }
+#c5.on .scroll-body{ clip-path:inset(0 0 0 0); }
+#c5 .bline{ font-size:15px; color:var(--paper-muted); padding:5px 0; border-bottom:1px dashed var(--paper-border); }
+#c5 .bline:last-child{ border-bottom:none; }
+#c5 .bmore{ padding:8px 0 4px; text-align:center; font-size:17px; font-weight:700;
+  letter-spacing:4px; color:var(--paper-muted); }
+
+/* 三个大问号 */
+.q{ position:absolute; z-index:6; font-size:46px; font-weight:800; color:var(--paper-ink);
+  background:var(--paper-card); border:2px solid var(--paper-border); border-radius:18px;
+  padding:10px 20px; opacity:0; box-shadow:0 14px 34px rgba(60,45,20,.2); }
+.q.boom{ animation:qIn .6s cubic-bezier(.2,.9,.3,1.3) both; }
+.q.boom::after{ content:""; }
+@keyframes qIn{ 0%{ opacity:0; transform:scale(.2) rotate(-10deg); } 55%{ transform:scale(1.18) rotate(3deg); } 100%{ opacity:1; transform:none; } }
+#q1{ left:420px; top:128px; }
+#q2{ left:500px; top:238px; animation-delay:.14s !important; }
+#q3{ left:440px; top:348px; animation-delay:.28s !important; }
+.q .qm{ color:var(--paper-accent); }
+
+/* 剧情台词 */
+.storyline{ position:absolute; left:50%; transform:translateX(-50%); bottom:64px; z-index:7;
+  font-size:25px; background:rgba(243,237,223,.92); border:1px solid var(--paper-border);
+  border-radius:14px; padding:10px 22px; box-shadow:0 10px 26px rgba(60,45,20,.15);
+  max-width:900px; text-align:center; line-height:1.5; }
+.hint{ position:absolute; right:40px; bottom:34px; z-index:7; font-size:16px; color:var(--paper-muted);
+  background:rgba(243,237,223,.8); border:1px solid var(--paper-border); border-radius:999px; padding:6px 14px; }
+.hint .h-count{ color:var(--paper-accent); font-weight:700; }
+.hint b{ animation:blinkSoft 1.6s infinite; }
+@keyframes blinkSoft{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+
+/* 桌角小物件 */
+.desk-emoji{ position:absolute; z-index:5; font-size:36px; opacity:0; animation:fbIn .8s ease 1.4s both; }
+#cup{ left:440px; top:540px; }
+#plant{ left:560px; top:540px; }
+
+/* ============================================================
+   章节通用卡片 / 表
+   ============================================================ */
+.wrap{ height:100%; display:flex; flex-direction:column; gap:18px; }
+.row{ display:flex; gap:22px; align-items:stretch; }
+.col{ flex:1; }
+.tbl{ width:100%; border-collapse:separate; border-spacing:0 12px; }
+.tbl td{ background:var(--paper-card); border:1px solid var(--paper-border); padding:16px 20px; font-size:21px; vertical-align:middle; }
+.tbl td:first-child{ border-radius:12px 0 0 12px; border-right:none; font-weight:700; }
+.tbl td:last-child{ border-radius:0 12px 12px 0; }
+
+.painbar{ font-size:24px; font-weight:700; text-align:center; padding:18px 26px; border-radius:14px;
+  background:var(--paper-ink); color:#f3eddf; }
+.step-flow{ display:flex; align-items:stretch; gap:0; }
+.step-flow .sstep{ flex:1; background:var(--paper-card); border:1px solid var(--paper-border); border-radius:14px;
+  padding:14px 12px; text-align:center; position:relative; }
+.step-flow .sstep .snum{ font-size:14px; color:var(--paper-faint); letter-spacing:.2em; }
+.step-flow .sstep .st{ font-size:19px; font-weight:700; margin-top:4px; }
+.step-flow .sstep .sd{ font-size:14px; color:var(--paper-muted); margin-top:4px; }
+.step-flow .arrow{ align-self:center; font-size:26px; color:var(--paper-accent); padding:0 6px; }
+.step-flow .sstep.on .st{ color:var(--paper-accent); }
+.tag{ display:inline-block; padding:5px 12px; border-radius:999px; font-size:16px; font-weight:700; }
+
+/* ============================================================
+   底部 / 顶部控件
+   ============================================================ */
+#progress{ position:fixed; bottom:0; left:0; height:4px; background:var(--paper-accent); width:0; z-index:70;
+  transition:width .3s ease; }
+#chrome{ position:fixed; bottom:14px; left:0; right:0; display:flex; align-items:center; justify-content:center;
+  gap:16px; z-index:60; }
+#dock{ display:flex; gap:9px; background:rgba(20,19,15,.55); padding:9px 16px; border-radius:999px; }
+.dock-dot{ width:11px; height:11px; border-radius:50%; background:rgba(255,255,255,.38); cursor:pointer;
+  transition:transform .2s, background .2s; }
+.dock-dot:hover{ transform:scale(1.35); background:rgba(255,255,255,.7); }
+.dock-dot.cur{ background:#fff; transform:scale(1.4); }
+#counter{ color:rgba(255,255,255,.75); font-size:13px; font-variant-numeric:tabular-nums; letter-spacing:.05em; }
+#fsBtn{ position:fixed; top:14px; right:14px; z-index:70; background:rgba(20,19,15,.55); color:#fff;
+  border:none; border-radius:9px; padding:8px 11px; font-size:16px; cursor:pointer; line-height:1; }
+#fsBtn:hover{ background:rgba(20,19,15,.8); }
+
+@media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="deck">
+
+    <!-- ============ 封面 ============ -->
+    <section class="slide cover active" data-act="cover">
+      <div class="cover-inner">
+        <h1 data-rise>AI-Native 读书雷达</h1>
+        <p class="cover-sub" data-rise style="--d:.25s">一张会长大的知识地图</p>
+        <p class="cover-tag" data-rise style="--d:.5s">AI 从业者共建的动态读书雷达 —— 不再零散找书，<br>而是一张会长大的知识地图。</p>
+        <p class="cover-foot" data-rise style="--d:.75s">杨亦凡 · 刘思捷</p>
+      </div>
+    </section>
+
+    <!-- ============ 第一幕 · 张明的故事（动画开场） ============ -->
+    <section class="slide story" data-act="act1">
+      <div class="kick">第一幕 · 缘起</div>
+      <h2>张明的故事</h2>
+      <div class="scene" id="scene">
+
+        <!-- 心情符号 -->
+        <div class="mood" id="mood"></div>
+        <div class="sweat">💦</div>
+
+        <!-- 漂浮书 -->
+        <div class="float-book fb1">📕</div>
+        <div class="float-book fb2">📘</div>
+        <div class="float-book fb3">📗</div>
+        <div class="float-book fb4">📙</div>
+        <div class="float-book fb5">📚</div>
+        <div class="float-book fb6">📖</div>
+
+        <!-- 桌面小物件 -->
+        <div class="desk-emoji" id="cup">☕</div>
+        <div class="desk-emoji" id="plant">🪴</div>
+
+        <!-- 场景 SVG：桌 · 笔记本 · 小人 -->
+        <svg class="scene-svg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid slice">
+          <!-- 桌面 -->
+          <rect x="290" y="510" width="700" height="72" rx="16" fill="#d0c5ab"/>
+          <rect x="290" y="576" width="700" height="10" rx="5" fill="#b7aa8d"/>
+
+          <!-- 笔记本 -->
+          <g class="laptop">
+            <rect x="710" y="468" width="265" height="46" rx="10" fill="#8a7c63"/>
+            <rect x="738" y="330" width="212" height="142" rx="10" fill="#f7f2e7" stroke="#b7aa8d" stroke-width="3"/>
+            <rect x="746" y="338" width="196" height="126" rx="6" fill="#fdfaf2"/>
+            <clipPath id="screenClip"><rect x="746" y="338" width="196" height="126" rx="6"/></clipPath>
+            <g class="screen-list" clip-path="url(#screenClip)">
+              <g font-family="system-ui, sans-serif">
+                <circle cx="756" cy="360" r="3" fill="#4a5d4e"/><text x="764" y="364">大模型应用开发</text>
+                <circle cx="756" cy="384" r="3" fill="#5d4a56"/><text x="764" y="388">提示工程实战</text>
+                <circle cx="756" cy="408" r="3" fill="#4a4d5d"/><text x="764" y="412">Agent 设计模式</text>
+                <circle cx="756" cy="432" r="3" fill="#6b4f3b"/><text x="764" y="436">RAG 系统构建</text>
+                <circle cx="756" cy="456" r="3" fill="#5d4a4a"/><text x="764" y="460">深度学习入门</text>
+              </g>
+            </g>
+            <rect x="846" y="335" width="5" height="5" rx="2" fill="#b7aa8d"/>
+          </g>
+
+          <!-- 小人 -->
+          <g class="person" data-expr="neutral">
+            <!-- 后臂（深色袖） -->
+            <g class="arm-back">
+              <path d="M492 354 Q 605 402 716 470" stroke="#4f7a6a" stroke-width="24" stroke-linecap="round" fill="none"/>
+              <circle class="hand hand-l" cx="722" cy="476" r="13" fill="#f2c49b"/>
+            </g>
+            <!-- 身体：头顶住下巴，不再需要脖子 -->
+            <rect class="body" x="472" y="318" width="118" height="204" rx="40" fill="#5d8a7a"/>
+            <!-- 衣领 -->
+            <path d="M506 334 q 26 -14 52 0" stroke="#4f7a6a" stroke-width="10" stroke-linecap="round" fill="none"/>
+            <!-- 前臂 -->
+            <g class="arm-front">
+              <path d="M568 356 Q 655 412 754 488" stroke="#5d8a7a" stroke-width="26" stroke-linecap="round" fill="none"/>
+              <circle class="hand hand-r" cx="760" cy="494" r="14" fill="#f2c49b"/>
+            </g>
+            <!-- 头 -->
+            <g class="head">
+              <circle cx="532" cy="258" r="60" fill="#f2c49b"/>
+              <path d="M472 245 a60 60 0 0 1 120 0 q-6 -34 -60 -34 t-60 34 z" fill="#4a3b2f"/>
+              <circle cx="572" cy="268" r="9" fill="#e8b98e"/>
+              <!-- 表情：平静 -->
+              <g class="expr-neutral">
+                <ellipse cx="508" cy="262" rx="6" ry="8" fill="#2b2017"/>
+                <ellipse cx="556" cy="262" rx="6" ry="8" fill="#2b2017"/>
+                <path d="M528 300 q 8 8 16 0" stroke="#2b2017" stroke-width="4" stroke-linecap="round" fill="none"/>
+              </g>
+              <!-- 表情：疑惑 -->
+              <g class="expr-confused">
+                <path d="M500 250 q 8 -7 16 0" stroke="#2b2017" stroke-width="4" fill="none"/>
+                <ellipse cx="510" cy="265" rx="6" ry="7" fill="#2b2017"/>
+                <path d="M548 251 q 8 6 16 -2" stroke="#2b2017" stroke-width="4" fill="none"/>
+                <ellipse cx="556" cy="268" rx="6" ry="8" fill="#2b2017"/>
+                <path d="M528 301 q 10 -7 18 5" stroke="#2b2017" stroke-width="4" stroke-linecap="round" fill="none"/>
+              </g>
+              <!-- 表情：思考 -->
+              <g class="expr-thinking">
+                <ellipse cx="508" cy="266" rx="6" ry="8" fill="#2b2017"/>
+                <ellipse cx="556" cy="266" rx="6" ry="8" fill="#2b2017"/>
+                <path d="M570 236 q 4 -11 14 -13" stroke="#2b2017" stroke-width="4" stroke-linecap="round" fill="none"/>
+                <path d="M498 238 q 6 -9 14 -6" stroke="#2b2017" stroke-width="4" stroke-linecap="round" fill="none"/>
+                <ellipse cx="543" cy="300" rx="6" ry="8" fill="#2b2017"/>
+              </g>
+              <!-- 表情：抓狂 -->
+              <g class="expr-frustrated">
+                <path d="M500 250 q 8 9 17 -2" stroke="#2b2017" stroke-width="4" fill="none"/>
+                <path d="M550 249 q 8 -9 18 0" stroke="#2b2017" stroke-width="4" fill="none"/>
+                <ellipse cx="510" cy="268" rx="6" ry="7" fill="#2b2017"/>
+                <ellipse cx="554" cy="268" rx="6" ry="7" fill="#2b2017"/>
+                <ellipse cx="532" cy="304" rx="10" ry="13" fill="#5c2a22"/>
+                <path d="M590 212 a9 9 0 0 1 0 18 a9 9 0 0 1 0 -18 z" fill="#8fc7e8"/>
+              </g>
+              <!-- 眼睑（眨眼） -->
+              <g class="eyelid"><rect x="492" y="250" width="82" height="30" rx="8" fill="#f2c49b"/></g>
+            </g>
+          </g>
+        </svg>
+
+        <!-- 剧情卡片 -->
+        <div class="story-card" id="c1">
+          <div class="sc-t">💭 刷知乎书单</div>
+          <div class="sc-d">保存了七八篇，越看越乱</div>
+        </div>
+        <div class="story-card" id="c2">
+          <div class="sc-t">⭐ 豆瓣查评分</div>
+          <div class="sc-d">筛掉一版又拿不准一版</div>
+        </div>
+        <div class="story-card" id="c3">
+          <div class="sc-t">💬 问身边的同事</div>
+          <div class="bubble">「先读这本入门经典！」</div>
+          <div class="bubble">「直接看最新的那本」</div>
+          <div class="bubble">「那本翻译太差，换这本」</div>
+        </div>
+        <div class="story-card nopop" id="c5">
+          <div class="scroll-head">📜 长书单 · 仍无解</div>
+          <div class="scroll-body">
+            <div class="bline">《从零开始学大模型》</div>
+            <div class="bline">《Prompt 从入门到放弃》</div>
+            <div class="bline">《人人都会 RAG》</div>
+            <div class="bline">《Deep Learning 圣经》</div>
+            <div class="bline">《AI 产品经理宝典》</div>
+            <div class="bline">《智能体实战手册》</div>
+            <div class="bline">《机器学习周志华》</div>
+            <div class="bline">《百炼成仙的 Transformer》</div>
+            <div class="bline">《LangChain 全家桶》</div>
+            <div class="bline">《Embedding 从入门到跑偏》</div>
+            <div class="bline">《多模态学习手册》</div>
+            <div class="bmore">……</div>
+          </div>
+        </div>
+
+        <!-- 三个大问号 -->
+        <div class="q" id="q1"><span class="qm">❓</span> 这本值得读吗？</div>
+        <div class="q" id="q2"><span class="qm">❓</span> 适合现在的我吗？</div>
+        <div class="q" id="q3"><span class="qm">❓</span> 读完下一步读哪本？</div>
+
+        <!-- 台词 -->
+        <div class="storyline" id="storyline"></div>
+        <div class="hint"><span id="hintText">空格 / 点击 · 继续</span> <b>·</b> <span class="h-count" id="stepCount">0 / 5</span></div>
+
+      </div>
+    </section>
+
+    <!-- ============ 第一幕 · 现有方案为什么不够 ============ -->
+    <section class="slide" data-act="act1">
+      <div class="kick">第一幕 · 缘起</div>
+      <h2>现有方案，为什么不够？</h2>
+      <div class="wrap" style="margin-top:24px">
+        <div class="row">
+          <div class="col card" data-rise style="--d:.1s">
+            <h3>📋 知乎 / 公众号书单</h3>
+            <p class="sub" style="margin-top:10px"><b>它给的答案：</b>有人推荐</p>
+            <p class="sub" style="margin-top:4px"><b>它没回答的：</b>推荐零散、不系统，没有领域和难度结构</p>
+          </div>
+          <div class="col card" data-rise style="--d:.2s">
+            <h3>⭐ 豆瓣评分</h3>
+            <p class="sub" style="margin-top:10px"><b>它给的答案：</b>有人打分</p>
+            <p class="sub" style="margin-top:4px"><b>它没回答的：</b>面向大众口味，和「AI 从业者成长」不匹配</p>
+          </div>
+          <div class="col card" data-rise style="--d:.3s">
+            <h3>💬 问同事朋友</h3>
+            <p class="sub" style="margin-top:10px"><b>它给的答案：</b>有人背书</p>
+            <p class="sub" style="margin-top:4px"><b>它没回答的：</b>覆盖有限，难判断难度适不适合自己</p>
+          </div>
+        </div>
+        <div class="painbar" data-rise style="--d:.5s">书太多 · 推荐太零散 · 不知道哪本值得读 · 判断不了难度合不合适</div>
+      </div>
+    </section>
+
+    <!-- ============ 第一幕 · 初心：为什么是我们 ============ -->
+    <section class="slide" data-act="act1">
+      <div class="kick">第一幕 · 缘起</div>
+      <h2>初心：为什么是我们</h2>
+      <div class="wrap" style="margin-top:24px">
+        <div class="card" data-rise>
+          <h3>🏢 一个真实的业务起点</h3>
+          <p class="sub" style="margin-top:10px">我们最初为一家 <b>3000 人的科技组织</b>做 AI 人才能力提升规划。客户想建一个学习资料库；而我们在规划过程中同样发现——组织内部、甚至我们自己，都缺少一份<b>体系化的 AI 学习资料参考</b>。</p>
+        </div>
+        <div class="card" data-rise style="--d:.15s">
+          <h3>🤔 于是我们问了一个问题</h3>
+          <p class="sub" style="margin-top:10px; font-size:30px; color:var(--paper-accent); font-weight:700">「如果把『专业的人推荐的专业书』×『可视化』结合起来，会怎样？」</p>
+        </div>
+        <div class="painbar" data-rise style="--d:.3s">带着这个念头，我们做了这样一件事。</div>
+      </div>
+    </section>
+
+    <!-- ============ 第二幕 · 产品：一句话定义 + 三个关键词 ============ -->
+    <section class="slide" data-act="act2">
+      <div class="kick">第二幕 · 产品</div>
+      <h2>我们做了什么</h2>
+      <div class="wrap" style="margin-top:24px">
+        <div class="card" data-rise>
+          <h3>一句话定义</h3>
+          <p class="sub" style="margin-top:10px; font-size:25px; line-height:1.6">AI-Native 读书雷达：AI 从业者<b>共建</b>的<b>动态</b>读书雷达，通过专业可信的集体推荐与评分，帮助用户快速发现高质量 AI 学习资料。</p>
+        </div>
+        <div class="row" data-rise style="--d:.25s">
+          <div class="col card" style="text-align:center">
+            <div style="font-size:42px">👥</div><h3 style="margin:6px 0 4px">专业可信</h3>
+            <p class="sub">从业者集体共建，<br>而非算法爬取</p>
+          </div>
+          <div class="col card" style="text-align:center">
+            <div style="font-size:42px">🗺️</div><h3 style="margin:6px 0 4px">体系化</h3>
+            <p class="sub">8 大领域 × 3 层难度，<br>告诉你从哪学起</p>
+          </div>
+          <div class="col card" style="text-align:center">
+            <div style="font-size:42px">🌱</div><h3 style="margin:6px 0 4px">动态演化</h3>
+            <p class="sub">每周版本对比，<br>地图在生长</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 第二幕 · 问题→答案 ============ -->
+    <section class="slide" data-act="act2">
+      <div class="kick">第二幕 · 产品</div>
+      <h2>痛点 → 答案，一一对应</h2>
+      <table class="tbl" style="margin-top:24px">
+        <tr data-rise><td>推荐零散、不系统</td><td>8 大领域扇区 + 3 层难度环的雷达知识地图</td></tr>
+        <tr data-rise style="--d:.1s"><td>不知道哪本值得读</td><td>从业者集体推荐的「推荐指数」+ 完整推荐理由</td></tr>
+        <tr data-rise style="--d:.2s"><td>判断不了难度合不合适</td><td>3 层难度环 + 领域学习路径（按难度进阶）</td></tr>
+        <tr data-rise style="--d:.3s"><td>书单会过时</td><td>每周自动更替成员（每领域 Top 8 且指数 ≥3.0）+ 版本对比</td></tr>
+      </table>
+      <div class="sub" style="margin-top:26px; text-align:center; --d:.45s" data-rise>那么，这样一张雷达，是为谁画的？</div>
+    </section>
+
+    <!-- ============ 第三幕 · 用户 ============ -->
+    <section class="slide" data-act="act3">
+      <div class="kick">第三幕 · 用户</div>
+      <h2>为谁而做</h2>
+      <div class="row" style="margin-top:24px">
+        <div class="col card" data-rise style="--d:.05s; text-align:center">
+          <div style="font-size:38px">🧑‍💼</div><h3 style="margin:6px 0 4px">张明 · AI 产品经理</h3>
+          <p class="sub">工作 1–5 年，持续学新方向</p><p class="sub"><b>👉 快速找到对路的书</b></p>
+        </div>
+        <div class="col card" data-rise style="--d:.15s; text-align:center">
+          <div style="font-size:38px">🎓</div><h3 style="margin:6px 0 4px">李华 · 入门新人</h3>
+          <p class="sub">刚进入 AI 领域</p><p class="sub"><b>👉 建立学习路径不绕弯路</b></p>
+        </div>
+        <div class="col card" data-rise style="--d:.25s; text-align:center">
+          <div style="font-size:38px">🔀</div><h3 style="margin:6px 0 4px">王芳 · 跨领域</h3>
+          <p class="sub">本职非强相关</p><p class="sub"><b>👉 了解 AI 在行业中的应用</b></p>
+        </div>
+        <div class="col card" data-rise style="--d:.35s; text-align:center">
+          <div style="font-size:38px">⚙️</div><h3 style="margin:6px 0 4px">赵强 · 技术从业者</h3>
+          <p class="sub">想深钻某个方向</p><p class="sub"><b>👉 深入学习 LLM / Agent / RAG</b></p>
+        </div>
+      </div>
+      <div class="row" style="margin-top:20px">
+        <div class="col tag" style="flex:1; text-align:center; background:#e3dac8; color:var(--paper-muted)">🔍 探索发现 · 悬停点击雷达</div>
+        <div class="col tag" style="flex:1; text-align:center; background:#e3dac8; color:var(--paper-muted)">⚡ 筛选查找 · 领域 / 难度 / 指数</div>
+        <div class="col tag" style="flex:1; text-align:center; background:#e3dac8; color:var(--paper-muted)">🪜 体系化提升 · 领域学习路径</div>
+      </div>
+    </section>
+
+    <!-- ============ 第四幕 · 现场演示 ============ -->
+    <section class="slide" data-act="act4">
+      <div class="kick">第四幕 · 现场演示</div>
+      <h2>三个片段，跑起来</h2>
+      <div class="row" style="margin-top:24px">
+        <div class="col card" data-rise style="--d:.1s">
+          <h3>🎬 演示 A · 看见全貌</h3>
+          <ul>
+            <li>首页雷达整体亮相：8 领域 × 3 难度环</li>
+            <li>悬停一颗点 → 推荐指数 & 推荐理由</li>
+            <li>点击 → 完整详情侧栏</li>
+          </ul>
+        </div>
+        <div class="col card" data-rise style="--d:.2s">
+          <h3>🧭 演示 B · 找到对的路径</h3>
+          <ul>
+            <li>筛选：领域 + 难度 + 指数分段按钮</li>
+            <li>列表页卡片网格 + 搜索</li>
+            <li>领域学习路径，详情返回<b>原样恢复</b></li>
+          </ul>
+        </div>
+        <div class="col card" data-rise style="--d:.3s">
+          <h3>🌱 演示 C · 共建与演化</h3>
+          <ul>
+            <li>书籍推荐：抽屉表单 + 草稿确认</li>
+            <li>评分投票：推荐指数<b>实时更新</b></li>
+            <li>本周更新：新 / ↑ / ↓ 版本对比</li>
+          </ul>
+        </div>
+      </div>
+      <div class="painbar" data-rise style="--d:.5s; margin-top:22px">推荐 · 评分 · 版本对比 —— 「共建 + 演化」的完整证据链</div>
+    </section>
+
+    <!-- ============ 第五幕 · 0→1 工作流 ============ -->
+    <section class="slide" data-act="act5">
+      <div class="kick">第五幕 · Vibe Coding 之旅</div>
+      <h2>第一节课：从 0 到 1，搭起整个原型</h2>
+      <div class="card" data-rise style="margin-top:24px">
+        <p class="sub">这不是一个大团队做的——是我在 <b>AI 产品经理培训</b>第 2、3 节的 <b>Vibe Coding</b> 课上，用 <b>Trae + Codex</b> 与 AI 结对做出的原型。</p>
+      </div>
+      <div class="step-flow" style="margin-top:22px">
+        <div class="sstep" data-rise style="--d:.15s"><div class="snum">STEP 1</div><div class="st">设置全局规则</div><div class="sd">先在设置里写清楚</div></div>
+        <div class="arrow" data-rise style="--d:.2s">→</div>
+        <div class="sstep" data-rise style="--d:.25s"><div class="snum">STEP 2</div><div class="st">需求澄清</div><div class="sd">Prompt 1：要做什么、为谁做</div></div>
+        <div class="arrow" data-rise style="--d:.3s">→</div>
+        <div class="sstep" data-rise style="--d:.35s"><div class="snum">STEP 3</div><div class="st">写项目 Context</div><div class="sd">给 AI 完整上下文</div></div>
+        <div class="arrow" data-rise style="--d:.4s">→</div>
+        <div class="sstep" data-rise style="--d:.45s"><div class="snum">STEP 4</div><div class="st">UX Design Guideline</div><div class="sd">先定设计规范</div></div>
+        <div class="arrow" data-rise style="--d:.5s">→</div>
+        <div class="sstep" data-rise style="--d:.55s"><div class="snum">STEP 5</div><div class="st">首页雷达方案</div><div class="sd">一张图怎么组织信息</div></div>
+        <div class="arrow" data-rise style="--d:.6s">→</div>
+        <div class="sstep" data-rise style="--d:.65s"><div class="snum">STEP 6</div><div class="st">构建原型</div><div class="sd">最后才开始写代码</div></div>
+      </div>
+      <div class="painbar" data-rise style="--d:.8s; margin-top:22px">全程「先讲清楚、再动手」——而不是一上来就让 AI 写代码</div>
+    </section>
+
+    <!-- ============ 第五幕 · 1→n 方法 + 课下迭代 ============ -->
+    <section class="slide" data-act="act5">
+      <div class="kick">第五幕 · Vibe Coding 之旅</div>
+      <h2>第二节课：从 1 到 n，设计一个新功能</h2>
+      <p class="sub" data-rise style="margin-top:24px">目标：在已有原型上，增加「书籍推荐」功能 —— 一套可复用的方法：</p>
+      <div class="step-flow" style="margin-top:18px">
+        <div class="sstep" data-rise style="--d:.1s"><div class="snum">①</div><div class="st">扫描现状</div><div class="sd">原型·文档·代码</div></div>
+        <div class="arrow" data-rise style="--d:.15s">→</div>
+        <div class="sstep" data-rise style="--d:.2s"><div class="snum">②</div><div class="st">写清边界</div><div class="sd">范围·复用·不做项</div></div>
+        <div class="arrow" data-rise style="--d:.25s">→</div>
+        <div class="sstep" data-rise style="--d:.3s"><div class="snum">③</div><div class="st">确认增量</div><div class="sd">这一轮做多少</div></div>
+        <div class="arrow" data-rise style="--d:.35s">→</div>
+        <div class="sstep" data-rise style="--d:.4s"><div class="snum">④</div><div class="st">设计 UI·数据</div><div class="sd">交互 + 接口</div></div>
+        <div class="arrow" data-rise style="--d:.45s">→</div>
+        <div class="sstep" data-rise style="--d:.5s"><div class="snum">⑤</div><div class="st">可执行计划</div><div class="sd">按计划动手</div></div>
+        <div class="arrow" data-rise style="--d:.55s">→</div>
+        <div class="sstep" data-rise style="--d:.6s"><div class="snum">⑥</div><div class="st">实施纠偏</div><div class="sd">边做边调</div></div>
+        <div class="arrow" data-rise style="--d:.65s">→</div>
+        <div class="sstep" data-rise style="--d:.7s"><div class="snum">⑦</div><div class="st">自动化验收</div><div class="sd">回归 + 验收</div></div>
+      </div>
+      <div class="card" data-rise style="--d:.75s; margin-top:24px">
+        <h3>课下 · 一轮接一轮的迭代</h3>
+        <div style="margin-top:10px; display:flex; gap:12px; flex-wrap:wrap">
+          <span class="tag" style="background:#4a5d4e; color:#f3eddf">📗 书籍推荐</span>
+          <span class="tag" style="background:#5d4a56; color:#f3eddf">🗳️ 评分投票</span>
+          <span class="tag" style="background:#4a4d5d; color:#f3eddf">🔄 雷达每周更新</span>
+          <span class="tag" style="background:#6b4f3b; color:#f3eddf">🗄️ 接入后端</span>
+          <span class="tag" style="background:#3d3d3d; color:#f3eddf">🎨 UI 设计更新</span>
+        </div>
+        <p class="sub" style="margin-top:12px">产品，就是这样一版一版长出来的。</p>
+      </div>
+    </section>
+
+    <!-- ============ 第六幕 · 协作与打磨 ============ -->
+    <section class="slide" data-act="act6">
+      <div class="kick">第六幕 · 协作与打磨</div>
+      <h2>印象最深的两件事</h2>
+      <div class="row" style="margin-top:24px">
+        <div class="col card" data-rise style="--d:.1s">
+          <h3>🤝 协作：Git 仓库</h3>
+          <ul>
+            <li>小组项目，从<b>不会用 GitHub</b> 到<b>离不开</b></li>
+            <li>建项目仓库、推代码、拉别人的代码</li>
+            <li>仓库保留原型每个版本，方便随时回溯</li>
+            <li><b>踩坑</b>：拉取后原型没更新 → 请对方重传才成功（猜测首次上传不完整）</li>
+          </ul>
+        </div>
+        <div class="col card" data-rise style="--d:.2s">
+          <h3>✨ 打磨：UI 细节</h3>
+          <ul>
+            <li>站在用户角度，审视视觉 UI 与交互体验</li>
+            <li>越改发现问题越多，磨人但值得</li>
+            <li>是产品真正上线前必不可少的打磨过程</li>
+            <li>没有完美产品，只有一遍遍迭代，更接近理想</li>
+          </ul>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:24px; text-align:center; --d:.4s" data-rise>而正因一步步做出来，我也比谁都清楚它的不足——</div>
+    </section>
+
+    <!-- ============ 第六幕 · 诚实地看不足 ============ -->
+    <section class="slide" data-act="act6">
+      <div class="kick">第六幕 · 协作与打磨</div>
+      <h2>诚实地看不足</h2>
+      <div class="row" style="margin-top:24px">
+        <div class="col card" data-rise style="--d:.05s">
+          <div style="font-size:34px">📊</div>
+          <h3 style="margin-top:6px">数据质量 <span class="tag" style="background:#6b4f3b; color:#f3eddf; font-size:14px">最优先</span></h3>
+          <p class="sub" style="margin-top:8px">当前是示例书库 + 社区投票的「起点」；真实上线需权威推荐人、更多投票与<b>防刷 & 质量分</b>机制。</p>
+        </div>
+        <div class="col card" data-rise style="--d:.15s">
+          <div style="font-size:34px">🕳️</div>
+          <h3 style="margin-top:6px">冷启动</h3>
+          <p class="sub" style="margin-top:8px">新领域 / 新书无人投票，需要「种子推荐人」与平台引导机制。</p>
+        </div>
+        <div class="col card" data-rise style="--d:.25s">
+          <div style="font-size:34px">🛡️</div>
+          <h3 style="margin-top:6px">内容治理</h3>
+          <p class="sub" style="margin-top:8px">推荐理由与评分的质量，需要<b>规则 + 人工</b>双通道审核。</p>
+        </div>
+        <div class="col card" data-rise style="--d:.35s">
+          <div style="font-size:34px">🧠</div>
+          <h3 style="margin-top:6px">推荐深度</h3>
+          <p class="sub" style="margin-top:8px">目前是「均值指数 + 每周 Top 8」；长期可加入同领域进阶、基于学习记录的个性化。</p>
+        </div>
+      </div>
+      <div class="painbar" data-rise style="--d:.55s; margin-top:22px">这些不足，不是终点，而是下一轮「共建与演化」的起点。</div>
+    </section>
+
+    <!-- ============ 收尾 · 愿景 ============ -->
+    <section class="slide" data-act="vision">
+      <div class="kick">收尾 · 愿景</div>
+      <h2>一张会长大的知识地图</h2>
+      <div class="row" style="margin-top:24px">
+        <div class="col card" data-rise style="--d:.1s">
+          <h3>🕐 短期</h3>
+          <p class="sub" style="margin-top:10px">一份有效的 <b>AI 学习资料参考平台</b>，提供清晰的学习路径。</p>
+        </div>
+        <div class="col card" data-rise style="--d:.2s">
+          <h3>🔭 长期</h3>
+          <p class="sub" style="margin-top:10px">AI 业界<b>高价值、高信息、高水平</b>的交流平台。</p>
+        </div>
+      </div>
+      <div class="card" data-rise style="--d:.35s; margin-top:28px; text-align:center; padding:28px 34px">
+        <p style="font-size:36px; font-weight:800; line-height:1.5">「汇聚每个人的专业知识，形成一张完整的知识地图<br>——而且它每周都在生长。」</p>
+      </div>
+      <p class="sub" style="text-align:center; margin-top:22px; letter-spacing:.4em; color:var(--paper-faint); --d:.55s" data-rise>谢 谢 · 敬 请 指 正</p>
+    </section>
+
+  </div>
+</div>
+
+<div id="chrome">
+  <div id="dock"></div>
+  <div id="counter">1 / 13</div>
+</div>
+<button id="fsBtn" title="全屏 (F)">⛶</button>
+
+<script>
+/* ============================================================
+   导航
+   ============================================================ */
+var deck = document.getElementById('deck');
+var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+var DOCKMAP = { cover:0, act1:1, act2:4, act3:6, act4:7, act5:8, act6:10, vision:12 };
+var cur = 0;
+
+function fit(){
+  var s = Math.min(window.innerWidth/1280, window.innerHeight/720);
+  deck.style.transform = 'scale(' + s + ')';
+}
+window.addEventListener('resize', fit); fit();
+
+var dock = document.getElementById('dock');
+Object.keys(DOCKMAP).forEach(function(key){
+  var d = document.createElement('div');
+  d.className = 'dock-dot';
+  d.dataset.act = key;
+  d.title = key;
+  d.addEventListener('click', function(e){ e.stopPropagation(); go(DOCKMAP[key]); });
+  dock.appendChild(d);
+});
+
+function updateChrome(){
+  document.getElementById('counter').textContent = (cur+1) + ' / ' + slides.length;
+  var pct = ((cur+1)/slides.length)*100;
+  document.getElementById('progress').style.width = pct + '%';
+  var curAct = slides[cur].dataset.act;
+  Array.prototype.forEach.call(dock.children, function(d){
+    d.classList.toggle('cur', d.dataset.act === curAct);
+  });
+}
+
+function go(n){
+  if(n<0 || n>=slides.length) return;
+  slides[cur].classList.remove('active');
+  cur = n;
+  slides[cur].classList.add('active');
+  if(cur === 1) initStory();
+  updateChrome();
+}
+function next(){ if(cur===1){ if(advanceStory()) return; } go(cur+1); }
+function prev(){ go(cur-1); }
+
+document.addEventListener('keydown', function(e){
+  switch(e.key){
+    case 'ArrowRight': case ' ' : case 'Enter': case 'PageDown': e.preventDefault(); next(); break;
+    case 'ArrowLeft' : case 'Backspace': case 'PageUp': e.preventDefault(); prev(); break;
+    case 'Home': e.preventDefault(); go(0); break;
+    case 'End': e.preventDefault(); go(slides.length-1); break;
+    case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
+  }
+});
+
+/* 点击翻页（避开控件） */
+document.getElementById('stage').addEventListener('click', function(e){
+  if(e.target.closest('#dock')) return;
+  next();
+});
+
+document.getElementById('fsBtn').addEventListener('click', function(e){
+  e.stopPropagation(); toggleFullscreen();
+});
+function toggleFullscreen(){
+  if(document.fullscreenElement){ document.exitFullscreen(); }
+  else{ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); }
+}
+
+/* 进度条 */
+var bar = document.createElement('div');
+bar.id = 'progress';
+document.body.appendChild(bar);
+updateChrome();
+
+/* ============================================================
+   开场剧情步进
+   ============================================================ */
+var MAX = 5;
+var step = 0;
+var scene = document.getElementById('scene');
+var person = scene.querySelector('.person');
+var STEPS = [
+  { mood:'',   expr:'neutral',    line:'这个月，张明想入门「Agent 设计」——手头的产品要接智能体。' },
+  { mood:'😕', expr:'confused',   line:'Ta 先刷知乎书单，收藏了七八篇，越看越乱…', show:'c1' },
+  { mood:'😕', expr:'confused',   line:'又去豆瓣查评分，筛掉一版，又拿不准一版…', show:'c2' },
+  { mood:'🤔', expr:'thinking',   line:'再问身边的同事，得到三四个矛盾的推荐…', show:'c3' },
+  { mood:'😩', expr:'frustrated', line:'折腾了一周，Ta 列了一张长长的书单…', show:['c5'] },
+  { mood:'😩', expr:'frustrated', line:'可 Ta 还是回答不了三个问题——', show:null }
+];
+
+function popIn(el){ el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
+
+function applyStep(){
+  var s = STEPS[step];
+  scene.dataset.step = step;
+  person.setAttribute('data-expr', s.expr);
+  var m = document.getElementById('mood');
+  m.textContent = s.mood;
+  m.classList.remove('pop'); void m.offsetWidth;
+  if(s.mood){ m.classList.add('pop'); }
+  document.getElementById('storyline').textContent = s.line;
+  if(s.show){
+    (Array.isArray(s.show) ? s.show : [s.show]).forEach(function(id){
+      var el = document.getElementById(id);
+      el.classList.add('on');
+      if(!el.classList.contains('nopop')) popIn(el);
+    });
+  }
+  if(step >= 5){
+    // 最后一步：弹出三个问号
+    ['q1','q2','q3'].forEach(function(id){
+      var q = document.getElementById(id);
+      if(!q.classList.contains('boom')){
+        q.classList.add('boom');
+      }
+    });
+  }
+  document.getElementById('hintText').textContent = (step >= MAX) ? '空格 / 点击 · 下一页 →' : '空格 / 点击 · 继续';
+  document.getElementById('stepCount').textContent = step + ' / ' + MAX;
+}
+
+function initStory(){
+  step = 0;
+  ['c1','c2','c3','c5'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.classList.remove('on'); el.classList.remove('pop');
+  });
+  ['q1','q2','q3'].forEach(function(id){ document.getElementById(id).classList.remove('boom'); });
+  applyStep();
+}
+
+function advanceStory(){
+  if(step < MAX){ step++; applyStep(); return true; }
+  return false;
+}
+</script>
+</body>
+</html>
