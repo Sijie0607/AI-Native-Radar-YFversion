@@ -7,7 +7,7 @@
 <style>
 /* ============================================================
    AI-Native 读书雷达 · Showcase 幻灯片
-   莫兰迪纸感主题 · 自包含 · 零外部依赖
+   纸感领域色 token 主题 · 自包含 · 零外部依赖
    ============================================================ */
 :root{
   --paper-bg:#e8e2d5;      /* 纸面 */
@@ -482,22 +482,22 @@ body{ font-family:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Micr
     <!-- ============ 第三幕 · 用户 ============ -->
     <section class="slide" data-act="act3">
       <div class="kick">第三幕 · 用户</div>
-      <h2>为谁而做</h2>
+      <h2>为谁而作</h2>
       <div class="row" style="margin-top:24px">
         <div class="col card" data-rise style="--d:.05s; text-align:center">
-          <div style="font-size:38px">🧑‍💼</div><h3 style="margin:6px 0 4px">张明 · AI 产品经理</h3>
+          <div style="font-size:38px">🧑‍💼</div><h3 style="margin:6px 0 4px">AI 产品经理</h3>
           <p class="sub">工作 1–5 年，持续学新方向</p><p class="sub"><b>👉 快速找到对路的书</b></p>
         </div>
         <div class="col card" data-rise style="--d:.15s; text-align:center">
-          <div style="font-size:38px">🎓</div><h3 style="margin:6px 0 4px">李华 · 入门新人</h3>
+          <div style="font-size:38px">🎓</div><h3 style="margin:6px 0 4px">入门新人</h3>
           <p class="sub">刚进入 AI 领域</p><p class="sub"><b>👉 建立学习路径不绕弯路</b></p>
         </div>
         <div class="col card" data-rise style="--d:.25s; text-align:center">
-          <div style="font-size:38px">🔀</div><h3 style="margin:6px 0 4px">王芳 · 跨领域</h3>
+          <div style="font-size:38px">🔀</div><h3 style="margin:6px 0 4px">跨领域从业者</h3>
           <p class="sub">本职非强相关</p><p class="sub"><b>👉 了解 AI 在行业中的应用</b></p>
         </div>
         <div class="col card" data-rise style="--d:.35s; text-align:center">
-          <div style="font-size:38px">⚙️</div><h3 style="margin:6px 0 4px">赵强 · 技术从业者</h3>
+          <div style="font-size:38px">⚙️</div><h3 style="margin:6px 0 4px">技术从业者</h3>
           <p class="sub">想深钻某个方向</p><p class="sub"><b>👉 深入学习 LLM / Agent / RAG</b></p>
         </div>
       </div>
@@ -508,45 +508,51 @@ body{ font-family:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Micr
       </div>
     </section>
 
-    <!-- ============ 第四幕 · 现场演示 ============ -->
+      <!-- ============ 第四幕 · 现场演示 ============ -->
     <section class="slide" data-act="act4">
       <div class="kick">第四幕 · 现场演示</div>
-      <h2>三个片段，跑起来</h2>
+      <h2>三条用户路径，跑起来</h2>
       <div class="row" style="margin-top:24px">
         <div class="col card" data-rise style="--d:.1s">
-          <h3>🎬 演示 A · 看见全貌</h3>
+          <h3>🧭 路径 A · 定向学习某个领域</h3>
           <ul>
-            <li>首页雷达整体亮相：8 领域 × 3 难度环</li>
-            <li>悬停一颗点 → 推荐指数 & 推荐理由</li>
-            <li>点击 → 完整详情侧栏</li>
+            <li>进入 <b>/list</b>，按领域 / 难度 / 推荐指数筛选</li>
+            <li>打开领域学习路径，查看入门 → 方法 → 进阶</li>
+            <li>点击书籍进入 <b>/detail/:id</b>，判断是否适合当前阶段</li>
           </ul>
         </div>
         <div class="col card" data-rise style="--d:.2s">
-          <h3>🧭 演示 B · 找到对的路径</h3>
+          <h3>🌱 路径 B · 推荐自己读过的好书</h3>
           <ul>
-            <li>筛选：领域 + 难度 + 指数分段按钮</li>
-            <li>列表页卡片网格 + 搜索</li>
-            <li>领域学习路径，详情返回<b>原样恢复</b></li>
+            <li>从导航栏或首页入口打开书籍推荐抽屉</li>
+            <li>填写书名、作者、所属领域、推荐理由和推荐指数</li>
+            <li>提交后获得成功 / 重复 / 失败反馈，并保留本次会话记录</li>
           </ul>
         </div>
         <div class="col card" data-rise style="--d:.3s">
-          <h3>🌱 演示 C · 共建与演化</h3>
+          <h3>🎬 路径 C · 探索书籍和领域</h3>
           <ul>
-            <li>书籍推荐：抽屉表单 + 草稿确认</li>
-            <li>评分投票：推荐指数<b>实时更新</b></li>
-            <li>本周更新：新 / ↑ / ↓ 版本对比</li>
+            <li>进入首页 <b>/</b>，先看 8 领域 × 3 难度的雷达全貌</li>
+            <li>悬停点位或书名纸片，查看推荐指数与推荐理由</li>
+            <li>点击打开详情侧栏，也可进入列表页继续探索热门 / 上新 / 路径</li>
           </ul>
         </div>
       </div>
-      <div class="painbar" data-rise style="--d:.5s; margin-top:22px">推荐 · 评分 · 版本对比 —— 「共建 + 演化」的完整证据链</div>
+      <div class="painbar" data-rise style="--d:.5s; margin-top:22px">定向学习 · 参与共建 · 探索发现 —— 三种目的，对应三条完整路径</div>
     </section>
 
     <!-- ============ 第五幕 · 0→1 工作流 ============ -->
     <section class="slide" data-act="act5">
       <div class="kick">第五幕 · Vibe Coding 之旅</div>
-      <h2>第一节课：从 0 到 1，搭起整个原型</h2>
+      <h2>从 0 到 1，搭起稳定可用的核心功能</h2>
       <div class="card" data-rise style="margin-top:24px">
-        <p class="sub">这不是一个大团队做的——是我在 <b>AI 产品经理培训</b>第 2、3 节的 <b>Vibe Coding</b> 课上，用 <b>Trae + Codex</b> 与 AI 结对做出的原型。</p>
+        <p class="sub">这不是一个大团队做的——是我在 <b>AI 产品经理培训</b>中的 <b>Vibe Coding</b> 实践里，用 <b>Trae + Codex</b> 与 AI 结对做出的原型。</p>
+      </div>
+      <div class="card" data-rise style="--d:.1s; margin-top:18px">
+        <h3>💡 MVP 构建心得</h3>
+        <p class="sub" style="margin-top:10px">
+          构建 MVP 产品时，最重要的是先把核心功能模块做成一条<b>稳定可用、能跑通完整用户旅程</b>的路径。若一开始就陷入过细的问题和局部功能细节，很容易被某个点卡住，造成后续迭代时间被打乱、构建过程变混乱。因此，在开工前要先定义清楚：本期 user journey 要实现到哪里结束，哪些能力必须覆盖，哪些内容明确不在本期完成。
+        </p>
       </div>
       <div class="step-flow" style="margin-top:22px">
         <div class="sstep" data-rise style="--d:.15s"><div class="snum">STEP 1</div><div class="st">设置全局规则</div><div class="sd">先在设置里写清楚</div></div>
@@ -567,7 +573,7 @@ body{ font-family:system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Micr
     <!-- ============ 第五幕 · 1→n 方法 + 课下迭代 ============ -->
     <section class="slide" data-act="act5">
       <div class="kick">第五幕 · Vibe Coding 之旅</div>
-      <h2>第二节课：从 1 到 n，设计一个新功能</h2>
+      <h2>从 1 到 n，围绕清晰边界持续迭代</h2>
       <p class="sub" data-rise style="margin-top:24px">目标：在已有原型上，增加「书籍推荐」功能 —— 一套可复用的方法：</p>
       <div class="step-flow" style="margin-top:18px">
         <div class="sstep" data-rise style="--d:.1s"><div class="snum">①</div><div class="st">扫描现状</div><div class="sd">原型·文档·代码</div></div>

@@ -30,17 +30,33 @@ const BookScoringForm = ({
   const isEditMode = draft.mode === 'edit';
 
   return (
-    <section className="paper-panel rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       <div className="mb-5">
         <h3 className="text-lg font-semibold text-slate-50">
           {isEditMode ? '修改评分' : '评分表单'}
         </h3>
         <p className="mt-1 text-sm leading-6 text-slate-400">
-          你正在为《{bookTitle}》填写评分。评分支持 3-5 星和 0.5 分颗粒度，评分理由为必填。
+          你正在为《{bookTitle}》填写评分。评分支持 3-5 星和 0.5 分颗粒度，评分理由为必填，推荐人可选填。
         </p>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="score-recommender" className="mb-2 block text-sm font-medium text-slate-200">
+            推荐人/评分人（选填）
+          </label>
+          <input
+            id="score-recommender"
+            type="text"
+            value={draft.recommenderName}
+            onChange={(e) => onFieldChange('recommenderName', e.target.value)}
+            onBlur={() => onFieldBlur('recommenderName')}
+            placeholder="例如：你的姓名 / 昵称"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm text-slate-50 placeholder:text-slate-500 focus:border-[var(--paper-accent)] focus:outline-none"
+          />
+          <p className="mt-2 text-sm text-slate-500">不填写时会以当前会话用户记录。</p>
+        </div>
+
         <div>
           <p className="mb-2 block text-sm font-medium text-slate-200">推荐指数</p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -77,15 +93,15 @@ const BookScoringForm = ({
             value={draft.reason}
             onChange={(e) => onFieldChange('reason', e.target.value)}
             onBlur={() => onFieldBlur('reason')}
-            placeholder="请说明这本书为什么值得读、适合什么人、与你的实际判断依据是什么。"
+            placeholder="请说明这份资料为什么值得读、适合什么人、与你的实际判断依据是什么。"
             rows={6}
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-[#4a5d4e] focus:outline-none"
+            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-sm leading-6 text-slate-50 placeholder:text-slate-500 focus:border-[var(--paper-accent)] focus:outline-none"
           />
           <div className="mt-2 flex items-center justify-between">
             {errors.reason ? (
               <p className="text-sm text-rose-400">{errors.reason}</p>
             ) : (
-              <p className="text-sm text-slate-500">你的判断会影响该书的推荐指数展示结果。</p>
+              <p className="text-sm text-slate-500">你的判断会影响该资料的推荐指数展示结果。</p>
             )}
             <span className="text-xs text-slate-500">{draft.reason.trim().length} 字</span>
           </div>
@@ -106,7 +122,7 @@ const BookScoringForm = ({
           type="button"
           onClick={onSubmit}
           disabled={!isComplete || isSubmitting}
-          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a] disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="rounded-xl bg-[var(--paper-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
         >
           {isSubmitting ? '提交中...' : isEditMode ? '更新评分' : '提交评分'}
         </button>

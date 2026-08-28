@@ -31,13 +31,13 @@ const List = () => {
   }, [books.length, setBooks, setLoadingStatus]);
 
   return (
-    <main className="pt-16">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-slate-50 mb-8">
+    <main className="pt-14">
+      <div className="mx-auto max-w-[1280px] px-4 py-5">
+        <h1 className="mb-5 text-3xl font-bold text-slate-50">
           书单列表
         </h1>
-        <div className="paper-panel mb-8 rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
-          <h3 className="mb-4 text-lg font-semibold text-slate-50">筛选</h3>
+        <div className="paper-panel mb-5 rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <h3 className="mb-3 text-base font-semibold text-slate-50">筛选</h3>
           <SearchFilter />
         </div>
         <ResourceList

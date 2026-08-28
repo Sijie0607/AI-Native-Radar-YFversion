@@ -1,5 +1,5 @@
 import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { DOMAINS } from '../../constants';
+import { DOMAINS, getDomainColorToken } from '../../constants';
 import {
   RecommendationExistingBookSnapshot,
   RecommendationSubmissionResult,
@@ -34,7 +34,7 @@ const STATUS_META: Record<
     panelBorderClass: 'border-emerald-500/20 bg-emerald-500/8',
   },
   duplicate: {
-    title: '发现重复书籍',
+    title: '发现重复资料',
     icon: AlertTriangle,
     colorClass: 'text-amber-300',
     iconBgClass: 'bg-amber-500/15',
@@ -60,6 +60,16 @@ const formatSubmittedTime = (submittedAt: string) =>
 const getDomainName = (domainId: RecommendationExistingBookSnapshot['domain']) =>
   DOMAINS.find((domain) => domain.id === domainId)?.name ?? '未分类';
 
+const getDomainTagStyle = (domainId: RecommendationExistingBookSnapshot['domain']) => {
+  const colorToken = getDomainColorToken(domainId);
+
+  return {
+    backgroundColor: colorToken.tagBg,
+    borderColor: colorToken.tagBorder,
+    color: colorToken.text,
+  };
+};
+
 const RecommendationResult = ({
   result,
   isSubmitting,
@@ -73,7 +83,7 @@ const RecommendationResult = ({
   const Icon = meta.icon;
 
   return (
-    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-4 rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       <div className={`rounded-xl border p-4 ${meta.panelBorderClass}`}>
         <div className="flex items-start gap-3">
           <div
@@ -91,20 +101,25 @@ const RecommendationResult = ({
 
       {result.existingBook && (
         <section className="paper-card rounded-xl border border-slate-700 bg-slate-800/70 p-4">
-          <div className="mb-3 text-sm font-medium text-slate-200">已存在书籍信息</div>
+          <div className="mb-3 text-sm font-medium text-slate-200">已存在资料信息</div>
           <div className="space-y-2 text-sm text-slate-300">
             <p>
-              <span className="text-slate-400">书名：</span>
+              <span className="text-slate-400">资料名称：</span>
               {result.existingBook.title}
             </p>
             <p>
               <span className="text-slate-400">作者：</span>
               {result.existingBook.author}
             </p>
-            <p>
+            <div className="flex items-center gap-2">
               <span className="text-slate-400">所属领域：</span>
-              {getDomainName(result.existingBook.domain)}
-            </p>
+              <span
+                className="rounded-full border px-2.5 py-1 text-xs font-medium"
+                style={getDomainTagStyle(result.existingBook.domain)}
+              >
+                {getDomainName(result.existingBook.domain)}
+              </span>
+            </div>
             <p>
               <span className="text-slate-400">当前推荐指数：</span>
               {result.existingBook.recommendationScore.toFixed(1)} 星
@@ -132,7 +147,7 @@ const RecommendationResult = ({
           <button
             type="button"
             onClick={onReturnBrowse}
-            className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
+            className="rounded-xl bg-[var(--paper-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:opacity-90"
           >
             返回浏览
           </button>

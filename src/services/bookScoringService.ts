@@ -36,6 +36,8 @@ const delay = (ms: number) =>
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
 
+const normalizeRecommenderName = (value: string) => value.trim() || '当前会话用户';
+
 const roundScore = (value: number) => Math.round(value * 100) / 100;
 
 const buildSessionRecommendationId = (bookId: string) => `${SESSION_RECOMMENDER_PREFIX}:${bookId}`;
@@ -45,12 +47,13 @@ const shouldSimulateFailure = (draft: BookScoringDraft) =>
 
 const buildSessionRecommendation = (
   bookId: string,
+  recommenderName: string,
   score: number,
   reason: string,
   submittedAt: string,
 ): Recommendation => ({
   id: buildSessionRecommendationId(bookId),
-  recommender: '当前会话评分',
+  recommender: recommenderName,
   isAnonymous: false,
   reason,
   score,
@@ -112,6 +115,7 @@ export const bookScoringService = {
           p_user_session_id: getCurrentSessionId(),
           p_score: draft.score,
           p_reason: draft.reason.trim(),
+          p_recommender_name: normalizeRecommenderName(draft.recommenderName),
         });
 
         return {
@@ -159,6 +163,7 @@ export const bookScoringService = {
     }
 
     const submittedAt = new Date().toISOString();
+    const recommenderName = normalizeRecommenderName(draft.recommenderName);
     const aggregate = calculateNextAggregate({
       currentAverage: book.recommendationScore,
       currentVotesCount: book.votesCount,
@@ -168,6 +173,7 @@ export const bookScoringService = {
 
     const sessionScore: SessionBookScore = {
       bookId: book.id,
+      recommenderName,
       score: draft.score,
       reason: draft.reason.trim(),
       submittedAt,
@@ -175,6 +181,7 @@ export const bookScoringService = {
 
     const nextRecommendation = buildSessionRecommendation(
       book.id,
+      recommenderName,
       draft.score,
       draft.reason.trim(),
       submittedAt,

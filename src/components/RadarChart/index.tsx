@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useResourceStore } from '../../store/useResourceStore';
-import { DOMAINS, DIFFICULTIES, DOMAIN_COLORS, getDomainConfig } from '../../constants';
+import { DOMAINS, DIFFICULTIES, getDomainColorToken, getDomainConfig } from '../../constants';
 import { Book, Domain } from '../../types';
 import { getDomainRadarPosition, RadarBookItem } from '../../utils/radarLayout';
 import { VersionCompareData } from '../../types/versionCompare';
@@ -16,15 +16,23 @@ const PAPER_BG = '#e8e2d5';
 const PAPER_LIGHT = '#f4efe4';
 const INK = '#1a1a1a';
 const BORDER_FAINT = 'rgba(26, 26, 26, 0.14)';
+const MIN_BOOK_POINT_RADIUS = 12;
+const MAX_BOOK_POINT_RADIUS = 20;
 
-// 版本对比态的配色（贴合纸感主题）：新增/升 = 莫兰迪森林绿，降 = 焦赭
+// 版本对比态的配色（贴合纸感主题）：新增/升 = 森林绿，降 = 焦赭
 const COMPARE_COLORS = {
   added: '#3f6b4f',
   scoreUp: '#3f6b4f',
   scoreDown: '#9c5a30',
 };
 
-// 领域色统一取 constants 的 DOMAIN_COLORS（莫兰迪色，与全站一致，雷达不再自持一份）
+// 领域色统一取 constants 的 DOMAIN_COLOR_TOKENS，避免扇区、标签、书籍点颜色漂移。
+
+const getBookPointRadius = (score: number) => {
+  const clampedScore = Math.min(Math.max(score, 3), 5);
+  const progress = (clampedScore - 3) / 2;
+  return MIN_BOOK_POINT_RADIUS + progress * (MAX_BOOK_POINT_RADIUS - MIN_BOOK_POINT_RADIUS);
+};
 
 const RadarChart = ({ points, domainGroups, className, versionChanges = null }: RadarChartProps) => {
   const { loadingStatus, viewState, setHoveredBook, selectBook } = useResourceStore();
@@ -115,14 +123,14 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
     for (let i = 0; i < 8; i++) {
       const domain = DOMAINS[i];
       const isActive = activeDomain === domain.id;
-      const petalRadius = getPetalRadius(domain.id) + (isActive ? 18 : 0);
+      const petalRadius = getPetalRadius(domain.id) + (isActive ? 12 : 0);
       const startAngle = i * anglePerSector - Math.PI / 2 + angleGap;
       const endAngle = (i + 1) * anglePerSector - Math.PI / 2 - angleGap;
       const startX = centerX + Math.cos(startAngle) * petalRadius;
       const startY = centerY + Math.sin(startAngle) * petalRadius;
       const endX = centerX + Math.cos(endAngle) * petalRadius;
       const endY = centerY + Math.sin(endAngle) * petalRadius;
-      const domainColor = DOMAIN_COLORS[domain.id];
+      const colorToken = getDomainColorToken(domain.id);
 
       const pathData = [
         `M ${centerX} ${centerY}`,
@@ -135,11 +143,10 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
         <path
           key={`sector-${domain.id}`}
           d={pathData}
-          fill={domainColor}
-          opacity={isActive ? 0.34 : 0.22}
-          stroke={INK}
-          strokeWidth={isActive ? 1.2 : 0.7}
-          strokeOpacity={isActive ? 0.46 : 0.24}
+          fill={isActive ? colorToken.sectorHover : colorToken.sector}
+          stroke={colorToken.dotDark}
+          strokeWidth={isActive ? 1 : 0.6}
+          strokeOpacity={isActive ? 0.3 : 0.12}
           onMouseEnter={() => setHoveredDomain(domain.id)}
           onMouseLeave={() => setHoveredDomain(null)}
           style={{
@@ -204,8 +211,8 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
     return DOMAINS.map((domain, i) => {
       const angle = (i + 0.5) * anglePerSector - Math.PI / 2;
       const isActive = activeDomain === domain.id;
-      const petalRadius = getPetalRadius(domain.id);
-      const labelRadius = Math.min(petalRadius + 30, maxRadius + 22);
+      const colorToken = getDomainColorToken(domain.id);
+      const labelRadius = maxRadius + 34;
       const x = centerX + Math.cos(angle) * labelRadius;
       const y = centerY + Math.sin(angle) * labelRadius;
       const rotate = (angle * 180) / Math.PI;
@@ -218,7 +225,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           y={y}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill={isActive ? DOMAIN_COLORS[domain.id] : INK}
+          fill={isActive ? colorToken.base : colorToken.labelMuted}
           fontSize={12}
           fontStyle="italic"
           fontWeight={isActive ? 700 : 500}
@@ -264,7 +271,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           <circle
             cx={x}
             cy={y}
-            r={18}
+            r={getBookPointRadius(snap.recommendationScore)}
             fill="none"
             stroke={color}
             strokeWidth={2}
@@ -320,7 +327,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
     return points.map((item) => {
       const x = centerX + item.x * maxRadius;
       const y = centerY + item.y * maxRadius;
-      const domainColor = DOMAIN_COLORS[item.book.domain];
+      const colorToken = getDomainColorToken(item.book.domain);
       const isHovered = viewState.hoveredBookId === item.book.id;
       const isSelected = viewState.selectedBookId === item.book.id;
       const change = versionChanges?.changesByBookId[item.book.id];
@@ -334,8 +341,8 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
               ? 1.1
               : 1
           : 1;
-      const baseRadius = 18;
-      const radius = baseRadius * (isHovered || isSelected ? 1.4 : 1) * compareMultiplier;
+      const baseRadius = getBookPointRadius(item.book.recommendationScore);
+      const radius = baseRadius * (isHovered || isSelected ? 1.24 : 1) * compareMultiplier;
       const isDown = showCompare && change?.type === 'score_down';
       const label = String(item.displayNumber);
       const fontSize = label.length > 2 ? 10 : 12;
@@ -344,23 +351,14 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
         <g
           key={`book-${item.book.id}`}
           className="book-point"
-          onMouseEnter={(e) => {
+          onMouseEnter={() => {
             setHoveredBook(item.book.id);
             setTooltip({
               visible: true,
-              x: e.clientX + 15,
-              y: e.clientY - 10,
+              x,
+              y,
               book: item.book,
             });
-          }}
-          onMouseMove={(e) => {
-            if (tooltip.visible) {
-              setTooltip((prev) => ({
-                ...prev,
-                x: e.clientX + 15,
-                y: e.clientY - 10,
-              }));
-            }
           }}
           onMouseLeave={() => {
             setHoveredBook(null);
@@ -372,19 +370,35 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
           <circle
             cx={x}
             cy={y}
-            r={radius * 1.5}
-            fill={domainColor}
-            opacity={isDown ? 0.08 : 0.18}
+            r={radius * 1.55}
+            fill={colorToken.dotDark}
+            opacity={isDown ? 0.08 : 0.14}
+          />
+          <circle
+            cx={x + radius * 0.16}
+            cy={y + radius * 0.2}
+            r={radius * 0.96}
+            fill={colorToken.dotDark}
+            opacity={isDown ? 0.11 : 0.18}
           />
           <circle
             cx={x}
             cy={y}
             r={radius}
-            fill={domainColor}
-            fillOpacity={isDown ? 0.55 : undefined}
+            fill={`url(#book-dot-${item.book.domain})`}
+            fillOpacity={isDown ? 0.78 : 0.98}
             stroke={PAPER_LIGHT}
-            strokeWidth={isSelected ? 3 : 2}
+            strokeWidth={isSelected ? 2.8 : 1.8}
+            filter="url(#book-dot-shadow)"
             style={{ transition: 'r 0.2s ease-out' }}
+          />
+          <circle
+            cx={x}
+            cy={y}
+            r={radius * 0.9}
+            fill={`url(#book-wood-grain-${item.book.domain})`}
+            opacity={isDown ? 0.18 : 0.3}
+            pointerEvents="none"
           />
           <text
             x={x}
@@ -395,7 +409,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
             fontSize={fontSize}
             fontWeight={600}
             stroke={INK}
-            strokeWidth={3}
+            strokeWidth={2.6}
             paintOrder="stroke"
           >
             {label}
@@ -409,7 +423,6 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
   // 避免被相邻书籍圆点遮挡（对比标记不拦截鼠标事件，悬停/点击仍落在圆点上）。
   const renderCompareMarkers = () => {
     if (!versionChanges) return null;
-    const baseRadius = 18;
 
     return points.map((item) => {
       const change = versionChanges.changesByBookId[item.book.id];
@@ -429,7 +442,7 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
       const y = centerY + item.y * maxRadius;
       const multiplier =
         change.type === 'added' ? 1.2 : change.type === 'score_up' ? 1.1 : 1;
-      const radius = baseRadius * multiplier;
+      const radius = getBookPointRadius(item.book.recommendationScore) * multiplier;
       const color =
         change.type === 'score_down' ? COMPARE_COLORS.scoreDown : COMPARE_COLORS.added;
 
@@ -468,10 +481,10 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
 
   if (loadingStatus === 'loading') {
     return (
-      <div className="relative flex aspect-square min-h-[320px] w-full items-center justify-center">
+      <div className="relative flex aspect-square min-h-[280px] w-full items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-slate-700 border-t-[#4a5d4e]" />
-          <p className="text-lg text-[var(--paper-muted)]">加载中...</p>
+          <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-4 border-slate-700 border-t-[var(--paper-accent)]" />
+          <p className="text-sm text-[var(--paper-muted)]">加载中...</p>
         </div>
       </div>
     );
@@ -479,9 +492,9 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
 
   if (points.length === 0) {
     return (
-      <div className="relative flex aspect-square min-h-[320px] w-full items-center justify-center">
+      <div className="relative flex aspect-square min-h-[280px] w-full items-center justify-center">
         <div className="text-center">
-          <p className="text-lg text-[var(--paper-muted)]">无符合条件的书籍</p>
+          <p className="text-sm text-[var(--paper-muted)]">无符合条件的资料</p>
         </div>
       </div>
     );
@@ -508,6 +521,56 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
               <feFuncA type="table" tableValues="0 0.08" />
             </feComponentTransfer>
           </filter>
+          <filter id="book-dot-shadow" x="-45%" y="-45%" width="190%" height="190%">
+            <feDropShadow dx="1.8" dy="2.4" stdDeviation="1.4" floodColor={INK} floodOpacity="0.28" />
+          </filter>
+          {DOMAINS.map((domain) => {
+            const colorToken = getDomainColorToken(domain.id);
+
+            return (
+              <radialGradient
+                key={`dot-gradient-${domain.id}`}
+                id={`book-dot-${domain.id}`}
+                cx="38%"
+                cy="30%"
+                r="82%"
+              >
+                <stop offset="0%" stopColor={colorToken.dotLight} stopOpacity="0.72" />
+                <stop offset="36%" stopColor={colorToken.base} stopOpacity="1" />
+                <stop offset="74%" stopColor={colorToken.base} stopOpacity="0.96" />
+                <stop offset="100%" stopColor={colorToken.dotDark} stopOpacity="1" />
+              </radialGradient>
+            );
+          })}
+          {DOMAINS.map((domain) => {
+            const colorToken = getDomainColorToken(domain.id);
+
+            return (
+              <pattern
+                key={`wood-grain-${domain.id}`}
+                id={`book-wood-grain-${domain.id}`}
+                width="22"
+                height="18"
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(-18)"
+              >
+                <path
+                  d="M-4 5 C 2 2, 8 8, 26 4"
+                  fill="none"
+                  stroke={colorToken.dotDark}
+                  strokeOpacity="0.34"
+                  strokeWidth="1.1"
+                />
+                <path
+                  d="M-3 12 C 5 16, 12 10, 26 14"
+                  fill="none"
+                  stroke={PAPER_LIGHT}
+                  strokeOpacity="0.16"
+                  strokeWidth="0.8"
+                />
+              </pattern>
+            );
+          })}
           {/* 纸纹只作用于雷达圆内，圆外四角保持透明，露出底层书名 */}
           <clipPath id="radar-circle-clip">
             <circle cx={centerX} cy={centerY} r={maxRadius} />
@@ -542,10 +605,13 @@ const RadarChart = ({ points, domainGroups, className, versionChanges = null }: 
 
       {tooltip.visible && tooltip.book && (
         <div
-          className="paper-card fixed z-50 min-w-[250px] rounded-lg border border-slate-700 bg-slate-800 p-4 shadow-xl"
+          className="paper-card absolute z-50 min-w-[220px] max-w-[280px] rounded-lg border border-slate-700 bg-slate-800 p-3 shadow-xl"
           style={{
-            left: tooltip.x,
-            top: tooltip.y,
+            left: `${(tooltip.x / width) * 100}%`,
+            top: `${(tooltip.y / height) * 100}%`,
+            transform: `translate(${tooltip.x > centerX ? 'calc(-100% - 18px)' : '18px'}, ${
+              tooltip.y > centerY ? 'calc(-100% - 18px)' : '18px'
+            })`,
             pointerEvents: 'none',
           }}
         >

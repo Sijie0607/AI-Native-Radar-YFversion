@@ -1,11 +1,37 @@
-# 书籍推荐功能 Brief
+# 资料推荐功能 Brief
 
 > **实现现状（2026-08 更新）**：本功能已按 Brief 落地为原型。
-> - 组件：`RecommendationDrawer`（form/result/records 三态）、`RecommendationForm`、`RecommendationResult`、`RecommendationRecords`、`DraftConfirmModal`；入口为导航栏 + 首页筛选面板「书籍推荐」按钮。
+> - 组件：`RecommendationDrawer`（form/result/records 三态）、`RecommendationForm`、`RecommendationResult`、`RecommendationRecords`、`DraftConfirmModal`；入口为导航栏 + 首页筛选面板「资料推荐」按钮。
 > - 数据：`useRecommendationStore` 管理草稿/会话记录，持久化 `sessionStorage`（key `ai-native-radar:recommendation-records`）。
-> - 后端：新增 RPC `submit_recommendation`（`supabase/migrations/001_initial_schema.sql`），后端未配置/失败时回退 mock service（输入含「失败测试」关键词可模拟失败态）；重复判定按「书名 + 作者」在 service 层完成。
-> - **与原 Brief 的主要差异**：Brief §3.2/§9.4/§12.3 曾约定「不做真实后端」，实现时改为「RPC 优先 + mock 兜底」；「推荐指数是否允许半星」已确认为**不允许（整星 3/4/5）**，半星仅用于「评分投票」（见 §12.8）。
+> - 后端：RPC `submit_recommendation` 定义在 `supabase/migrations/001_initial_schema.sql`，并由 `005_recommendation_resource_curation_fields.sql` 扩展资料类型、URL、适合人群建议、前置能力建议和能力主题建议；后端未配置/失败时回退 mock service（输入含「失败测试」关键词可模拟失败态）。
+> - 字段：当前推荐入口支持 `resourceType`、`title`、`author`、`url`、`recommenderName`、`domain`、`fitFor`、`prerequisites`、`reason`、`score`。其中 `url`、推荐人、适合人群、前置能力为选填，`url` 若填写需以 `http://` 或 `https://` 开头。
+> - AI eval：推荐提交会把资料标题、作者/来源、URL、适合人群、前置能力、能力主题建议和推荐理由写入 `ai_evaluations.quality_signals` / `evidence_summary`，作为后续判断领域、难度和质量分的证据包。
+> - **与原 Brief 的主要差异**：Brief §3.2/§9.4/§12.3 曾约定「不做真实后端」，实现时改为「RPC 优先 + mock 兜底」；「推荐指数是否允许半星」已确认为**不允许（整星 3/4/5）**，半星仅用于「评分投票」（见 §12.8）；内容对象已从「书籍」扩展为「书籍、在线课程/官方文档、文章/其他资料」。
 > - 记录与草稿仍仅限当前会话，推荐不会自动进入正式雷达（后端 `submit_recommendation` 写入 `recommendations` 表并置 pending，`radar_books` 视图只取 `status = 'published'`）。
+
+## 0. 2026-08 资料推荐入口扩展
+
+本次实现基于 Excel 字段和当前数据库表进行扩展：
+
+| 前端字段 | 用户填写复杂度 | 写入位置 | 后续用途 |
+|---|---:|---|---|
+| `resourceType` | 单选 | `recommendations.resource_type`；新资料同时写入 `resources.resource_type` | 区分书籍、课程/文档、文章/其他资料，并在列表/详情展示 |
+| `title` | 必填文本 | `recommendations.title`；新资料写入 `resources.title` / `normalized_title` | 查重、展示、AI eval 证据 |
+| `author` | 必填文本 | `recommendations.author`；新资料写入 `resources.author` / `normalized_author` | 查重、展示、AI eval 证据 |
+| `url` | 选填 URL | `recommendations.url`；新资料写入 `resources.url` / `source_note` | 详情页跳转、资料追溯、AI eval 证据 |
+| `fitFor` | 多选 | `recommendations.fit_for_suggestions`；新资料写入 `resources.fit_for` | 适合人群展示、难度判断辅助 |
+| `prerequisites` | 多选 | `recommendations.prerequisite_suggestions`；新资料写入 `resources.tags` | 能力类型展示、难度判断辅助 |
+| 能力主题建议 | 系统根据 `prerequisites` 生成 | `recommendations.ability_theme_suggestions`；新资料写入 `resources.ability_themes` | 雷达领域/圈层判断、AI eval 证据 |
+| `reason` | 必填长文本 | `recommendations.reason`；新资料写入 `resources.reason_full` | 推荐解释、质量判断 |
+| `score` | 必填整星 | `recommendations.score` | 推荐指数聚合 |
+
+适合人群选项来自 Excel `能力主题` 的前缀，例如 `【全员通用】`、`【技术-应用】`、`【产品】`；能力类型来自 `能力主题` 的更概括标签，例如 `Prompt 工程`、`LLM 应用架构`、`AI 数据治理`。用户只需要多选标签，不需要手写完整能力主题。
+
+推荐入口的交互密度规则：
+- 未选择适合人群时，`能力类型` 默认只展示 `全员 / AI 初学者` 对应的能力类型，避免入口展开后出现过多按钮。
+- 选择适合人群后，能力类型列表只展示当前人群相关选项；取消人群选择时回到初学者默认可见范围。
+- 点击能力类型只更新 `prerequisites`，不会反向自动勾选或取消 `fitFor`。
+- 桌面端推荐抽屉宽度约为 `38.2vw`，让页面未被抽屉覆盖的部分接近 `61.8%`。
 
 ## 1. 功能背景
 
@@ -388,6 +414,7 @@ AI-Native 读书雷达当前主要帮助用户浏览和发现值得阅读的 AI 
 最小字段建议包括：
 - `title`
 - `author`
+- `recommenderName`：推荐人姓名，可选填；不填写时按“当前会话用户”记录
 - `domain`
 - `reason`
 - `score`
@@ -421,6 +448,7 @@ AI-Native 读书雷达当前主要帮助用户浏览和发现值得阅读的 AI 
 - `id`
 - `title`
 - `author`
+- `recommenderName?`
 - `domain`
 - `score`
 - `reason`

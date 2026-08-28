@@ -5,6 +5,7 @@ import {
   RecommendationSubmissionResult,
 } from '../types';
 import { callBackendRpc, isBackendConfigured } from './backendClient';
+import { getAbilityThemeSuggestions } from '../constants';
 
 interface SubmitRecommendationParams {
   draft: BookRecommendationDraft;
@@ -18,6 +19,8 @@ const delay = (ms: number) =>
   });
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
+
+const normalizeRecommenderName = (value: string) => value.trim() || '当前会话用户';
 
 const toExistingBookSnapshot = (book: Book): RecommendationExistingBookSnapshot => ({
   id: book.id,
@@ -51,9 +54,12 @@ export const recommendationService = {
           p_domain: draft.domain,
           p_reason: draft.reason.trim(),
           p_score: draft.score,
-          p_resource_type: '书籍',
-          p_url: null,
-          p_recommender_name: '当前会话用户',
+          p_resource_type: draft.resourceType,
+          p_url: draft.url.trim() || null,
+          p_recommender_name: normalizeRecommenderName(draft.recommenderName),
+          p_fit_for_suggestions: draft.fitFor,
+          p_prerequisite_suggestions: draft.prerequisites,
+          p_ability_theme_suggestions: getAbilityThemeSuggestions(draft.prerequisites),
           p_is_anonymous: false,
           p_allow_duplicate_submit: allowDuplicateSubmit,
         });
@@ -85,7 +91,7 @@ export const recommendationService = {
     if (duplicateBook && !allowDuplicateSubmit) {
       return {
         status: 'duplicate',
-        message: '该书已存在，你可以补充推荐理由后再次提交。',
+        message: '该资料已存在，你可以补充推荐理由后再次提交。',
         submittedAt: new Date().toISOString(),
         existingBook: toExistingBookSnapshot(duplicateBook),
       };
@@ -95,7 +101,7 @@ export const recommendationService = {
       status: 'success',
       message: duplicateBook
         ? '已接收你的补充推荐理由，但不会自动进入正式雷达。'
-        : '已接收你的书籍推荐，但不会自动进入正式雷达。',
+        : '已接收你的资料推荐，但不会自动进入正式雷达。',
       submittedAt: new Date().toISOString(),
       existingBook: duplicateBook ? toExistingBookSnapshot(duplicateBook) : undefined,
     };

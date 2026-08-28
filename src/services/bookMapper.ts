@@ -4,6 +4,11 @@ export interface BackendRecommendationRow {
   id: string;
   recommender: string;
   isAnonymous: boolean;
+  resourceType?: string | null;
+  url?: string | null;
+  fitForSuggestions?: string[] | null;
+  prerequisiteSuggestions?: string[] | null;
+  abilityThemeSuggestions?: string[] | null;
   reason: string;
   score: number;
   recommendedAt: string;
@@ -15,6 +20,7 @@ export interface BackendRadarBookRow {
   title: string;
   subtitle: string | null;
   author: string | null;
+  url?: string | null;
   cover: string | null;
   domain: Domain;
   difficulty_level: DifficultyLevel;
@@ -44,6 +50,11 @@ const mapRecommendation = (item: BackendRecommendationRow): Recommendation => ({
   id: item.id,
   recommender: item.recommender,
   isAnonymous: item.isAnonymous,
+  resourceType: item.resourceType ?? undefined,
+  url: item.url ?? undefined,
+  fitForSuggestions: item.fitForSuggestions ?? undefined,
+  prerequisiteSuggestions: item.prerequisiteSuggestions ?? undefined,
+  abilityThemeSuggestions: item.abilityThemeSuggestions ?? undefined,
   reason: item.reason,
   score: item.score,
   recommendedAt: item.recommendedAt,
@@ -55,6 +66,7 @@ export const mapBackendBook = (row: BackendRadarBookRow, index: number): Book =>
   title: row.title,
   subtitle: row.subtitle ?? undefined,
   author: row.author ?? '作者待补充',
+  url: row.url ?? undefined,
   cover: row.cover ?? undefined,
   domain: row.domain,
   difficultyLevel: row.difficulty_level,

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Book } from '../../types';
-import { DOMAIN_LABELS, DOMAIN_COLORS, DIFFICULTIES } from '../../constants';
+import { DOMAIN_LABELS, DIFFICULTIES, getDomainColorToken } from '../../constants';
 import { Star } from 'lucide-react';
 import { useBookScoringStore } from '../../store/useBookScoringStore';
 
@@ -14,27 +14,35 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
   const difficultyConfig = DIFFICULTIES[resource.ringIndex];
   const { sessionScores } = useBookScoringStore();
   const hasSessionScore = Boolean(sessionScores[resource.id]);
+  const colorToken = getDomainColorToken(resource.domain);
 
   return (
     <div
       onClick={() => navigate(`/detail/${resource.id}`)}
-      className="paper-card bg-slate-800 rounded-xl border border-slate-700 p-6 cursor-pointer hover:border-[#4a5d4e] hover:-translate-y-1 transition-all"
+      className="paper-card bg-slate-800 rounded-xl border border-slate-700 p-4 cursor-pointer hover:border-[var(--paper-accent)] hover:-translate-y-0.5 transition-all"
     >
-      <div className="flex items-start justify-between mb-4">
+      <div className="mb-3 flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-50 mb-1">
+          <h3 className="mb-1 text-base font-semibold leading-6 text-slate-50">
             {resource.title}
           </h3>
           <p className="text-slate-400 text-sm">{resource.author}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mb-4">
+      <div className="mb-3 flex items-center gap-2">
         <span
-          className="px-2 py-1 rounded-full text-xs font-medium text-white"
-          style={{ backgroundColor: DOMAIN_COLORS[resource.domain] }}
+          className="rounded-full border px-2 py-1 text-xs font-medium"
+          style={{
+            backgroundColor: colorToken.tagBg,
+            borderColor: colorToken.tagBorder,
+            color: colorToken.text,
+          }}
         >
           {DOMAIN_LABELS[resource.domain]}
+        </span>
+        <span className="rounded-full bg-slate-700 px-2 py-1 text-xs font-medium text-slate-300">
+          {resource.contentType}
         </span>
         <div className="flex items-center gap-1">
           <Star size={14} className="text-amber-800 fill-current" />
@@ -62,14 +70,14 @@ const ResourceCard = ({ resource, onScoreClick }: ResourceCardProps) => {
       </div>
 
       {onScoreClick && (
-        <div className="mt-5 flex justify-end">
+        <div className="mt-4 flex justify-end">
           <button
             type="button"
             onClick={(event) => {
               event.stopPropagation();
               onScoreClick(resource);
             }}
-            className="rounded-xl border border-[#4a5d4e]/40 bg-[#4a5d4e]/10 px-3 py-2 text-sm font-medium text-[#4a5d4e] transition-colors hover:border-[#4a5d4e]/60 hover:bg-[#4a5d4e]/20"
+            className="rounded-lg border border-[#0E42D2]/40 bg-[#0E42D2]/10 px-3 py-1.5 text-sm font-medium text-[var(--paper-accent)] transition-colors hover:border-[#0E42D2]/60 hover:bg-[#0E42D2]/20"
           >
             {hasSessionScore ? '修改评分' : '评分投票'}
           </button>

@@ -3,7 +3,7 @@
 > **实现现状（2026-08 更新）**：本功能已按 Brief 落地为原型（前端 + Supabase 后端），详见 [radar-home-visual-update.md](./radar-home-visual-update.md) §2.3。
 > - 后端（`supabase/migrations/003_radar_versions.sql`）：新增表 `radar_versions`（版本元数据）、`radar_version_books`（版本内书目快照，`resource_id` 不加外键以支持幽灵书）；RPC `generate_weekly_version()`（当前雷达全量快照生成新版本）、`get_version_diff()`（最近两版元数据 + 上一版书目快照）。**含可删除的演示差异数据**（`ghost-demo-1`，一张"上版独有"的书）。注：前端已不展示「删除」类别，该数据不再产生可见效果，可保留可删除。
 > - 前端：`src/types/versionCompare.ts`（`VersionDiff` 等）、`src/utils/versionCompare.ts`（`computeVersionCompareData`：以 `resourceId` 匹配，产出 `added / score_up / score_down / unchanged` + `changedBooks`）、`src/services/versionCompareService.ts`（RPC 优先，失败回退演示数据；无上一版时不兜底，返回 `null`）。
-> - 首页（`src/pages/Home/index.tsx`）：「本周更新」入口按钮 + 左上角浮层面板（第 N 期 vs 第 M 期、新增/指数升/指数降计数，附全局提示「雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注」）；diff 拉取一次后本地缓存复用。
+> - 首页（`src/pages/Home/index.tsx`）：「本周更新」入口按钮 + 导航下方右上角固定面板（第 N 期 vs 第 M 期、新增/指数升/指数降计数，附全局提示「雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注」）；diff 拉取一次后本地缓存复用。
 > - 雷达对比态渲染（`src/components/RadarChart`）：被筛选隐藏但有变化的书离屏迷你标记、点位上「新 / ↑ / ↓」徽标；状态优先级 `selected > hover > 对比态 > 默认`；对比色 `#3f6b4f`（add/up）、`#9c5a30`（down）。**跌出雷达的书不渲染残影、不单独标注**。
 > - **视觉权重字段（`point_radius` / halo / stroke / fill 等）随快照存储，但本轮不参与渲染**（雷达点位渲染仍由当前 `radar_books` 实时数据驱动）。
 > - **视觉权重字段（`point_radius` / halo / stroke / fill 等）随快照存储，但本轮不参与渲染**（雷达点位渲染仍由当前 `radar_books` 实时数据驱动）。
@@ -214,7 +214,7 @@
 ### 10.3 前端新增（建议 → 已实现）
 
 - 版本对比类型（`src/types/versionCompare.ts`：`VersionDiff` / `BookChangeType` 等）。
-- 首页对比入口 + 对比态渲染（`RadarChart` 新增 `versionChanges` props，`Home` 挂「本周更新」按钮 + 左上角面板）。
+- 首页对比入口 + 对比态渲染（`RadarChart` 新增 `versionChanges` props，`Home` 挂「本周更新」按钮 + 导航下方右上角固定面板）。
 - 加载对比数据的 service（`src/services/versionCompareService.ts`，复用 `backendClient`，失败回退演示数据）。
 
 ### 10.4 组件影响范围

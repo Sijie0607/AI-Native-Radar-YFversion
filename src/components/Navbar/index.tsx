@@ -8,13 +8,13 @@ const Navbar = () => {
 
   return (
     <nav className="paper-nav fixed top-0 left-0 right-0 bg-slate-900 border-b border-slate-800 z-50">
-      <div className="container mx-auto flex h-16 items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between gap-3 px-4 lg:px-5">
         <Link
           to="/"
           className="min-w-0 flex items-center gap-2 text-slate-50"
         >
-          <BookOpen size={24} className="flex-shrink-0 text-[#4a5d4e]" />
-          <span className="truncate text-base font-bold sm:text-xl">AI-Native 读书雷达</span>
+          <BookOpen size={22} className="flex-shrink-0 text-[var(--paper-accent)]" />
+          <span className="truncate text-base font-bold sm:text-lg">AI-Native 读书雷达</span>
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
@@ -22,7 +22,7 @@ const Navbar = () => {
             to="/"
             className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors sm:px-0 sm:py-0 ${
               location.pathname === '/'
-                ? 'text-[#8fb09e]'
+                ? 'text-[var(--paper-accent)]'
                 : 'text-slate-400 hover:text-slate-50'
             }`}
           >
@@ -33,7 +33,7 @@ const Navbar = () => {
             to="/list"
             className={`flex items-center gap-2 rounded-lg px-2 py-2 text-sm transition-colors sm:px-0 sm:py-0 ${
               location.pathname === '/list'
-                ? 'text-[#8fb09e]'
+                ? 'text-[var(--paper-accent)]'
                 : 'text-slate-400 hover:text-slate-50'
             }`}
           >
@@ -44,10 +44,10 @@ const Navbar = () => {
           <button
             type="button"
             onClick={openRecommendation}
-            className="inline-flex items-center gap-2 rounded-full bg-[#4a5d4e] px-3 py-2 text-sm font-medium text-white transition-all hover:bg-[#55685a] hover:shadow-lg hover:shadow-[#4a5d4e]/25 sm:px-4"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--paper-accent)] px-3 py-1.5 text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[#0E42D2]/20 sm:px-4"
           >
             <BookPlus size={18} />
-            <span className="hidden sm:inline">书籍推荐</span>
+            <span className="hidden sm:inline">资料推荐</span>
           </button>
         </div>
       </div>

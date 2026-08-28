@@ -1,6 +1,6 @@
-import { X, BookOpen, User, Star, Target, BookMarked, Tag, CheckCircle, MessageSquare } from 'lucide-react';
+import { X, BookOpen, User, Star, Target, BookMarked, Tag, CheckCircle, MessageSquare, ExternalLink } from 'lucide-react';
 import { useResourceStore } from '../../store/useResourceStore';
-import { getDomainConfig, DIFFICULTIES } from '../../constants';
+import { getDomainColorToken, getDomainConfig, DIFFICULTIES } from '../../constants';
 import { useBookScoringStore } from '../../store/useBookScoringStore';
 
 interface DetailSidebarProps {
@@ -17,11 +17,12 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
   const domainConfig = getDomainConfig(selectedBook.domain);
   const difficultyConfig = DIFFICULTIES[selectedBook.ringIndex];
   const hasSessionScore = Boolean(sessionScores[selectedBook.id]);
+  const colorToken = getDomainColorToken(selectedBook.domain);
 
   return (
     <div className="paper-drawer fixed inset-y-0 right-0 z-50 w-full border-l border-slate-700 bg-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out translate-x-0 sm:w-[450px]">
       {/* 头部 */}
-      <div className="border-b border-slate-700 p-4 sm:p-6">
+      <div className="border-b border-slate-700 p-4 sm:p-5">
         <div className="flex items-start justify-between">
           <div className="flex-1 pr-4">
             <h2 className="text-2xl font-bold text-slate-50 mb-2">{selectedBook.title}</h2>
@@ -31,6 +32,22 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
             <div className="flex items-center gap-2">
               <User size={16} className="text-slate-400" />
               <span className="text-slate-300 text-sm">{selectedBook.author}</span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300">
+                {selectedBook.contentType}
+              </span>
+              {selectedBook.url && (
+                <a
+                  href={selectedBook.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full bg-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300 transition-colors hover:bg-slate-600 hover:text-slate-100"
+                >
+                  <ExternalLink size={12} />
+                  原始链接
+                </a>
+              )}
             </div>
           </div>
           <button
@@ -46,7 +63,7 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
       </div>
 
       {/* 内容 */}
-      <div className="h-[calc(100vh-80px)] overflow-y-auto p-4 sm:p-6">
+      <div className="h-[calc(100vh-56px)] overflow-y-auto p-4 sm:p-5">
         {/* 封面 */}
         {selectedBook.cover && (
           <div className="mb-6 flex justify-center">
@@ -95,7 +112,14 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
                 <BookOpen size={16} className="text-slate-400" />
                 <span className="text-slate-400 text-sm">领域</span>
               </div>
-              <div className="font-medium" style={{ color: domainConfig.color }}>
+              <div
+                className="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium"
+                style={{
+                  backgroundColor: colorToken.tagBg,
+                  borderColor: colorToken.tagBorder,
+                  color: colorToken.text,
+                }}
+              >
                 {domainConfig.name}
               </div>
             </div>
@@ -112,10 +136,10 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
         {/* 推荐理由 */}
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-slate-50 mb-3 flex items-center gap-2">
-            <MessageSquare size={20} className="text-[#4a5d4e]" />
+            <MessageSquare size={20} className="text-[var(--paper-accent)]" />
             推荐理由
           </h3>
-          <div className="paper-card p-4 bg-slate-700/30 rounded-lg border-l-4 border-[#4a5d4e]">
+          <div className="paper-card rounded-lg border-l-4 border-[var(--paper-accent)] bg-slate-700/30 p-4">
             <p className="text-slate-300 leading-relaxed">{selectedBook.reasonFull}</p>
           </div>
         </div>
@@ -217,6 +241,27 @@ const DetailSidebar = ({ onScoreClick }: DetailSidebarProps) => {
                       ))}
                     </div>
                   </div>
+                  {(rec.resourceType || rec.url) && (
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      {rec.resourceType && (
+                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                          {rec.resourceType}
+                        </span>
+                      )}
+                      {rec.url && (
+                        <a
+                          href={rec.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(event) => event.stopPropagation()}
+                          className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300 transition-colors hover:bg-slate-700 hover:text-slate-100"
+                        >
+                          <ExternalLink size={12} />
+                          推荐链接
+                        </a>
+                      )}
+                    </div>
+                  )}
                   <p className="text-slate-400 text-sm">{rec.reason}</p>
                 </div>
               ))}
