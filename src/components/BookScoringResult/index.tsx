@@ -40,7 +40,7 @@ const BookScoringResult = ({
     : 'border-rose-500/20 bg-rose-500/8';
 
   return (
-    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-4 rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       <div className={`rounded-xl border p-4 ${panelClass}`}>
         <div className="flex items-start gap-3">
           <div
@@ -91,7 +91,7 @@ const BookScoringResult = ({
           <button
             type="button"
             onClick={onReturnBrowse}
-            className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
+            className="rounded-xl bg-[var(--paper-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:opacity-90"
           >
             返回浏览
           </button>

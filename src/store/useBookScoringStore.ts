@@ -32,6 +32,7 @@ const persistSessionValue = <T,>(storageKey: string, value: T) => {
 
 export const EMPTY_BOOK_SCORING_DRAFT: BookScoringDraft = {
   bookId: '',
+  recommenderName: '',
   score: null,
   reason: '',
   mode: 'create',

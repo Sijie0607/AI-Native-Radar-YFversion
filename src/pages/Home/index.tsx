@@ -141,68 +141,129 @@ const Home = () => {
   }, [setBooks, setLoadingStatus]);
 
   return (
-    <main className="pt-16">
-      <div className="container mx-auto px-4 py-8">
+    <main className="pt-14">
+      <div className="mx-auto max-w-[1440px] px-4 py-4 lg:px-5">
         {/* 页面标题和介绍 */}
-        <div className="mb-8 text-center">
-          <h1 className="mb-4 text-3xl font-bold text-slate-50 sm:text-4xl">
+        <div className="mb-4 text-center">
+          <h1 className="mb-2 text-2xl font-bold text-slate-50 sm:text-3xl">
             AI-Native 读书雷达
           </h1>
-          <p className="mx-auto mb-6 max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-            探索 AI 领域的优质书籍，发现最适合你的学习路径。
-            通过雷达图直观地浏览不同领域和难度的书籍推荐。
+          <p className="mx-auto mb-3 max-w-xl text-sm leading-6 text-slate-400">
+            探索 AI 领域的优质资料，发现最适合你的学习路径。
+            通过雷达图直观地浏览不同领域和难度的资料推荐。
           </p>
 
           {/* 图例说明 */}
-          <div className="paper-panel inline-flex flex-wrap items-center justify-center gap-4 rounded-2xl border border-slate-700 bg-slate-800/50 px-5 py-3 sm:gap-6 sm:rounded-full sm:px-6">
+          <div className="paper-panel inline-flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-slate-700 bg-slate-800/50 px-4 py-2 sm:rounded-full">
             <div className="flex items-center gap-2">
               <div className="h-4 w-4 rounded-full bg-slate-500 text-center text-[9px] font-semibold leading-4 text-white">
                 1
               </div>
-              <span className="text-sm text-slate-400">书籍编号</span>
+              <span className="text-xs text-slate-400">资料编号</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-[#4a5d4e]" />
-              <span className="text-slate-400 text-sm">领域</span>
+              <div className="h-3 w-3 rounded-full bg-[var(--paper-accent)]" />
+              <span className="text-xs text-slate-400">领域</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-0.5 bg-slate-600" style={{ borderStyle: 'dashed', borderWidth: 1 }} />
-              <span className="text-slate-400 text-sm">难度圈</span>
+              <div className="h-0.5 w-7 bg-slate-600" style={{ borderStyle: 'dashed', borderWidth: 1 }} />
+              <span className="text-xs text-slate-400">难度圈</span>
             </div>
             <div className="flex items-center gap-2">
-              <Info size={16} className="text-slate-500" />
-              <span className="text-slate-400 text-sm">悬停查看详情</span>
+              <Info size={14} className="text-slate-500" />
+              <span className="text-xs text-slate-400">悬停查看详情</span>
             </div>
           </div>
 
           {/* 历史版本对比入口 */}
-          <div className="mt-5 flex flex-col items-center gap-2">
+          <div className="mt-3 flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={handleToggleCompare}
               disabled={versionCompare.loading}
-              className={`inline-flex items-center gap-2 rounded-full border border-[var(--paper-border)] bg-[var(--paper-panel)] px-5 py-2 text-sm font-medium text-[var(--paper-ink)] shadow-sm transition-all hover:bg-[var(--paper-card)] disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`inline-flex items-center gap-2 rounded-full border border-[var(--paper-border)] bg-[var(--paper-panel)] px-4 py-1.5 text-xs font-medium text-[var(--paper-ink)] shadow-sm transition-all hover:bg-[var(--paper-card)] disabled:cursor-not-allowed disabled:opacity-60 ${
                 versionCompare.active ? 'ring-2 ring-[var(--paper-accent)]' : ''
               }`}
             >
-              <History size={16} />
+              <History size={14} />
               {versionCompare.loading
                 ? '加载中...'
                 : versionCompare.active
                   ? '退出对比'
                   : '本周更新'}
             </button>
-            {versionCompare.notice && (
-              <p className="text-sm text-[var(--paper-muted)]">{versionCompare.notice}</p>
-            )}
-          </div>
+          {versionCompare.notice && (
+            <p className="text-sm text-[var(--paper-muted)]">{versionCompare.notice}</p>
+          )}
         </div>
 
-        <div className="flex flex-col gap-6 xl:flex-row xl:gap-8">
+        {/* 版本对比说明面板：固定在导航下方，避免被雷达外圈书名纸片覆盖 */}
+        {versionCompare.active && versionCompare.diff && (
+          <div className="fixed right-4 top-20 z-[49] w-[min(calc(100vw-2rem),18rem)] rounded-xl border border-[var(--paper-border)] bg-[var(--paper-panel)] p-3 text-left text-[var(--paper-ink)] shadow-[0_18px_45px_rgba(70,52,28,0.18)] backdrop-blur-sm lg:right-6">
+            <div className="mb-1 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold">
+                  第 {versionCompare.diff.currentVersion?.versionNumber ?? '?'} 期
+                  vs 第 {versionCompare.diff.previousVersion?.versionNumber ?? '?'} 期
+                </h3>
+                <p className="text-xs text-[var(--paper-muted)]">
+                  {versionCompare.diff.currentVersion
+                    ? `${fmtDate(versionCompare.diff.currentVersion.weekStart)} 起`
+                    : ''}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleCompare}
+                className="rounded-md p-1 text-[var(--paper-muted)] transition-colors hover:bg-[var(--paper-card)] hover:text-[var(--paper-ink)]"
+                aria-label="退出对比"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-2 space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#3f6b4f' }} />
+                  <span className="text-[var(--paper-muted)]">新增</span>
+                </span>
+                <span className="font-semibold">{compareCounts.added}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--paper-accent)]">↑</span>
+                  <span className="text-[var(--paper-muted)]">指数升</span>
+                </span>
+                <span className="font-semibold">{compareCounts.scoreUp}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <span className="font-bold" style={{ color: '#9c5a30' }}>↓</span>
+                  <span className="text-[var(--paper-muted)]">指数降</span>
+                </span>
+                <span className="font-semibold">{compareCounts.scoreDown}</span>
+              </div>
+            </div>
+
+            {compareCounts.added + compareCounts.scoreUp + compareCounts.scoreDown === 0 && (
+              <p className="mt-2 text-center text-xs text-[var(--paper-muted)]">
+                本周无变化
+              </p>
+            )}
+
+            <p className="mt-2 border-t border-[var(--paper-border)] pt-2 text-[11px] leading-4 text-[var(--paper-muted)]">
+              雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注。
+            </p>
+          </div>
+        )}
+        </div>
+
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:gap-6">
           {/* 左侧边栏 */}
           <aside
             className={`flex-shrink-0 transition-all duration-300 ${
-              isSidebarCollapsed ? 'w-full xl:w-16' : 'w-full xl:w-80'
+              isSidebarCollapsed ? 'w-full xl:w-14' : 'w-full xl:w-72'
             }`}
           >
             {isSidebarCollapsed ? (
@@ -219,16 +280,16 @@ const Home = () => {
                 <Filter size={20} className="hidden xl:block" />
                 <ChevronRight size={20} className="xl:hidden" />
                 {activeFilterCount > 0 && (
-                  <span className="rounded-full bg-[#4a5d4e] px-2 py-0.5 text-xs font-medium text-white xl:absolute xl:-right-2 xl:-top-2">
+                  <span className="rounded-full bg-[var(--paper-accent)] px-2 py-0.5 text-xs font-medium text-white xl:absolute xl:-right-2 xl:-top-2">
                     {activeFilterCount}
                   </span>
                 )}
               </button>
             ) : (
-              <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-4 sm:p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-slate-50 flex items-center gap-2">
-                    <Filter size={20} className="text-[#4a5d4e]" />
+              <div className="paper-panel rounded-xl border border-slate-700 bg-slate-800 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="flex items-center gap-2 text-base font-semibold text-slate-50">
+                    <Filter size={18} className="text-[var(--paper-accent)]" />
                     筛选面板
                   </h3>
                   <button
@@ -244,32 +305,40 @@ const Home = () => {
                 <SearchFilter />
 
                 {/* 统计信息 */}
-                <div className="paper-card mt-6 rounded-xl border border-slate-700 bg-slate-900/50 p-4">
+                <div className="paper-card mt-4 rounded-xl border border-slate-700 bg-slate-900/50 p-3">
                   <div className="text-center">
-                    <div className="mb-1 text-3xl font-bold text-[#4a5d4e]">
+                    <div className="mb-1 text-2xl font-bold text-[var(--paper-accent)]">
                       {filteredBooks().length}
                     </div>
-                    <div className="text-sm text-slate-400">符合条件的书籍</div>
+                    <div className="text-sm text-slate-400">符合条件的资料</div>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={openRecommendation}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-all hover:bg-[#55685a] hover:shadow-lg hover:shadow-[#4a5d4e]/25"
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--paper-accent)] px-4 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 hover:shadow-lg hover:shadow-[#0E42D2]/20"
                 >
                   <BookPlus size={18} />
-                  书籍推荐
+                  资料推荐
                 </button>
               </div>
             )}
           </aside>
 
-          {/* 右侧：雷达 + 书名九宫格 */}
+          {/* 右侧：雷达 + 浮动书名纸片 */}
           <div className="min-w-0 flex-1">
-            <div className="mx-auto w-full max-w-[1200px]">
-              {/* 雷达为主体：占满右侧宽度、上限 1000px，与调整书名框布局之前的大小一致 */}
-              <div className="relative mx-auto aspect-square w-full max-w-[1000px]">
+            <div className="mx-auto w-full max-w-[1280px]">
+              {/* 宽屏舞台：雷达居中，周围书名纸片用左右留白分散摆放 */}
+              <div
+                className="relative mx-auto w-full"
+                style={{ height: 'min(1040px, calc(100vh - 160px))', minHeight: 620 }}
+              >
+                {/* 雷达为主体：同比例放大，仍按视口高度收敛，避免桌面首屏过度滚动 */}
+                <div
+                  className="absolute left-1/2 top-1/2 aspect-square w-full -translate-x-1/2 -translate-y-1/2"
+                  style={{ maxWidth: 'min(1040px, calc(100vh - 160px))' }}
+                >
                   <RadarChart
                     points={radarData.points}
                     domainGroups={radarData.domainGroups}
@@ -277,140 +346,95 @@ const Home = () => {
                     className="absolute inset-0"
                   />
 
-              {/* 版本对比浮层面板（左上角） */}
-              {versionCompare.active && versionCompare.diff && (
-                <div className="absolute left-4 top-4 z-30 w-52 rounded-xl border border-[var(--paper-border)] bg-[var(--paper-panel)] p-4 text-[var(--paper-ink)] shadow-lg">
-                  <div className="mb-1 flex items-start justify-between gap-2">
-                    <div>
-                      <h3 className="text-sm font-bold">
-                        第 {versionCompare.diff.currentVersion?.versionNumber ?? '?'} 期
-                        vs 第 {versionCompare.diff.previousVersion?.versionNumber ?? '?'} 期
-                      </h3>
-                      <p className="text-xs text-[var(--paper-muted)]">
-                        {versionCompare.diff.currentVersion
-                          ? `${fmtDate(versionCompare.diff.currentVersion.weekStart)} 起`
-                          : ''}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleToggleCompare}
-                      className="rounded-md p-1 text-[var(--paper-muted)] transition-colors hover:bg-[var(--paper-card)] hover:text-[var(--paper-ink)]"
-                      aria-label="退出对比"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  <div className="mt-3 space-y-1.5 text-sm">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#3f6b4f' }} />
-                        <span className="text-[var(--paper-muted)]">新增</span>
-                      </span>
-                      <span className="font-semibold">{compareCounts.added}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className="font-bold text-[var(--paper-accent)]">↑</span>
-                        <span className="text-[var(--paper-muted)]">指数升</span>
-                      </span>
-                      <span className="font-semibold">{compareCounts.scoreUp}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <span className="font-bold" style={{ color: '#9c5a30' }}>↓</span>
-                        <span className="text-[var(--paper-muted)]">指数降</span>
-                      </span>
-                      <span className="font-semibold">{compareCounts.scoreDown}</span>
-                    </div>
-                  </div>
-
-                  {compareCounts.added + compareCounts.scoreUp + compareCounts.scoreDown === 0 && (
-                    <p className="mt-2 text-center text-xs text-[var(--paper-muted)]">
-                      本周无变化
-                    </p>
-                  )}
-
-                  {/* 全局提示：交代雷达成员变动规则，解释"书不见了"不代表被删除 */}
-                  <p className="mt-3 border-t border-[var(--paper-border)] pt-2 text-xs leading-5 text-[var(--paper-muted)]">
-                    雷达成员按每领域 Top 8 且指数 ≥3.0 每周变动，未在榜的书不单独标注。
-                  </p>
                 </div>
-              )}
 
-              {/* 8 个领域书名框：lg+ 环绕雷达、各自贴近对应领域扇形方位（上/右上/右/右下/下/左下/左/左上）；<lg 隐藏 */}
+              {/* 8 个领域书名框：lg+ 收拢到雷达外圈，轻微浮动但不倾斜；<lg 隐藏 */}
               <div className="pointer-events-none absolute inset-0 z-10 hidden lg:block">
-                {/* 上：AI 前沿趋势 */}
-                <div className="pointer-events-auto absolute left-1/2 top-1 w-[36%] -translate-x-1/2">
+                {/* 上方：AI 前沿趋势 */}
+                <div className="pointer-events-auto absolute left-1/2 top-[2%] w-[26%] -translate-x-1/2">
                   <DomainBookCard
                     domain={DOMAINS[7]}
                     items={radarData.domainGroups[DOMAINS[7].id] || []}
-                    listMaxHeight="max-h-[120px]"
+                    listMaxHeight="max-h-[84px]"
+                    floating
+                    floatingDelay="-1.6s"
                   />
                 </div>
                 {/* 右上：AI 工程 */}
-                <div className="pointer-events-auto absolute right-1 top-1 w-[24%]">
+                <div className="pointer-events-auto absolute right-[10%] top-[8%] w-[21%]">
                   <DomainBookCard
                     domain={DOMAINS[0]}
                     items={radarData.domainGroups[DOMAINS[0].id] || []}
-                    listMaxHeight="max-h-[170px]"
+                    listMaxHeight="max-h-[120px]"
+                    floating
+                    floatingDelay="-0.4s"
                   />
                 </div>
-                {/* 右：AI 产品设计 */}
-                <div className="pointer-events-auto absolute right-1 top-1/2 w-[18%] -translate-y-1/2">
+                {/* 右侧：AI 产品设计 */}
+                <div className="pointer-events-auto absolute right-[7%] top-1/2 w-[18%] -translate-y-1/2">
                   <DomainBookCard
                     domain={DOMAINS[1]}
                     items={radarData.domainGroups[DOMAINS[1].id] || []}
-                    listMaxHeight="max-h-[220px]"
+                    listMaxHeight="max-h-[150px]"
                     itemTextClass="text-[10px]"
                     stripTagPrefix
+                    floating
+                    floatingDelay="-2.2s"
                   />
                 </div>
                 {/* 右下：Agent 与智能体 */}
-                <div className="pointer-events-auto absolute right-1 bottom-1 w-[24%]">
+                <div className="pointer-events-auto absolute bottom-[8%] right-[10%] w-[21%]">
                   <DomainBookCard
                     domain={DOMAINS[2]}
                     items={radarData.domainGroups[DOMAINS[2].id] || []}
-                    listMaxHeight="max-h-[170px]"
+                    listMaxHeight="max-h-[120px]"
+                    floating
+                    floatingDelay="-3s"
                   />
                 </div>
-                {/* 下：AI 组织变革 */}
-                <div className="pointer-events-auto absolute bottom-1 left-1/2 w-[36%] -translate-x-1/2">
+                {/* 下方：AI 组织变革 */}
+                <div className="pointer-events-auto absolute bottom-[2%] left-1/2 w-[26%] -translate-x-1/2">
                   <DomainBookCard
                     domain={DOMAINS[3]}
                     items={radarData.domainGroups[DOMAINS[3].id] || []}
-                    listMaxHeight="max-h-[120px]"
+                    listMaxHeight="max-h-[84px]"
+                    floating
+                    floatingDelay="-0.9s"
                   />
                 </div>
                 {/* 左下：数据智能与知识 */}
-                <div className="pointer-events-auto absolute bottom-1 left-1 w-[24%]">
+                <div className="pointer-events-auto absolute bottom-[8%] left-[10%] w-[21%]">
                   <DomainBookCard
                     domain={DOMAINS[4]}
                     items={radarData.domainGroups[DOMAINS[4].id] || []}
-                    listMaxHeight="max-h-[170px]"
+                    listMaxHeight="max-h-[120px]"
+                    floating
+                    floatingDelay="-2.7s"
                   />
                 </div>
-                {/* 左：AI 商业落地 */}
-                <div className="pointer-events-auto absolute left-1 top-1/2 w-[18%] -translate-y-1/2">
+                {/* 左侧：AI 商业落地 */}
+                <div className="pointer-events-auto absolute left-[7%] top-1/2 w-[18%] -translate-y-1/2">
                   <DomainBookCard
                     domain={DOMAINS[5]}
                     items={radarData.domainGroups[DOMAINS[5].id] || []}
-                    listMaxHeight="max-h-[220px]"
+                    listMaxHeight="max-h-[150px]"
                     itemTextClass="text-[10px]"
                     stripTagPrefix
+                    floating
+                    floatingDelay="-1.2s"
                   />
                 </div>
                 {/* 左上：AI 伦理治理 */}
-                <div className="pointer-events-auto absolute left-1 top-1 w-[24%]">
+                <div className="pointer-events-auto absolute left-[10%] top-[8%] w-[21%]">
                   <DomainBookCard
                     domain={DOMAINS[6]}
                     items={radarData.domainGroups[DOMAINS[6].id] || []}
-                    listMaxHeight="max-h-[170px]"
+                    listMaxHeight="max-h-[120px]"
+                    floating
+                    floatingDelay="-3.4s"
                   />
                 </div>
               </div>
-
               </div>
 
               {/* 8 个领域书名卡：次要、紧凑，两行四列排开，与雷达零重叠（仅 <lg 显示） */}

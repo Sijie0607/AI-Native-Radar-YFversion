@@ -34,8 +34,11 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
   const allValidationErrors = useMemo<RecommendationDraftErrors>(() => {
     const errors: RecommendationDraftErrors = {};
 
-    if (!draft.title.trim()) errors.title = '请输入书名';
-    if (!draft.author.trim()) errors.author = '请输入作者';
+    if (!draft.title.trim()) errors.title = '请输入资料名称';
+    if (!draft.author.trim()) errors.author = '请输入作者/来源';
+    if (draft.url.trim() && !/^https?:\/\//i.test(draft.url.trim())) {
+      errors.url = '请输入以 http:// 或 https:// 开头的链接';
+    }
     if (!draft.domain) errors.domain = '请选择所属领域';
     if (!draft.reason.trim()) errors.reason = '请填写推荐理由';
     if (draft.score === null) errors.score = '请选择推荐指数';
@@ -60,7 +63,11 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
       Boolean(
         draft.title.trim() ||
           draft.author.trim() ||
+          draft.url.trim() ||
+          draft.recommenderName.trim() ||
           draft.domain ||
+          draft.fitFor.length > 0 ||
+          draft.prerequisites.length > 0 ||
           draft.reason.trim() ||
           draft.score !== null
       ),
@@ -74,9 +81,10 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
           draft.author.trim() &&
           draft.domain &&
           draft.reason.trim() &&
-          draft.score !== null
+          draft.score !== null &&
+          !allValidationErrors.url
       ),
-    [draft]
+    [allValidationErrors.url, draft]
   );
 
   const handleFieldChange = <K extends keyof BookRecommendationDraft>(
@@ -116,7 +124,10 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
     setTouchedFields({
       title: true,
       author: true,
+      url: true,
       domain: true,
+      fitFor: true,
+      prerequisites: true,
       reason: true,
       score: true,
     });
@@ -129,9 +140,14 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
 
     return {
       id: `${result.submittedAt}-${result.status}-${draft.title}-${draft.author}`,
+      resourceType: draft.resourceType,
       title: draft.title.trim(),
       author: draft.author.trim(),
+      url: draft.url.trim() || undefined,
+      recommenderName: draft.recommenderName.trim() || '当前会话用户',
       domain: draft.domain,
+      fitFor: draft.fitFor,
+      prerequisites: draft.prerequisites,
       score: draft.score,
       reason: draft.reason.trim(),
       status: result.status,
@@ -193,16 +209,16 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
         onClick={handleRequestClose}
       />
 
-      <aside className="paper-drawer absolute inset-y-0 right-0 w-full max-w-[440px] border-l border-slate-700 bg-slate-800 shadow-2xl">
+      <aside className="paper-drawer absolute inset-y-0 right-0 w-full border-l border-slate-700 bg-slate-800 shadow-2xl sm:w-[480px] lg:w-[38.2vw] lg:min-w-[500px] lg:max-w-[640px]">
         <div className="flex h-full flex-col">
-          <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-6">
+          <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-5">
             <div className="pr-4">
-              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#4a5d4e]/15 text-[#4a5d4e]">
+              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-[#0E42D2]/15 text-[var(--paper-accent)]">
                 <BookPlus size={22} />
               </div>
-              <h2 className="text-2xl font-bold text-slate-50">书籍推荐</h2>
+              <h2 className="text-2xl font-bold text-slate-50">资料推荐</h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                分享一本你认为值得推荐的 AI 领域书籍，帮助从业者快速找到适合自己的高质量学习参考用书。
+                分享一份你认为值得推荐的 AI 领域资料，帮助从业者快速找到适合自己的高质量学习参考。
               </p>
             </div>
             <button
@@ -214,16 +230,16 @@ const RecommendationDrawer = ({ isOpen, onClose }: RecommendationDrawerProps) =>
             </button>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-            <section className="paper-card rounded-xl border border-[#4a5d4e]/20 bg-[#4a5d4e]/8 p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-[#4a5d4e]">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+            <section className="paper-card rounded-xl border border-[#0E42D2]/20 bg-[#0E42D2]/10 p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--paper-accent)]">
                 <FileText size={16} />
                 推荐说明
               </div>
               <p className="mt-3 text-sm leading-6 text-slate-300">
                 你可以在这里填写推荐信息，并查看本次推荐的后续结果。
                 <br />
-                目前仅支持提交书籍，暂不支持课程、博客或视频。
+                支持提交书籍、在线课程、官方文档、文章或其他 AI 学习资料。
               </p>
             </section>
 

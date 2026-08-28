@@ -27,8 +27,8 @@ body {
   --paper-ink: #211b14;
   --paper-muted: #6f6252;
   --paper-faint: #9b8f7f;
-  --paper-accent: #4a5d4e;
-  --paper-blue: #4a4d5d;
+  --paper-accent: #0e42d2;
+  --paper-blue: #206ccf;
 }
 
 .paper-app {
@@ -68,7 +68,7 @@ body {
     repeating-linear-gradient(0deg, rgba(60, 48, 30, 0.026) 0 1px, transparent 1px 7px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 18px 48px rgba(69, 58, 38, 0.12);
+    0 10px 28px rgba(69, 58, 38, 0.09);
 }
 
 .paper-card {
@@ -78,7 +78,7 @@ body {
     repeating-linear-gradient(90deg, rgba(60, 48, 30, 0.024) 0 1px, transparent 1px 8px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.42),
-    0 10px 24px rgba(69, 58, 38, 0.09);
+    0 6px 16px rgba(69, 58, 38, 0.07);
 }
 
 .paper-drawer {
@@ -87,7 +87,26 @@ body {
     linear-gradient(104deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 40%),
     linear-gradient(76deg, rgba(96, 76, 46, 0.09), rgba(96, 76, 46, 0) 54%),
     repeating-linear-gradient(0deg, rgba(60, 48, 30, 0.026) 0 1px, transparent 1px 7px);
-  box-shadow: -24px 0 60px rgba(69, 58, 38, 0.2);
+  box-shadow: -18px 0 46px rgba(69, 58, 38, 0.16);
+}
+
+@keyframes floatingDomainCard {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.floating-domain-card {
+  animation: floatingDomainCard 6.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.floating-domain-card:hover {
+  animation-play-state: paused;
 }
 
 .paper-app .bg-slate-900,
@@ -187,4 +206,3 @@ body {
     linear-gradient(76deg, rgba(96, 76, 46, 0.09), rgba(96, 76, 46, 0) 54%),
     repeating-linear-gradient(0deg, rgba(60, 48, 30, 0.026) 0 1px, transparent 1px 7px);
 }
-

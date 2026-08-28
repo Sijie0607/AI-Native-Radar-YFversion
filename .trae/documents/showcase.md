@@ -139,7 +139,7 @@
 
 | 分镜 | 操作演示 | 讲解要点 |
 |---|---|---|
-| 1. 首页打开 | 雷达图整体亮相 | 米黄纸面上，8 个莫兰迪色领域扇区 + 3 层虚线难度环 + 编号书点，8 个领域书名框环绕 |
+| 1. 首页打开 | 雷达图整体亮相 | 米黄纸面上，8 个领域 token 扇区 + 3 层虚线难度环 + 木质编号书点，8 个领域书名纸片水平悬浮在外圈 |
 | 2. 结构解读 | 依次指：右上 AI 工程 → 顺时针一圈 → 内/中/外环 | **扇区 = 领域**（AI 工程、Agent 与智能体、数据智能与知识、AI 伦理治理……）；**圈层 = 难度**（内圈入门认知 / 中圈方法实践 / 外圈深度进阶） |
 | 3. 快速探索 | 悬停一个雷达点 | tooltip 弹出书名 / 作者 / 推荐指数 / 推荐理由摘要——雷达上每一颗点就是一本经过专业推荐的书 |
 | 4. 深入查看 | 点击雷达点 → 右侧详情侧栏 | 完整信息、推荐理由、能力主题标签，以及评分入口 |
@@ -302,4 +302,4 @@
 - 版本对比：[radar-version-compare.md](./radar-version-compare.md)
 - 设计规范：[ux-design-guidelines.md](./ux-design-guidelines.md)
 - 架构：[arch.md](./arch.md)
-- 前端更新记录：[morandi-theme-and-learning-path-update.md](./morandi-theme-and-learning-path-update.md)
+- 前端更新记录：[radar-home-visual-update.md](./radar-home-visual-update.md)、[ux-design-guidelines.md](./ux-design-guidelines.md)

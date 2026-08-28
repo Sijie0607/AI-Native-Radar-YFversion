@@ -17,6 +17,11 @@ export interface Recommendation {
   id: string;
   recommender: string;
   isAnonymous: boolean;
+  resourceType?: string;
+  url?: string;
+  fitForSuggestions?: string[];
+  prerequisiteSuggestions?: string[];
+  abilityThemeSuggestions?: string[];
   reason: string;
   score: number; // 3-5
   recommendedAt: string;
@@ -29,6 +34,7 @@ export interface Book {
   title: string;
   subtitle?: string;
   author: string;
+  url?: string;
   cover?: string;
   domain: Domain;
   difficultyLevel: DifficultyLevel;
@@ -95,9 +101,14 @@ export interface DifficultyConfig {
 export type RecommendationScore = 3 | 4 | 5;
 
 export interface BookRecommendationDraft {
+  resourceType: string;
   title: string;
   author: string;
+  url: string;
+  recommenderName: string;
   domain: Domain | '';
+  fitFor: string[];
+  prerequisites: string[];
   reason: string;
   score: RecommendationScore | null;
 }
@@ -123,9 +134,14 @@ export interface RecommendationSubmissionResult {
 
 export interface RecommendationRecord {
   id: string;
+  resourceType?: string;
   title: string;
   author: string;
+  url?: string;
+  recommenderName?: string;
   domain: Domain;
+  fitFor?: string[];
+  prerequisites?: string[];
   score: RecommendationScore;
   reason: string;
   status: RecommendationSubmissionStatus;
@@ -140,17 +156,20 @@ export type BookScoringMode = 'create' | 'edit';
 
 export interface BookScoringDraft {
   bookId: string;
+  recommenderName: string;
   score: BookScoringScore | null;
   reason: string;
   mode: BookScoringMode;
+  originalRecommenderName?: string;
   originalScore?: BookScoringScore;
   originalReason?: string;
 }
 
-export type BookScoringDraftErrors = Partial<Record<'score' | 'reason', string>>;
+export type BookScoringDraftErrors = Partial<Record<keyof BookScoringDraft, string>>;
 
 export interface SessionBookScore {
   bookId: string;
+  recommenderName?: string;
   score: BookScoringScore;
   reason: string;
   submittedAt: string;
@@ -163,6 +182,7 @@ export interface BookScoringRecord {
   bookId: string;
   title: string;
   author: string;
+  recommenderName?: string;
   score: BookScoringScore;
   reason: string;
   actionType: BookScoringActionType;

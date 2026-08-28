@@ -26,9 +26,11 @@ interface BookScoringDrawerProps {
 
 const createDraftFromBook = (book: Book, existingSessionScore?: SessionBookScore): BookScoringDraft => ({
   bookId: book.id,
+  recommenderName: existingSessionScore?.recommenderName ?? '',
   score: existingSessionScore?.score ?? null,
   reason: existingSessionScore?.reason ?? '',
   mode: existingSessionScore ? 'edit' : 'create',
+  originalRecommenderName: existingSessionScore?.recommenderName,
   originalScore: existingSessionScore?.score,
   originalReason: existingSessionScore?.reason,
 });
@@ -48,7 +50,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
   } = useBookScoringStore();
   const [activeBook, setActiveBook] = useState<Book | null>(book);
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
-  const [touchedFields, setTouchedFields] = useState<Partial<Record<'score' | 'reason', boolean>>>({});
+  const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BookScoringDraft, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<BookScoringSubmissionResult | null>(null);
   const [drawerView, setDrawerView] = useState<DrawerView>('form');
@@ -93,7 +95,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
   const visibleValidationErrors = useMemo<BookScoringDraftErrors>(() => {
     const errors: BookScoringDraftErrors = {};
 
-    (Object.keys(touchedFields) as Array<'score' | 'reason'>).forEach((field) => {
+    (Object.keys(touchedFields) as Array<keyof BookScoringDraft>).forEach((field) => {
       if (touchedFields[field] && allValidationErrors[field]) {
         errors[field] = allValidationErrors[field];
       }
@@ -107,8 +109,12 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
       return false;
     }
 
-    return draft.score !== initialDraft.score || draft.reason.trim() !== initialDraft.reason.trim();
-  }, [draft.reason, draft.score, initialDraft]);
+    return (
+      draft.score !== initialDraft.score ||
+      draft.reason.trim() !== initialDraft.reason.trim() ||
+      draft.recommenderName.trim() !== initialDraft.recommenderName.trim()
+    );
+  }, [draft.reason, draft.recommenderName, draft.score, initialDraft]);
 
   const isFormComplete = useMemo(
     () => Boolean(draft.score !== null && draft.reason.trim()),
@@ -149,6 +155,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
       bookId: currentBook.id,
       title: currentBook.title,
       author: currentBook.author,
+      recommenderName: draft.recommenderName.trim() || '当前会话用户',
       score: draft.score,
       reason: draft.reason.trim(),
       actionType: result.actionType,
@@ -163,12 +170,10 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
   };
 
   const handleFieldBlur = (field: keyof BookScoringDraft) => {
-    if (field === 'score' || field === 'reason') {
-      setTouchedFields((prev) => ({
-        ...prev,
-        [field]: true,
-      }));
-    }
+    setTouchedFields((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
   };
 
   const handleSubmit = async () => {
@@ -248,9 +253,9 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
         onClick={handleRequestClose}
       />
 
-      <aside className="paper-drawer absolute inset-y-0 right-0 w-full max-w-[440px] border-l border-slate-700 bg-slate-800 shadow-2xl">
+      <aside className="paper-drawer absolute inset-y-0 right-0 w-full max-w-[420px] border-l border-slate-700 bg-slate-800 shadow-2xl">
         <div className="flex h-full flex-col">
-          <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-6">
+          <div className="flex items-start justify-between border-b border-slate-700 p-4 sm:p-5">
             <div className="pr-4">
               <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/15 text-amber-800">
                 <Star size={22} />
@@ -271,7 +276,7 @@ const BookScoringDrawer = ({ isOpen, book, onClose }: BookScoringDrawerProps) =>
             </button>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
+          <div className="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
             <section className="paper-card rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-amber-800">
                 <FileText size={16} />

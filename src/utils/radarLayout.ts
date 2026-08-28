@@ -1,4 +1,4 @@
-import { Book, Domain, FilterState } from '../types';
+import { Book, DifficultyLevel, Domain, FilterState } from '../types';
 import { DOMAINS } from '../constants';
 
 export const MAX_RADAR_POINTS_PER_DOMAIN = 8;
@@ -17,18 +17,15 @@ export interface RadarBookItem {
 
 const SECTOR_ANGLE = (Math.PI * 2) / 8;
 
-// 每个扇形内 8 个预计算位置，按从中心到边缘、均匀分布。
-// angleOffset 和 radius 都是相对于扇形中心的单位值。
-const SECTOR_POSITIONS: { angleOffset: number; radius: number }[] = [
-  { angleOffset: 0, radius: 0.32 },
-  { angleOffset: -0.15, radius: 0.42 },
-  { angleOffset: 0.15, radius: 0.42 },
-  { angleOffset: -0.24, radius: 0.62 },
-  { angleOffset: 0.24, radius: 0.62 },
-  { angleOffset: 0, radius: 0.72 },
-  { angleOffset: -0.15, radius: 0.85 },
-  { angleOffset: 0.15, radius: 0.85 },
-];
+// 难度决定三层同心半径带：入门在内圈，方法实践在中圈，深度进阶在外圈。
+// 数值为相对于雷达最大半径的比例，保留环线之间的缓冲，避免点压在线上。
+const DIFFICULTY_RADIUS_BANDS: Record<DifficultyLevel, { min: number; max: number }> = {
+  1: { min: 0.18, max: 0.31 },
+  2: { min: 0.42, max: 0.58 },
+  3: { min: 0.72, max: 0.9 },
+};
+
+const RADIUS_LANES = [0.5, 0.18, 0.82, 0.34, 0.66, 0.08, 0.92, 0.58];
 
 function getBaseAngle(sectorIndex: number): number {
   return (sectorIndex + 0.5) * SECTOR_ANGLE - Math.PI / 2;
@@ -66,6 +63,33 @@ function sortBooks(a: Book, b: Book): number {
   return a.displayNumber - b.displayNumber;
 }
 
+function getDifficultyLevel(book: Book): DifficultyLevel {
+  return book.difficultyLevel ?? ((book.ringIndex + 1) as DifficultyLevel);
+}
+
+function getSectorPositionByDifficulty(
+  sectorIndex: number,
+  difficultyLevel: DifficultyLevel,
+  rankInDifficulty: number,
+  totalInDifficulty: number,
+): { x: number; y: number } {
+  const baseAngle = getBaseAngle(sectorIndex);
+  const maxAngleOffset = SECTOR_ANGLE * 0.38;
+  const angleOffset =
+    totalInDifficulty <= 1
+      ? 0
+      : -maxAngleOffset + (rankInDifficulty / (totalInDifficulty - 1)) * maxAngleOffset * 2;
+  const radiusBand = DIFFICULTY_RADIUS_BANDS[difficultyLevel];
+  const radiusLane = RADIUS_LANES[rankInDifficulty % RADIUS_LANES.length];
+  const radius = radiusBand.min + radiusLane * (radiusBand.max - radiusBand.min);
+  const angle = baseAngle + angleOffset;
+
+  return {
+    x: Math.cos(angle) * radius,
+    y: Math.sin(angle) * radius,
+  };
+}
+
 export function buildRadarData(
   books: Book[],
   filters: FilterState,
@@ -98,14 +122,27 @@ export function buildRadarData(
     group.sort((a, b) => sortBooks(a.book, b.book));
 
     const radarGroup = group.slice(0, MAX_RADAR_POINTS_PER_DOMAIN);
-    const baseAngle = getBaseAngle(sectorIndex);
+    const totalsByDifficulty = radarGroup.reduce(
+      (acc, item) => {
+        acc[getDifficultyLevel(item.book)] += 1;
+        return acc;
+      },
+      { 1: 0, 2: 0, 3: 0 } as Record<DifficultyLevel, number>,
+    );
+    const rankByDifficulty = { 1: 0, 2: 0, 3: 0 } as Record<DifficultyLevel, number>;
 
-    radarGroup.forEach((item, index) => {
-      const offset = SECTOR_POSITIONS[index % SECTOR_POSITIONS.length];
-      const angle = baseAngle + offset.angleOffset;
-      const radius = offset.radius;
-      item.x = Math.cos(angle) * radius;
-      item.y = Math.sin(angle) * radius;
+    radarGroup.forEach((item) => {
+      const difficultyLevel = getDifficultyLevel(item.book);
+      const rankInDifficulty = rankByDifficulty[difficultyLevel];
+      const pos = getSectorPositionByDifficulty(
+        sectorIndex,
+        difficultyLevel,
+        rankInDifficulty,
+        totalsByDifficulty[difficultyLevel],
+      );
+      rankByDifficulty[difficultyLevel] += 1;
+      item.x = pos.x;
+      item.y = pos.y;
       item.isOnRadar = true;
       points.push(item);
     });
@@ -133,13 +170,8 @@ export function buildRadarData(
 
 export function getDomainRadarPosition(
   sectorIndex: number,
-  itemIndex: number,
+  ringIndex: number,
 ): { x: number; y: number } {
-  const baseAngle = getBaseAngle(sectorIndex);
-  const offset = SECTOR_POSITIONS[itemIndex % SECTOR_POSITIONS.length];
-  const angle = baseAngle + offset.angleOffset;
-  return {
-    x: Math.cos(angle) * offset.radius,
-    y: Math.sin(angle) * offset.radius,
-  };
+  const difficultyLevel = Math.min(Math.max(ringIndex + 1, 1), 3) as DifficultyLevel;
+  return getSectorPositionByDifficulty(sectorIndex, difficultyLevel, 0, 1);
 }

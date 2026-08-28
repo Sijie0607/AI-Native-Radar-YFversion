@@ -35,7 +35,7 @@ const BookScoringRecords = ({
   onEditRecord,
 }: BookScoringRecordsProps) => {
   return (
-    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-4 rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-slate-50">
@@ -82,6 +82,9 @@ const BookScoringRecords = ({
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
+                <span className="rounded-full bg-slate-700 px-2.5 py-1">
+                  推荐人/评分人：{record.recommenderName || '当前会话用户'}
+                </span>
                 <span className="rounded-full bg-slate-700 px-2.5 py-1">我的评分：{record.score} 星</span>
                 <span className="rounded-full bg-slate-700 px-2.5 py-1">
                   最新推荐指数：{record.updatedRecommendationScore.toFixed(2)} 星
@@ -119,7 +122,7 @@ const BookScoringRecords = ({
         <button
           type="button"
           onClick={onReturnBrowse}
-          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
+          className="rounded-xl bg-[var(--paper-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:opacity-90"
         >
           返回浏览
         </button>

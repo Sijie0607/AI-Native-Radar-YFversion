@@ -1,5 +1,5 @@
 import { History, Trash2 } from 'lucide-react';
-import { DOMAINS } from '../../constants';
+import { DOMAINS, getDomainColorToken } from '../../constants';
 import { RecommendationRecord } from '../../types';
 
 interface RecommendationRecordsProps {
@@ -24,6 +24,16 @@ const STATUS_CLASSES: Record<RecommendationRecord['status'], string> = {
 const getDomainName = (domainId: RecommendationRecord['domain']) =>
   DOMAINS.find((domain) => domain.id === domainId)?.name ?? '未分类';
 
+const getDomainTagStyle = (domainId: RecommendationRecord['domain']) => {
+  const colorToken = getDomainColorToken(domainId);
+
+  return {
+    backgroundColor: colorToken.tagBg,
+    borderColor: colorToken.tagBorder,
+    color: colorToken.text,
+  };
+};
+
 const formatRecordTime = (submittedAt: string) =>
   new Intl.DateTimeFormat('zh-CN', {
     month: 'numeric',
@@ -39,7 +49,7 @@ const RecommendationRecords = ({
   onClearRecords,
 }: RecommendationRecordsProps) => {
   return (
-    <section className="paper-panel space-y-5 rounded-xl border border-slate-700 bg-slate-900/40 p-5">
+    <section className="paper-panel space-y-4 rounded-xl border border-slate-700 bg-slate-900/40 p-4">
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-slate-50">
@@ -80,17 +90,61 @@ const RecommendationRecords = ({
                       {STATUS_LABELS[record.status]}
                     </span>
                   </div>
-                  <p className="mt-1 text-sm text-slate-400">{record.author}</p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {record.author}
+                    {record.resourceType ? ` · ${record.resourceType}` : ''}
+                  </p>
                 </div>
                 <span className="text-xs text-slate-500">{formatRecordTime(record.submittedAt)}</span>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
+                <span
+                  className="rounded-full border px-2.5 py-1 font-medium"
+                  style={getDomainTagStyle(record.domain)}
+                >
+                  {getDomainName(record.domain)}
+                </span>
                 <span className="rounded-full bg-slate-700 px-2.5 py-1">
-                  领域：{getDomainName(record.domain)}
+                  推荐人：{record.recommenderName || '当前会话用户'}
                 </span>
                 <span className="rounded-full bg-slate-700 px-2.5 py-1">推荐指数：{record.score} 星</span>
+                {record.url && (
+                  <a
+                    href={record.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-full bg-slate-700 px-2.5 py-1 transition-colors hover:bg-slate-600 hover:text-slate-100"
+                  >
+                    资料链接
+                  </a>
+                )}
               </div>
+
+              {Boolean(record.fitFor?.length || record.prerequisites?.length) && (
+                <div className="mt-3 space-y-2 text-xs text-slate-300">
+                  {Boolean(record.fitFor?.length) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="text-slate-500">适合：</span>
+                      {record.fitFor?.map((item) => (
+                        <span key={item} className="rounded bg-slate-700 px-2 py-0.5">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {Boolean(record.prerequisites?.length) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      <span className="text-slate-500">前置：</span>
+                      {record.prerequisites?.map((item) => (
+                        <span key={item} className="rounded bg-slate-700 px-2 py-0.5">
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <p className="mt-3 text-sm leading-6 text-slate-300">{record.message}</p>
             </article>
@@ -109,7 +163,7 @@ const RecommendationRecords = ({
         <button
           type="button"
           onClick={onReturnBrowse}
-          className="rounded-xl bg-[#4a5d4e] px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-[#55685a]"
+          className="rounded-xl bg-[var(--paper-accent)] px-4 py-3 text-sm font-medium text-white transition-colors hover:opacity-90"
         >
           返回浏览
         </button>

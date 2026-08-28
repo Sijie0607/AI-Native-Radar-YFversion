@@ -1,0 +1,4295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Native读书雷达-书单推荐与评分本体设计 - Agent 本体设计 | Inspire</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #10213E;
+      --color-accent: #5DB2E2;
+      --color-secondary: #625D9C;
+      --color-success: #00524C;
+      --color-warning: #F59E0B;
+      --color-destructive: #EF4444;
+      --color-background: #FFFFFF;
+      --color-bg-alt: #F5F5F6;
+      --color-foreground: #10213E;
+      --color-text-muted: #64748B;
+      --color-border: #E2E8F0;
+      --shadow-sm: 0 2px 8px rgba(16,33,62,0.08);
+      --shadow-md: 0 10px 15px -3px rgba(16,33,62,0.1);
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --transition: 0.15s ease-out;
+
+      /* Entity type colours */
+      --entity-core-bg: #EFF6FF;
+      --entity-core-border: #3B82F6;
+      --entity-core-badge: #1D4ED8;
+      --entity-reference-bg: #F5F3FF;
+      --entity-reference-border: #7C3AED;
+      --entity-reference-badge: #5B21B6;
+      --entity-event-bg: #FFF7ED;
+      --entity-event-border: #EA580C;
+      --entity-event-badge: #C2410C;
+
+      /* Transition type colours */
+      --transition-normal: #10B981;
+      --transition-exception: #F59E0B;
+      --transition-recovery: #6366F1;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-family);
+      background-color: var(--color-bg-alt);
+      color: var(--color-foreground);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Page wrap ── */
+    .page-wrap {
+      background: var(--color-background);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 40px;
+      width: 85%;
+      margin: 48px auto;
+      border: 1px solid var(--color-border);
+      min-height: calc(100vh - 96px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      margin-bottom: 32px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .header-left { display: flex; flex-direction: column; gap: 6px; }
+    .page-header h1 {
+      font-size: 26px; font-weight: 700; color: var(--color-primary);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .page-header h1::before {
+      content: ""; display: block; width: 4px; height: 24px;
+      background: var(--color-accent); border-radius: 2px; flex-shrink: 0;
+    }
+    .header-meta {
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+      padding-left: 16px; margin-top: 4px;
+    }
+    .meta-badge {
+      font-size: 12px; font-weight: 600; padding: 3px 10px;
+      border-radius: 999px; border: 1px solid;
+    }
+    .meta-badge.domain  { background:#EFF6FF; border-color:#93C5FD; color:#1D4ED8; }
+    .meta-badge.role    { background:#F5F3FF; border-color:#C4B5FD; color:#5B21B6; }
+    .meta-scenario {
+      font-size: 13px; color: var(--color-text-muted);
+      padding-left: 16px; max-width: 600px; line-height: 1.5;
+    }
+    .header-right {
+      text-align: right; display: flex; flex-direction: column;
+      gap: 8px; flex-shrink: 0;
+    }
+    .meta-info { font-size: 12px; color: var(--color-text-muted); }
+    .btn-group { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-primary {
+      background: var(--color-primary); color: white; padding: 8px 14px;
+      border-radius: 6px; font-size: 12px; font-weight: 600; border: none;
+      cursor: pointer; transition: var(--transition);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-secondary {
+      background: white; color: var(--color-primary);
+      border: 1px solid var(--color-border); padding: 8px 14px;
+      border-radius: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: var(--transition);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-secondary:hover { background: var(--color-bg-alt); }
+
+    /* ── Tabs ── */
+    .tab-nav {
+      display: flex; gap: 0; border-bottom: 2px solid var(--color-border);
+      margin-bottom: 32px;
+    }
+    .tab-btn {
+      padding: 12px 24px; font-size: 14px; font-weight: 600;
+      color: var(--color-text-muted); background: none; border: none;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      cursor: pointer; transition: var(--transition);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--color-primary); }
+    .tab-btn.active {
+      color: var(--color-primary); border-bottom-color: var(--color-accent);
+    }
+    .tab-count {
+      font-size: 11px; background: var(--color-bg-alt); color: var(--color-text-muted);
+      border-radius: 999px; padding: 2px 7px; font-weight: 500;
+    }
+    .tab-btn.active .tab-count {
+      background: var(--color-accent); color: white;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 13px; font-weight: 700; color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: 16px; margin-top: 28px;
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ════════════════════════════════════════
+       TAB 1 · OBJECT RELATIONS
+       ════════════════════════════════════════ */
+
+    .entity-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .entity-card {
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 1.5px solid;
+      position: relative;
+      transition: var(--transition);
+    }
+    .entity-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .entity-card.entity-core      { background: var(--entity-core-bg);      border-color: var(--entity-core-border); }
+    .entity-card.entity-reference { background: var(--entity-reference-bg); border-color: var(--entity-reference-border); }
+    .entity-card.entity-event     { background: var(--entity-event-bg);     border-color: var(--entity-event-border); }
+
+    .entity-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+    .entity-badge {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 999px; color: white; flex-shrink: 0; margin-top: 2px;
+    }
+    .entity-core      .entity-badge { background: var(--entity-core-badge); }
+    .entity-reference .entity-badge { background: var(--entity-reference-badge); }
+    .entity-event     .entity-badge { background: var(--entity-event-badge); }
+
+    .entity-name { font-size: 15px; font-weight: 700; color: var(--color-primary); line-height: 1.3; }
+    .entity-desc { font-size: 12px; color: var(--color-text-muted); margin-bottom: 12px; line-height: 1.5; }
+
+    .entity-attrs { margin-bottom: 12px; }
+    .attr-row {
+      display: flex; gap: 6px; align-items: flex-start;
+      font-size: 11px; padding: 4px 0;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .attr-name { font-weight: 600; color: var(--color-foreground); min-width: 80px; flex-shrink: 0; }
+    .attr-type {
+      font-size: 10px; padding: 1px 6px; border-radius: 4px;
+      background: rgba(0,0,0,0.06); color: var(--color-text-muted);
+      font-family: monospace; flex-shrink: 0;
+    }
+    .attr-desc { color: var(--color-text-muted); line-height: 1.4; }
+    .attr-values { color: var(--color-text-muted); font-style: italic; }
+
+    .entity-distinctions { margin-top: 8px; }
+    .distinction-label {
+      font-size: 10px; font-weight: 700; color: #B45309;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+    }
+    .distinction-item {
+      display: flex; gap: 6px; align-items: flex-start;
+      font-size: 11px; color: #92400E; line-height: 1.45;
+      background: rgba(217,119,6,0.08); border-radius: 4px;
+      padding: 4px 8px; margin-bottom: 4px;
+    }
+    .distinction-icon { flex-shrink: 0; }
+
+    /* Relationships table */
+    .rel-table-wrap {
+      border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden;
+    }
+    .rel-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .rel-table th {
+      background: var(--color-bg-alt); font-size: 11px; font-weight: 700;
+      color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .05em;
+      padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--color-border);
+    }
+    .rel-table td { padding: 10px 14px; border-bottom: 1px solid var(--color-border); }
+    .rel-table tr:last-child td { border-bottom: none; }
+    .rel-table tr:hover td { background: var(--color-bg-alt); }
+    .rel-from { font-weight: 600; color: var(--color-primary); }
+    .rel-arrow { color: var(--color-accent); font-weight: 700; text-align: center; }
+    .rel-label {
+      display: inline-block; background: var(--color-secondary);
+      color: white; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+    }
+    .rel-card { font-size: 11px; color: var(--color-text-muted); font-family: monospace; }
+    .rel-desc { color: var(--color-text-muted); font-size: 12px; }
+
+    /* ════════════════════════════════════════
+       TAB 2 · ACTION BOUNDARIES
+       ════════════════════════════════════════ */
+
+    .ab-card {
+      border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+      overflow: hidden; margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .ab-card:hover { box-shadow: var(--shadow-md); }
+
+    .ab-header {
+      background: var(--color-primary); color: white;
+      padding: 14px 20px; display: flex; align-items: flex-start; gap: 12px;
+    }
+    .ab-situation-num {
+      font-size: 11px; font-weight: 700; background: rgba(255,255,255,0.2);
+      border-radius: 999px; padding: 2px 10px; flex-shrink: 0; margin-top: 2px;
+    }
+    .ab-situation-name { font-size: 16px; font-weight: 700; line-height: 1.3; }
+    .ab-situation-desc { font-size: 13px; color: rgba(255,255,255,0.75); margin-top: 4px; line-height: 1.5; }
+
+    .ab-body {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-top: none;
+    }
+    .ab-quadrant {
+      padding: 16px 18px;
+      border-right: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .ab-quadrant:nth-child(2)  { border-right: none; }
+    .ab-quadrant:nth-child(3)  { border-bottom: none; }
+    .ab-quadrant:nth-child(4)  { border-right: none; border-bottom: none; }
+
+    .quadrant-label {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .ql-evidence  { color: #1D4ED8; }
+    .ql-valid     { color: #065F46; }
+    .ql-invalid   { color: #991B1B; }
+    .ql-exception { color: #92400E; }
+
+    .ab-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 12px; line-height: 1.5; margin-bottom: 8px;
+      padding-bottom: 8px; border-bottom: 1px solid var(--color-bg-alt);
+    }
+    .ab-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .ab-item-dot { flex-shrink: 0; margin-top: 3px; }
+    .ab-item-content { color: var(--color-foreground); }
+    .ab-item-source  { font-size: 11px; font-weight: 600; color: #1D4ED8; margin-bottom: 2px; }
+    .ab-item-reason  { font-size: 11px; color: var(--color-text-muted); margin-top: 3px; font-style: italic; }
+    .ab-item-condition { font-size: 11px; color: #92400E; font-weight: 600; }
+    .ab-item-action    { font-size: 12px; color: var(--color-foreground); margin-top: 2px; }
+
+    /* ════════════════════════════════════════
+       TAB 3 · STATE TRANSITIONS
+       ════════════════════════════════════════ */
+
+    .ws-block {
+      border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+      overflow: hidden; margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ws-header {
+      background: linear-gradient(135deg, var(--color-primary) 0%, #1B3A6B 100%);
+      color: white; padding: 14px 20px;
+      display: flex; align-items: flex-start; gap: 12px;
+    }
+    .ws-name { font-size: 17px; font-weight: 700; }
+    .ws-desc { font-size: 13px; color: rgba(255,255,255,0.72); margin-top: 4px; line-height: 1.5; }
+    .ws-anchors { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .ws-anchor-chip {
+      font-size: 11px; background: rgba(255,255,255,0.15); color: white;
+      border-radius: 999px; padding: 2px 10px; font-weight: 500;
+    }
+
+    /* State flow diagram */
+    .ws-flow {
+      padding: 24px 20px;
+      overflow-x: auto;
+      background: white;
+    }
+    .states-row {
+      display: flex; gap: 0; align-items: flex-start;
+      min-width: max-content;
+    }
+    .state-col {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; min-width: 130px; max-width: 160px;
+    }
+    .state-node {
+      width: 130px; padding: 10px 12px; text-align: center;
+      border: 2px solid var(--color-border); border-radius: var(--radius-md);
+      background: var(--color-bg-alt); cursor: default;
+      transition: var(--transition);
+      position: relative;
+    }
+    .state-node:hover { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(93,178,226,0.15); }
+    .state-node.terminal { border-color: var(--color-success); background: #ECFDF5; }
+    .state-node.exception { border-color: var(--color-warning); background: #FFFBEB; }
+    .state-name { font-size: 12px; font-weight: 700; color: var(--color-primary); line-height: 1.3; }
+    .state-desc { font-size: 10px; color: var(--color-text-muted); margin-top: 4px; line-height: 1.4; }
+
+    .transition-arrow {
+      display: flex; align-items: center; flex-shrink: 0;
+      padding: 0 4px; margin-top: 18px;
+    }
+    .arrow-line {
+      position: relative; height: 2px; width: 48px;
+      background: #CBD5E1;
+    }
+    .arrow-line.solid    { background: var(--transition-normal); }
+    .arrow-line.dashed   { background: transparent; border-top: 2px dashed var(--transition-exception); }
+    .arrow-line.dotted   { background: transparent; border-top: 2px dotted var(--transition-recovery); }
+    .arrow-head {
+      width: 0; height: 0;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+      border-left: 8px solid #CBD5E1;
+      flex-shrink: 0;
+    }
+    .arrow-head.solid    { border-left-color: var(--transition-normal); }
+    .arrow-head.dashed   { border-left-color: var(--transition-exception); }
+    .arrow-head.dotted   { border-left-color: var(--transition-recovery); }
+
+    .trans-label {
+      font-size: 9px; color: var(--color-text-muted); text-align: center;
+      max-width: 130px; line-height: 1.3; margin-top: 4px;
+    }
+
+    /* Transition details list below flow */
+    .ws-transitions-detail {
+      padding: 16px 20px;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg-alt);
+    }
+    .trans-detail-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--color-text-muted); margin-bottom: 10px;
+    }
+    .trans-detail-row {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 12px; padding: 8px 10px; background: white;
+      border-radius: var(--radius-sm); margin-bottom: 6px;
+      border: 1px solid var(--color-border);
+    }
+    .trans-type-dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px;
+    }
+    .trans-type-dot.normal    { background: var(--transition-normal); }
+    .trans-type-dot.exception { background: var(--transition-exception); }
+    .trans-type-dot.recovery  { background: var(--transition-recovery); }
+    .trans-detail-content { flex: 1; }
+    .trans-route { font-weight: 600; color: var(--color-primary); }
+    .trans-trigger { color: var(--color-text-muted); font-size: 11px; margin-top: 2px; }
+    .trans-evidence { font-size: 11px; color: #1D4ED8; margin-top: 2px; }
+
+    /* Guardrails */
+    .ws-guardrails {
+      padding: 16px 20px;
+      border-top: 1px solid var(--color-border);
+    }
+    .guardrail-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: #991B1B; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .guardrail-item {
+      display: flex; gap: 8px; align-items: flex-start;
+      font-size: 12px; color: #7F1D1D; line-height: 1.5;
+      background: #FEF2F2; border: 1px solid #FECACA;
+      border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px;
+    }
+    .guardrail-icon { flex-shrink: 0; }
+
+    /* Dependency mapping */
+    .ws-deps { padding: 16px 20px; border-top: 1px solid var(--color-border); }
+    .dep-title {
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--color-text-muted); margin-bottom: 10px;
+    }
+    .dep-item {
+      display: flex; gap: 10px; align-items: flex-start;
+      font-size: 12px; line-height: 1.5; padding: 8px 10px;
+      background: #F0F9FF; border: 1px solid #BAE6FD;
+      border-radius: var(--radius-sm); margin-bottom: 6px;
+    }
+    .dep-ws-name { font-weight: 600; color: #0369A1; }
+    .dep-condition { color: var(--color-text-muted); font-size: 11px; margin-top: 2px; }
+    .dep-impact { color: var(--color-foreground); }
+
+    /* ── Agent Prompt Panel ── */
+    .prompt-panel {
+      margin-top: 12px;
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .prompt-header {
+      background: var(--color-bg-alt); padding: 12px 16px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .prompt-header-title { font-size: 13px; font-weight: 700; color: var(--color-primary); }
+    .prompt-hint { font-size: 11px; color: var(--color-text-muted); }
+    .prompt-body {
+      padding: 16px; font-family: 'Courier New', Courier, monospace;
+      font-size: 12px; line-height: 1.6; color: #1E293B;
+      background: #0F172A; color: #E2E8F0;
+      white-space: pre-wrap; word-break: break-all;
+      max-height: 400px; overflow-y: auto;
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex; gap: 20px; flex-wrap: wrap;
+      padding: 12px 16px; background: var(--color-bg-alt);
+      border-radius: var(--radius-md); margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .legend-line {
+      width: 28px; height: 2px; flex-shrink: 0;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      display: none; position: fixed; bottom: 32px; right: 32px;
+      background: var(--color-primary); color: white;
+      padding: 12px 20px; border-radius: var(--radius-md);
+      font-size: 14px; font-weight: 500; box-shadow: var(--shadow-md);
+      z-index: 1000; animation: slideUp 0.2s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+
+    /* ── Mermaid Diagram Overrides ── */
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      background: white;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      margin-top: 16px;
+    }
+    .mermaid svg {
+      max-height: 480px;
+      width: 100%;
+      height: auto;
+    }
+    .mermaid .edgePath .path {
+      stroke: var(--color-text-muted) !important;
+      stroke-width: 1.5px !important;
+      fill: none !important;
+    }
+    .mermaid .marker {
+      fill: var(--color-text-muted) !important;
+      stroke: var(--color-text-muted) !important;
+    }
+    /* Edge styles mapped to normal, exception and recovery styles */
+    .mermaid .edge-thickness-normal .path {
+      stroke: var(--transition-normal) !important;
+      stroke-width: 2px !important;
+      fill: none !important;
+    }
+    .mermaid .edge-pattern-dashed .path {
+      stroke: var(--transition-exception) !important;
+      stroke-width: 2px !important;
+      fill: none !important;
+    }
+    .mermaid .edge-thickness-thick .path {
+      stroke: var(--transition-recovery) !important;
+      stroke-width: 3px !important;
+      fill: none !important;
+    }
+    .mermaid .edgeLabel rect {
+      fill: white !important;
+      opacity: 0.9;
+    }
+    .mermaid .edgeLabel {
+      font-size: 11px !important;
+      font-weight: 500 !important;
+      color: var(--color-text-muted) !important;
+      font-family: var(--font-family) !important;
+    }
+    .mermaid .node rect {
+      rx: var(--radius-md) !important;
+      ry: var(--radius-md) !important;
+      stroke-width: 2px !important;
+      filter: drop-shadow(0 2px 4px rgba(16,33,62,0.04));
+    }
+    .mermaid .node .label {
+      font-family: var(--font-family) !important;
+      color: var(--color-primary) !important;
+      font-size: 12px !important;
+    }
+    .mermaid .node b {
+      font-size: 13px !important;
+      color: var(--color-primary) !important;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-wrap">
+  <!-- ── Header ── -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1>AI-Native读书雷达-书单推荐与评分本体设计</h1>
+      <div class="header-meta">
+        <span class="meta-badge domain">AI学习资料共建与推荐</span>
+        <span class="meta-badge role">🤖 AI-Native读书雷达数据治理助手</span>
+      </div>
+      
+      <p class="meta-scenario">围绕书单列表页、书籍推荐抽屉和评分抽屉，定义书籍、推荐、评分、推荐人、最终推荐分数、难度判断与雷达展示之间的对象关系、行动边界和状态迁移。</p>
+      
+    </div>
+    <div class="header-right">
+      <div class="meta-info">Generated by agent-ontology-designer</div>
+      <div class="meta-info">2026-08-28 09:28</div>
+      <div class="btn-group">
+        <button class="btn-secondary" onclick="window.print()">导出 PDF</button>
+        <button class="btn-primary" onclick="copyYAML()">复制 YAML</button>
+        <button class="btn-primary" onclick="copyPrompt()">复制 Prompt</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Tabs ── -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" id="tab-btn-objects" onclick="switchTab('objects')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      对象关系
+      <span class="tab-count">10</span>
+    </button>
+    <button class="tab-btn" id="tab-btn-actions" onclick="switchTab('actions')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      行动边界
+      <span class="tab-count">5</span>
+    </button>
+    <button class="tab-btn" id="tab-btn-states" onclick="switchTab('states')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>
+      状态迁移
+      <span class="tab-count">4</span>
+    </button>
+    <button class="tab-btn" id="tab-btn-prompt" onclick="switchTab('prompt')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Agent Prompt
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════
+       TAB 1 · 对象关系
+       ══════════════════════════ -->
+  <div class="tab-panel active" id="tab-objects">
+
+    <p class="section-title">实体（Entities）</p>
+
+    <!-- Entity type legend -->
+    <div class="legend">
+      <span style="font-weight:600; color:var(--color-text-muted);">实体类型：</span>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--entity-core-badge)"></div>
+        核心对象（core）— Agent 直接操作或判断的实体
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--entity-reference-badge)"></div>
+        参考对象（reference）— 提供上下文或约束
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--entity-event-badge)"></div>
+        事件对象（event）— 记录业务发生的事件
+      </div>
+    </div>
+
+    <div class="entity-grid">
+      
+      <div class="entity-card entity-reference">
+        <div class="entity-header">
+          <span class="entity-badge">参考对象</span>
+          <div class="entity-name">推荐人/评分人</div>
+        </div>
+        <p class="entity-desc">在推荐抽屉或评分抽屉中选填的人名或昵称，用于追踪贡献来源；当前阶段不等同于账号体系。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">recommender_name</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">用户填写的推荐人或评分人姓名；为空时使用当前会话用户</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">user_session_id</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">当前会话标识，用于限制同一会话同一本书只有一条有效评分</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">is_anonymous</span>
+            <span class="attr-type">boolean</span>
+            <div>
+              
+                <span class="attr-desc">推荐记录是否匿名展示；当前实现默认 false</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐人/评分人姓名是贡献署名，不是登录账号</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>姓名为空不阻止提交，系统以当前会话用户兜底</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>评分唯一性由 user_session_id 控制，不由姓名控制</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">资料/书籍</div>
+        </div>
+        <p class="entity-desc">进入系统的书籍或资料主对象，是首页雷达、书单列表和详情页的共同基础数据。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">id</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">系统内唯一资料 ID</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">title</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">资料名称</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">author</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">作者或作者待补充</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">domain</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">ai-engineering / ai-product-design / agent-and-intelligent-systems / ai-organizational-transformation / data-intelligence-and-knowledge / ai-business-implementation / ai-ethics-and-governance / ai-frontier-trends</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">ability_themes</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">能力主题，可作为领域和难度判断证据</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">difficulty_level</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">1 / 2 / 3</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">status</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">pending / published / rejected / archived</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>书籍主表保存稳定事实，不直接保存所有用户推荐理由</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>domain 和 difficulty_level 是内容定位字段，不是用户喜好评分</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>status = published 才能进入正式雷达</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-event">
+        <div class="entity-header">
+          <span class="entity-badge">事件对象</span>
+          <div class="entity-name">书籍推荐</div>
+        </div>
+        <p class="entity-desc">用户通过书籍推荐抽屉提交的新书或补充推荐，保存推荐理由、推荐分和推荐人。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">resource_id</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">关联的资料 ID；新书在审核前也可先形成 pending 推荐</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommender_name</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">推荐人姓名，来自推荐表单选填字段</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">整星推荐指数，当前前端为 3 / 4 / 5</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">reason</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">推荐理由</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">status</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">pending / accepted / duplicate / error / adopted</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">created_at</span>
+            <span class="attr-type">datetime</span>
+            <div>
+              
+                <span class="attr-desc">推荐提交时间</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐提交不是正式收录，pending 不等于 published</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐分是推荐人对价值的主观判断，可进入推荐指数聚合</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐理由和推荐人是一对多行为记录，不能压进 resource 单字段</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">评分投票</div>
+        </div>
+        <p class="entity-desc">用户对已收录书籍的当前有效评分，同一会话同一本书只有一条，修改时覆盖。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">resource_id</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">被评分的资料 ID</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">user_session_id</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">当前会话标识</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommender_name</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">推荐人/评分人姓名，来自评分表单选填字段</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">半星评分，范围 3 到 5，步长 0.5</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">reason</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">评分理由</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">updated_at</span>
+            <span class="attr-type">datetime</span>
+            <div>
+              
+                <span class="attr-desc">当前有效评分更新时间</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>rating 是当前有效评分，不保留所有历史改动</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>修改评分不新增有效票数，只替换同一会话的旧分</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>评分用于推荐指数，不直接决定书籍难度</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-event">
+        <div class="entity-header">
+          <span class="entity-badge">事件对象</span>
+          <div class="entity-name">评分流水</div>
+        </div>
+        <p class="entity-desc">评分创建或修改的历史流水，用于追踪评分变化和后续质量审计。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">action_type</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">create / update</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommender_name</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">本次操作填写的推荐人/评分人姓名</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">previous_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">修改前评分，首次评分为空</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">next_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">修改后评分</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">reason</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">本次评分理由</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>rating_event 是历史流水，不参与同一会话唯一评分约束</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>rating_event 支持追溯，不直接作为前端当前分数来源</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">资料聚合指标</div>
+        </div>
+        <p class="entity-desc">由推荐和评分聚合出的指标层，是推荐指数、榜单排序和视觉权重的主要来源。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">recommendation_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">最终推荐指数；有评分时优先使用评分平均分，否则使用已采纳推荐平均分</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">average_rating</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">评分平均分</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">rating_count</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">有效评分数量</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommendation_count</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">已采纳推荐数量</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">unique_recommender_count</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">推荐记录中的去重推荐人数</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">hotness_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">由评分数和推荐数计算的热度</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">confidence_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">由互动数量推导的置信度</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>最终推荐分数是聚合结果，不是 resource 手填字段</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>评分平均分优先级高于推荐平均分</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>榜单应读取聚合指标，而不是逐条重新扫前端数据</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">AI内容评估</div>
+        </div>
+        <p class="entity-desc">基于书名、作者、领域、能力主题、推荐理由、标签和已有评价，给出领域、难度、质量信号等建议。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">suggested_domain</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">AI 建议领域</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">suggested_difficulty</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">AI 建议难度层级 1 / 2 / 3</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">confidence</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">建议置信度</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">evidence_summary</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">判断依据摘要</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">status</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">pending / accepted / rejected</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>AI 难度建议需要证据，不应只看推荐分数</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>难度是学习门槛判断，不是价值高低判断</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>低置信度时应进入人工复核，而不是直接发布</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">雷达展示状态</div>
+        </div>
+        <p class="entity-desc">将资料映射到首页雷达的位置和动态视觉状态。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">sector_index</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">八大领域对应的扇区索引</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">ring_index</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">三层难度对应的圈层索引</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">x</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">雷达坐标 x</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">y</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">雷达坐标 y</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">visual_weight_score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">视觉权重，影响圆点大小和展示优先级</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">update_type</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">none / new_resource / score_up / score_down / new_recommendation / new_rating</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>领域决定扇区，难度决定圈层，推荐分数影响视觉权重</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>评分升降可影响动态效果，但不直接改变难度圈层</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">推荐抽屉表单</div>
+        </div>
+        <p class="entity-desc">用户新增书籍推荐或补充推荐的前端输入界面。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">title</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">author</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommenderName</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">选填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">domain</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">reason</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">必填，3 / 4 / 5</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐人选填，不影响表单完成状态</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>表单提交成功不等于书籍进入正式雷达</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+      <div class="entity-card entity-core">
+        <div class="entity-header">
+          <span class="entity-badge">核心对象</span>
+          <div class="entity-name">评分抽屉表单</div>
+        </div>
+        <p class="entity-desc">用户对已有书籍提交或修改评分的前端输入界面。</p>
+
+        
+        <div class="entity-attrs">
+          
+          <div class="attr-row">
+            <span class="attr-name">bookId</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填，由当前书籍带入</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">recommenderName</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">选填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">score</span>
+            <span class="attr-type">number</span>
+            <div>
+              
+                <span class="attr-desc">必填，3 到 5，步长 0.5</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">reason</span>
+            <span class="attr-type">string</span>
+            <div>
+              
+                <span class="attr-desc">必填</span>
+              
+            </div>
+          </div>
+          
+          <div class="attr-row">
+            <span class="attr-name">mode</span>
+            <span class="attr-type">enum</span>
+            <div>
+              
+                <span class="attr-values">create / edit</span>
+              
+            </div>
+          </div>
+          
+        </div>
+        
+
+        
+        <div class="entity-distinctions">
+          <div class="distinction-label">⚠️ 概念边界</div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>评分表单服务已有书籍，不负责创建新书</span>
+          </div>
+          
+          <div class="distinction-item">
+            <span class="distinction-icon">≠</span>
+            <span>推荐人选填，不影响评分提交完成状态</span>
+          </div>
+          
+        </div>
+        
+      </div>
+      
+    </div>
+
+    
+    <p class="section-title">对象关系拓扑图（Relationships Graph）</p>
+    <div class="ws-flow" style="margin-bottom: 24px;">
+      <div class="mermaid" id="mermaid-relationships" style="width: 100%; max-width: 960px; margin: 0 auto;">
+        graph TD
+          %% Styling classes
+          classDef core fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1D4ED8;
+          classDef reference fill:#F5F3FF,stroke:#7C3AED,stroke-width:2px,color:#5B21B6;
+          classDef event fill:#FFF7ED,stroke:#EA580C,stroke-width:2px,color:#C2410C;
+
+          %% Nodes definition
+          
+            contributor["<b>推荐人/评分人</b><br/><span style='font-size:10px;color:#64748B;'>参考对象</span>"]
+            class contributor reference;
+          
+            resource["<b>资料/书籍</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class resource core;
+          
+            recommendation["<b>书籍推荐</b><br/><span style='font-size:10px;color:#64748B;'>事件对象</span>"]
+            class recommendation event;
+          
+            rating["<b>评分投票</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class rating core;
+          
+            rating_event["<b>评分流水</b><br/><span style='font-size:10px;color:#64748B;'>事件对象</span>"]
+            class rating_event event;
+          
+            resource_metrics["<b>资料聚合指标</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class resource_metrics core;
+          
+            ai_evaluation["<b>AI内容评估</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class ai_evaluation core;
+          
+            radar_display_state["<b>雷达展示状态</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class radar_display_state core;
+          
+            recommendation_form["<b>推荐抽屉表单</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class recommendation_form core;
+          
+            scoring_form["<b>评分抽屉表单</b><br/><span style='font-size:10px;color:#64748B;'>核心对象</span>"]
+            class scoring_form core;
+          
+
+          %% Relationships definition
+          
+            contributor -->|提交 1:N| recommendation
+          
+            contributor -->|评分 1:N| rating
+          
+            recommendation_form -->|写入 1:1| recommendation
+          
+            scoring_form -->|创建或覆盖 1:1| rating
+          
+            rating -->|产生流水 1:N| rating_event
+          
+            resource -->|接收推荐 1:N| recommendation
+          
+            resource -->|接收评分 1:N| rating
+          
+            recommendation -->|聚合输入 N:1| resource_metrics
+          
+            rating -->|聚合输入 N:1| resource_metrics
+          
+            resource_metrics -->|驱动视觉权重 1:1| radar_display_state
+          
+            resource -->|决定基础位置 1:1| radar_display_state
+          
+            ai_evaluation -->|建议分类 N:1| resource
+          
+            recommendation -->|提供证据 N:N| ai_evaluation
+          
+            rating -->|提供弱证据 N:N| ai_evaluation
+          
+      </div>
+    </div>
+
+    <p class="section-title">对象关系详情（Relationships Detail）</p>
+    <div class="rel-table-wrap">
+      <table class="rel-table">
+        <thead>
+          <tr>
+            <th>从 (From)</th>
+            <th style="text-align:center;">关系</th>
+            <th>到 (To)</th>
+            <th style="text-align:center;">基数</th>
+            <th>业务含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td class="rel-from">推荐人/评分人</td>
+            <td class="rel-arrow">
+              <span class="rel-label">提交</span>
+            </td>
+            <td class="rel-from">书籍推荐</td>
+            <td class="rel-card" style="text-align:center;">1:N</td>
+            <td class="rel-desc">一个推荐人可以提交多条书籍推荐</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">推荐人/评分人</td>
+            <td class="rel-arrow">
+              <span class="rel-label">评分</span>
+            </td>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-card" style="text-align:center;">1:N</td>
+            <td class="rel-desc">一个评分人可以在当前会话内给多本书评分</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">推荐抽屉表单</td>
+            <td class="rel-arrow">
+              <span class="rel-label">写入</span>
+            </td>
+            <td class="rel-from">书籍推荐</td>
+            <td class="rel-card" style="text-align:center;">1:1</td>
+            <td class="rel-desc">推荐抽屉提交后写入 recommendations.recommender_name、score、reason 等字段</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">评分抽屉表单</td>
+            <td class="rel-arrow">
+              <span class="rel-label">创建或覆盖</span>
+            </td>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-card" style="text-align:center;">1:1</td>
+            <td class="rel-desc">评分抽屉提交后写入 ratings.recommender_name，并按 resource_id + user_session_id 覆盖当前有效评分</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-arrow">
+              <span class="rel-label">产生流水</span>
+            </td>
+            <td class="rel-from">评分流水</td>
+            <td class="rel-card" style="text-align:center;">1:N</td>
+            <td class="rel-desc">每次创建或修改评分都会记录一条 rating_events</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">资料/书籍</td>
+            <td class="rel-arrow">
+              <span class="rel-label">接收推荐</span>
+            </td>
+            <td class="rel-from">书籍推荐</td>
+            <td class="rel-card" style="text-align:center;">1:N</td>
+            <td class="rel-desc">一本书可以被多名推荐人推荐</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">资料/书籍</td>
+            <td class="rel-arrow">
+              <span class="rel-label">接收评分</span>
+            </td>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-card" style="text-align:center;">1:N</td>
+            <td class="rel-desc">一本书可以有多条当前有效评分</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">书籍推荐</td>
+            <td class="rel-arrow">
+              <span class="rel-label">聚合输入</span>
+            </td>
+            <td class="rel-from">资料聚合指标</td>
+            <td class="rel-card" style="text-align:center;">N:1</td>
+            <td class="rel-desc">accepted / adopted 推荐进入推荐数量、推荐平均分和推荐人计数</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-arrow">
+              <span class="rel-label">聚合输入</span>
+            </td>
+            <td class="rel-from">资料聚合指标</td>
+            <td class="rel-card" style="text-align:center;">N:1</td>
+            <td class="rel-desc">有效评分进入 average_rating、rating_count 和最终 recommendation_score</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">资料聚合指标</td>
+            <td class="rel-arrow">
+              <span class="rel-label">驱动视觉权重</span>
+            </td>
+            <td class="rel-from">雷达展示状态</td>
+            <td class="rel-card" style="text-align:center;">1:1</td>
+            <td class="rel-desc">推荐指数、热度和置信度影响圆点大小、优先级和更新状态</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">资料/书籍</td>
+            <td class="rel-arrow">
+              <span class="rel-label">决定基础位置</span>
+            </td>
+            <td class="rel-from">雷达展示状态</td>
+            <td class="rel-card" style="text-align:center;">1:1</td>
+            <td class="rel-desc">domain 映射扇区，difficulty_level 映射难度圈层</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">AI内容评估</td>
+            <td class="rel-arrow">
+              <span class="rel-label">建议分类</span>
+            </td>
+            <td class="rel-from">资料/书籍</td>
+            <td class="rel-card" style="text-align:center;">N:1</td>
+            <td class="rel-desc">AI 内容评估可建议 domain、difficulty_level 和质量信号，经采纳后更新资料主表</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">书籍推荐</td>
+            <td class="rel-arrow">
+              <span class="rel-label">提供证据</span>
+            </td>
+            <td class="rel-from">AI内容评估</td>
+            <td class="rel-card" style="text-align:center;">N:N</td>
+            <td class="rel-desc">推荐理由、推荐分和推荐人贡献可作为 AI 判断领域与难度的辅助证据</td>
+          </tr>
+          
+          <tr>
+            <td class="rel-from">评分投票</td>
+            <td class="rel-arrow">
+              <span class="rel-label">提供弱证据</span>
+            </td>
+            <td class="rel-from">AI内容评估</td>
+            <td class="rel-card" style="text-align:center;">N:N</td>
+            <td class="rel-desc">评分理由可补充内容判断证据，但评分值本身不应用来推断难度</td>
+          </tr>
+          
+        </tbody>
+      </table>
+    </div>
+    
+
+  </div><!-- /tab-objects -->
+
+
+  <!-- ══════════════════════════
+       TAB 2 · 行动边界
+       ══════════════════════════ -->
+  <div class="tab-panel" id="tab-actions">
+
+    <div class="legend">
+      <div class="legend-item"><span style="font-size:16px">📋</span> Required Evidence — 做判断前必须核实的门店可见证据</div>
+      <div class="legend-item"><span style="font-size:16px">✅</span> Valid Actions — 当前情境下可以执行的合法动作</div>
+      <div class="legend-item"><span style="font-size:16px">❌</span> Invalid Actions — 不应该执行（会产生错误假设）的动作</div>
+      <div class="legend-item"><span style="font-size:16px">⚠️</span> Exception Triggers — 需要标记风险或升级的触发条件</div>
+    </div>
+
+    
+    <div class="ab-card">
+      <div class="ab-header">
+        <span class="ab-situation-num">情境 1</span>
+        <div>
+          <div class="ab-situation-name">用户在书籍推荐抽屉提交一本书</div>
+          
+          <div class="ab-situation-desc">用户填写书名、作者、领域、推荐理由和整星推荐指数，可选填推荐人姓名。</div>
+          
+        </div>
+      </div>
+      <div class="ab-body">
+
+        <!-- Q1: Required Evidence -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-evidence">📋 Required Evidence</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">RecommendationForm</div>
+                <div>title、author、domain、reason、score 必填；recommenderName 可为空</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">resources normalized_title / normalized_author</div>
+                <div>检查书名 + 作者是否已存在，决定 success 或 duplicate</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q2: Valid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-valid">✅ Valid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">将 recommenderName 写入 recommendations.recommender_name，空值兜底为当前会话用户</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">把新书推荐保存为 pending，不自动进入正式雷达</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">重复书籍允许补充推荐理由，但需要保留 duplicate 结果反馈</div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q3: Invalid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-invalid">❌ Invalid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>因为用户未填写推荐人姓名而阻止提交</div>
+                <div class="ab-item-reason">原因：推荐人是署名信息，不是本阶段必填的内容质量证据</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>推荐提交成功后直接把新书发布到 radar_books</div>
+                <div class="ab-item-reason">原因：推荐成功只表示已接收，不等于审核采纳</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q4: Exception Triggers -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-exception">⚠️ Exception Triggers</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-condition">当：后端未配置或 RPC 失败</div>
+                <div class="ab-item-action">→ 回退到 mock service 并返回明确失败或模拟结果</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+      </div>
+    </div>
+    
+    <div class="ab-card">
+      <div class="ab-header">
+        <span class="ab-situation-num">情境 2</span>
+        <div>
+          <div class="ab-situation-name">用户在评分抽屉提交或修改评分</div>
+          
+          <div class="ab-situation-desc">用户对已有书籍填写半星评分、必填理由，可选填推荐人/评分人姓名。</div>
+          
+        </div>
+      </div>
+      <div class="ab-body">
+
+        <!-- Q1: Required Evidence -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-evidence">📋 Required Evidence</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">ScoringForm</div>
+                <div>bookId 已由当前书籍带入；score 和 reason 必填；recommenderName 可为空</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">ratings unique(resource_id, user_session_id)</div>
+                <div>同一会话同一本书只有一条当前有效评分</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q2: Valid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-valid">✅ Valid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">首次评分时创建 ratings，并记录 rating_events create</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">修改评分时覆盖 ratings 当前有效评分，并记录 rating_events update</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">将 recommenderName 写入 ratings 与 rating_events，空值兜底为当前会话用户</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">评分成功后刷新 resource_metrics 和当前书籍展示</div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q3: Invalid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-invalid">❌ Invalid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>修改评分时新增一条有效评分</div>
+                <div class="ab-item-reason">原因：会破坏当前会话同一本书只有一条有效评分的规则</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>把评分值用于改写 difficulty_level</div>
+                <div class="ab-item-reason">原因：评分表达价值判断，难度表达学习门槛，两者不是同一指标</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q4: Exception Triggers -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-exception">⚠️ Exception Triggers</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-condition">当：score 为空或 reason 为空</div>
+                <div class="ab-item-action">→ 阻止提交并提示补全必填项</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+      </div>
+    </div>
+    
+    <div class="ab-card">
+      <div class="ab-header">
+        <span class="ab-situation-num">情境 3</span>
+        <div>
+          <div class="ab-situation-name">推荐指数需要实时更新</div>
+          
+          <div class="ab-situation-desc">用户提交评分或后台采纳推荐后，需要得到书籍的最终推荐分数。</div>
+          
+        </div>
+      </div>
+      <div class="ab-body">
+
+        <!-- Q1: Required Evidence -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-evidence">📋 Required Evidence</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">ratings</div>
+                <div>读取所有当前有效评分，计算 average_rating 与 rating_count</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">recommendations</div>
+                <div>只读取 accepted / adopted 推荐，计算 recommendation_count 与推荐平均分</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q2: Valid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-valid">✅ Valid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">有有效评分时，recommendation_score 优先等于评分平均分</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">没有有效评分但有已采纳推荐时，recommendation_score 使用推荐平均分</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">刷新 hotness_score、confidence_score 和 votesCount 展示</div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q3: Invalid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-invalid">❌ Invalid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>把 pending 或 error 推荐纳入最终推荐分数</div>
+                <div class="ab-item-reason">原因：这些推荐尚未被采纳或已失败，不能作为正式质量信号</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>在前端临时扫列表重新定义推荐指数规则</div>
+                <div class="ab-item-reason">原因：推荐指数规则应由 resource_metrics 统一承接，保证列表、详情、雷达一致</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q4: Exception Triggers -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-exception">⚠️ Exception Triggers</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-condition">当：评分数量和采纳推荐数量都为 0</div>
+                <div class="ab-item-action">→ 保留默认推荐指数或等待种子数据/审核采纳</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+      </div>
+    </div>
+    
+    <div class="ab-card">
+      <div class="ab-header">
+        <span class="ab-situation-num">情境 4</span>
+        <div>
+          <div class="ab-situation-name">需要判断书籍难度层级</div>
+          
+          <div class="ab-situation-desc">新增书籍或已有书籍需要进入雷达圈层时，系统需要判断 difficulty_level。</div>
+          
+        </div>
+      </div>
+      <div class="ab-body">
+
+        <!-- Q1: Required Evidence -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-evidence">📋 Required Evidence</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">resources</div>
+                <div>title、author、domain、ability_themes、tags、summary、fit_for、takeaways</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">recommendations</div>
+                <div>推荐理由中是否说明适合人群、前置知识、应用深度</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">ai_evaluations</div>
+                <div>AI 给出 suggested_difficulty、confidence 和 evidence_summary</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q2: Valid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-valid">✅ Valid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">使用能力主题、推荐理由、适合人群和内容摘要判断难度</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">低置信度时进入人工复核或保持 pending</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">采纳后写入 resources.difficulty_level，再映射 radar_display_state.ring_index</div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q3: Invalid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-invalid">❌ Invalid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>要求用户像推荐分一样必填难度</div>
+                <div class="ab-item-reason">原因：难度是内容层级判断，普通用户填写会增加负担且主观漂移较大</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>只根据推荐分数高低判断难度</div>
+                <div class="ab-item-reason">原因：高分可以是入门好书，也可以是进阶经典，分数不能代表门槛</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q4: Exception Triggers -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-exception">⚠️ Exception Triggers</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-condition">当：书名、作者、理由和能力主题不足以判断难度</div>
+                <div class="ab-item-action">→ 把难度标为待评估，等待更多推荐理由或人工补充</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+      </div>
+    </div>
+    
+    <div class="ab-card">
+      <div class="ab-header">
+        <span class="ab-situation-num">情境 5</span>
+        <div>
+          <div class="ab-situation-name">书单列表页生成三个推荐榜单</div>
+          
+          <div class="ab-situation-desc">列表页需要展示本周推荐量最多、本周上新和长期高分学习路径。</div>
+          
+        </div>
+      </div>
+      <div class="ab-body">
+
+        <!-- Q1: Required Evidence -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-evidence">📋 Required Evidence</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">resource_metrics</div>
+                <div>recommendation_score、rating_count、recommendation_count、hotness_score、last_recommended_at</div>
+              </div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-source">resources</div>
+                <div>created_at、domain、difficulty_level、status</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q2: Valid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-valid">✅ Valid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">推荐量最多榜优先按本周互动量和 hotness_score 排序</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">本周上新榜读取本周 created_at 或 first_appeared_at</div>
+            </div>
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <div class="ab-item-content">长期高分学习路径按领域选取不同 difficulty_level 的高分书</div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q3: Invalid Actions -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-invalid">❌ Invalid Actions</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              <div class="ab-item-content">
+                <div>只按前端数组顺序展示榜单</div>
+                <div class="ab-item-reason">原因：榜单需要有可追溯的指标来源</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+        <!-- Q4: Exception Triggers -->
+        <div class="ab-quadrant">
+          <div class="quadrant-label ql-exception">⚠️ Exception Triggers</div>
+          
+            
+            <div class="ab-item">
+              <svg class="ab-item-dot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <div class="ab-item-content">
+                <div class="ab-item-condition">当：某领域不足三本不同难度高分书</div>
+                <div class="ab-item-action">→ 展示已有层级并标记该领域路径待补充</div>
+              </div>
+            </div>
+            
+          
+        </div>
+
+      </div>
+    </div>
+    
+
+  </div><!-- /tab-actions -->
+
+
+  <!-- ══════════════════════════
+       TAB 3 · 状态迁移
+       ══════════════════════════ -->
+  <div class="tab-panel" id="tab-states">
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background:var(--transition-normal);"></div>
+        正常迁移
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:transparent; border-top: 2px dashed var(--transition-exception); height:0;"></div>
+        异常分支
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:transparent; border-top: 2px dotted var(--transition-recovery); height:0;"></div>
+        异常恢复
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--color-success); border-radius:3px; width:16px; height:12px;"></div>
+        终态节点
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#FEF3C7; border:2px solid var(--color-warning); border-radius:3px; width:16px; height:12px;"></div>
+        异常态节点
+      </div>
+    </div>
+
+    
+    <div class="ws-block">
+      <!-- Workstream Header -->
+      <div class="ws-header">
+        <div style="flex:1;">
+          <div class="ws-name">⚙️ 书籍推荐提交</div>
+          <div class="ws-desc">从用户填写推荐表单到保存推荐记录、等待采纳的流程。</div>
+          
+          <div class="ws-anchors">
+            <span style="font-size:11px;color:rgba(255,255,255,0.55);flex-shrink:0;margin-top:2px;">锚点对象：</span>
+            
+            <span class="ws-anchor-chip">recommendation_form</span>
+            
+            <span class="ws-anchor-chip">recommendation</span>
+            
+            <span class="ws-anchor-chip">resource</span>
+            
+            <span class="ws-anchor-chip">contributor</span>
+            
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- State Flow -->
+      
+      <div class="ws-flow">
+        <div class="mermaid" id="mermaid-ws_recommendation_submission">
+          graph LR
+            %% Styling classes
+            classDef default fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1D4ED8;
+            classDef terminal fill:#ECFDF5,stroke:#10B981,stroke-width:2px,color:#065F46;
+            classDef exception fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#92400E;
+
+            %% Nodes definition
+            
+              
+              
+              rec_draft["<b>草稿填写中</b><br/><span style='font-size:10px;color:#64748B;'>用户正在填写推荐表单，推荐人姓名可为空。</span>"]
+              
+                class rec_draft default;
+              
+            
+              
+              
+              rec_ready["<b>可提交</b><br/><span style='font-size:10px;color:#64748B;'>推荐信息满足提交条件。</span>"]
+              
+                class rec_ready default;
+              
+            
+              
+              
+              rec_pending["<b>等待采纳</b><br/><span style='font-size:10px;color:#64748B;'>推荐已保存，但不会自动进入正式雷达。</span>"]
+              
+                class rec_pending default;
+              
+            
+              
+              
+              rec_duplicate["<b>重复推荐</b><br/><span style='font-size:10px;color:#64748B;'>书籍已存在，用户可作为补充推荐继续提交。</span>"]
+              
+                class rec_duplicate default;
+              
+            
+              
+              
+              rec_adopted["<b>已采纳</b><br/><span style='font-size:10px;color:#64748B;'>推荐成为聚合指标输入。</span>"]
+              
+                class rec_adopted terminal;
+              
+            
+
+            %% Transitions definition
+            
+              
+                
+                  rec_draft -->|完成必填字段| rec_ready
+                
+              
+            
+              
+                
+                  rec_ready -->|调用 submit_recommendation&#34;| rec_pending
+                
+              
+                
+                  rec_ready -.->|检测重复书籍| rec_duplicate
+                
+              
+            
+              
+                
+                  rec_pending -->|审核采纳推荐| rec_adopted
+                
+              
+            
+              
+                
+                  rec_duplicate ==>|用户确认补充推荐| rec_pending
+                
+              
+            
+              
+            
+        </div>
+      </div>
+
+      <!-- Transition Details -->
+      <div class="ws-transitions-detail">
+        <div class="trans-detail-title">迁移路径详情</div>
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">草稿填写中 → rec_ready</div>
+              <div class="trans-trigger">动作：完成必填字段</div>
+              
+              <div class="trans-evidence">证据：title、author、domain、reason、score 均已填写</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">可提交 → rec_pending</div>
+              <div class="trans-trigger">动作：调用 submit_recommendation&#34;</div>
+              
+              <div class="trans-evidence">证据：后端接收推荐并写入 recommendations</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot exception"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">可提交 → rec_duplicate</div>
+              <div class="trans-trigger">动作：检测重复书籍</div>
+              
+              <div class="trans-evidence">证据：normalized_title + normalized_author 已存在</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">异常分支</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">等待采纳 → rec_adopted</div>
+              <div class="trans-trigger">动作：审核采纳推荐</div>
+              
+              <div class="trans-evidence">证据：status 变为 accepted 或 adopted</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot recovery"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">重复推荐 → rec_pending</div>
+              <div class="trans-trigger">动作：用户确认补充推荐</div>
+              
+              <div class="trans-evidence">证据：允许重复补充并保留推荐理由</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">异常恢复</div>
+            </div>
+          </div>
+          
+        
+          
+        
+      </div>
+      
+
+      <!-- Guardrails -->
+      
+      <div class="ws-guardrails">
+        <div class="guardrail-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          全局护栏（不可绕过）
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>推荐人姓名选填，不能作为提交阻塞条件</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>pending 推荐不进入正式推荐指数</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>推荐记录必须保留 reason 与 recommender_name</span>
+        </div>
+        
+      </div>
+      
+
+      <!-- Dependency Mapping -->
+      
+      <div class="ws-deps">
+        <div class="dep-title">跨流依赖（Dependency Mapping）</div>
+        
+        <div class="dep-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <div>
+            <div class="dep-ws-name">→ 最终推荐分数计算</div>
+            <div class="dep-condition">条件：推荐状态变为 accepted 或 adopted</div>
+            <div class="dep-impact">影响：触发 resource_metrics 刷新</div>
+          </div>
+        </div>
+        
+      </div>
+      
+
+    </div><!-- /ws-block -->
+    
+    <div class="ws-block">
+      <!-- Workstream Header -->
+      <div class="ws-header">
+        <div style="flex:1;">
+          <div class="ws-name">⚙️ 评分投票提交</div>
+          <div class="ws-desc">从用户在书籍列表或详情入口打开评分抽屉，到更新当前有效评分和推荐指数。</div>
+          
+          <div class="ws-anchors">
+            <span style="font-size:11px;color:rgba(255,255,255,0.55);flex-shrink:0;margin-top:2px;">锚点对象：</span>
+            
+            <span class="ws-anchor-chip">scoring_form</span>
+            
+            <span class="ws-anchor-chip">rating</span>
+            
+            <span class="ws-anchor-chip">rating_event</span>
+            
+            <span class="ws-anchor-chip">resource_metrics</span>
+            
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- State Flow -->
+      
+      <div class="ws-flow">
+        <div class="mermaid" id="mermaid-ws_rating_submission">
+          graph LR
+            %% Styling classes
+            classDef default fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1D4ED8;
+            classDef terminal fill:#ECFDF5,stroke:#10B981,stroke-width:2px,color:#065F46;
+            classDef exception fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#92400E;
+
+            %% Nodes definition
+            
+              
+              
+              rate_draft["<b>评分填写中</b><br/><span style='font-size:10px;color:#64748B;'>用户填写 score、reason 和可选 recommenderName。</span>"]
+              
+                class rate_draft default;
+              
+            
+              
+              
+              rate_ready["<b>可提交评分</b><br/><span style='font-size:10px;color:#64748B;'>评分表单满足提交条件。</span>"]
+              
+                class rate_ready default;
+              
+            
+              
+              
+              rate_created["<b>首次评分生效</b><br/><span style='font-size:10px;color:#64748B;'>创建当前有效评分并记录 create 流水。</span>"]
+              
+                class rate_created default;
+              
+            
+              
+              
+              rate_updated["<b>评分已更新</b><br/><span style='font-size:10px;color:#64748B;'>覆盖当前有效评分并记录 update 流水。</span>"]
+              
+                class rate_updated default;
+              
+            
+              
+              
+              metrics_refreshed["<b>推荐指数已刷新</b><br/><span style='font-size:10px;color:#64748B;'>列表、详情和当前书籍展示拿到新的推荐指数和推荐人数。</span>"]
+              
+                class metrics_refreshed terminal;
+              
+            
+
+            %% Transitions definition
+            
+              
+                
+                  rate_draft -->|完成评分和理由| rate_ready
+                
+              
+            
+              
+                
+                  rate_ready -->|首次提交评分| rate_created
+                
+              
+                
+                  rate_ready -->|修改评分| rate_updated
+                
+              
+            
+              
+                
+                  rate_created -->|refresh_resource_metrics| metrics_refreshed
+                
+              
+            
+              
+                
+                  rate_updated -->|refresh_resource_metrics| metrics_refreshed
+                
+              
+            
+              
+            
+        </div>
+      </div>
+
+      <!-- Transition Details -->
+      <div class="ws-transitions-detail">
+        <div class="trans-detail-title">迁移路径详情</div>
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">评分填写中 → rate_ready</div>
+              <div class="trans-trigger">动作：完成评分和理由</div>
+              
+              <div class="trans-evidence">证据：score 非空且 reason 非空</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">可提交评分 → rate_created</div>
+              <div class="trans-trigger">动作：首次提交评分</div>
+              
+              <div class="trans-evidence">证据：当前 resource_id + user_session_id 尚无 rating</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">可提交评分 → rate_updated</div>
+              <div class="trans-trigger">动作：修改评分</div>
+              
+              <div class="trans-evidence">证据：当前 resource_id + user_session_id 已存在 rating</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">首次评分生效 → metrics_refreshed</div>
+              <div class="trans-trigger">动作：refresh_resource_metrics</div>
+              
+              <div class="trans-evidence">证据：ratings 已写入</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">评分已更新 → metrics_refreshed</div>
+              <div class="trans-trigger">动作：refresh_resource_metrics</div>
+              
+              <div class="trans-evidence">证据：ratings 已覆盖</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+        
+      </div>
+      
+
+      <!-- Guardrails -->
+      
+      <div class="ws-guardrails">
+        <div class="guardrail-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          全局护栏（不可绕过）
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>同一会话同一本书只保留一条有效评分</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>评分理由必填，推荐人/评分人姓名选填</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>评分成功会影响推荐指数，不改变难度层级</span>
+        </div>
+        
+      </div>
+      
+
+      <!-- Dependency Mapping -->
+      
+      <div class="ws-deps">
+        <div class="dep-title">跨流依赖（Dependency Mapping）</div>
+        
+        <div class="dep-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <div>
+            <div class="dep-ws-name">→ 最终推荐分数计算</div>
+            <div class="dep-condition">条件：rating create 或 update</div>
+            <div class="dep-impact">影响：重新计算 final recommendation_score</div>
+          </div>
+        </div>
+        
+      </div>
+      
+
+    </div><!-- /ws-block -->
+    
+    <div class="ws-block">
+      <!-- Workstream Header -->
+      <div class="ws-header">
+        <div style="flex:1;">
+          <div class="ws-name">⚙️ 最终推荐分数计算</div>
+          <div class="ws-desc">将有效评分和已采纳推荐汇总为资源级推荐指数、热度和置信度。</div>
+          
+          <div class="ws-anchors">
+            <span style="font-size:11px;color:rgba(255,255,255,0.55);flex-shrink:0;margin-top:2px;">锚点对象：</span>
+            
+            <span class="ws-anchor-chip">rating</span>
+            
+            <span class="ws-anchor-chip">recommendation</span>
+            
+            <span class="ws-anchor-chip">resource_metrics</span>
+            
+            <span class="ws-anchor-chip">radar_display_state</span>
+            
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- State Flow -->
+      
+      <div class="ws-flow">
+        <div class="mermaid" id="mermaid-ws_score_aggregation">
+          graph LR
+            %% Styling classes
+            classDef default fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1D4ED8;
+            classDef terminal fill:#ECFDF5,stroke:#10B981,stroke-width:2px,color:#065F46;
+            classDef exception fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#92400E;
+
+            %% Nodes definition
+            
+              
+              
+              score_waiting_input["<b>等待有效输入</b><br/><span style='font-size:10px;color:#64748B;'>资料尚无评分或已采纳推荐。</span>"]
+              
+                class score_waiting_input default;
+              
+            
+              
+              
+              score_from_recommendation["<b>推荐均分生效</b><br/><span style='font-size:10px;color:#64748B;'>无评分时，最终推荐指数来自已采纳推荐平均分。</span>"]
+              
+                class score_from_recommendation default;
+              
+            
+              
+              
+              score_from_rating["<b>评分均分生效</b><br/><span style='font-size:10px;color:#64748B;'>有评分时，最终推荐指数优先来自有效评分平均分。</span>"]
+              
+                class score_from_rating default;
+              
+            
+              
+              
+              radar_weight_refreshed["<b>视觉权重已刷新</b><br/><span style='font-size:10px;color:#64748B;'>圆点大小、榜单排序和动态状态可读取新的聚合指标。</span>"]
+              
+                class radar_weight_refreshed terminal;
+              
+            
+
+            %% Transitions definition
+            
+              
+                
+                  score_waiting_input -->|推荐被采纳| score_from_recommendation
+                
+              
+                
+                  score_waiting_input -->|用户提交评分| score_from_rating
+                
+              
+            
+              
+                
+                  score_from_recommendation -->|新增有效评分| score_from_rating
+                
+              
+            
+              
+                
+                  score_from_rating -->|刷新雷达视觉权重| radar_weight_refreshed
+                
+              
+            
+              
+            
+        </div>
+      </div>
+
+      <!-- Transition Details -->
+      <div class="ws-transitions-detail">
+        <div class="trans-detail-title">迁移路径详情</div>
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">等待有效输入 → score_from_recommendation</div>
+              <div class="trans-trigger">动作：推荐被采纳</div>
+              
+              <div class="trans-evidence">证据：recommendations.status in accepted / adopted</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">等待有效输入 → score_from_rating</div>
+              <div class="trans-trigger">动作：用户提交评分</div>
+              
+              <div class="trans-evidence">证据：ratings 存在当前有效评分</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">推荐均分生效 → score_from_rating</div>
+              <div class="trans-trigger">动作：新增有效评分</div>
+              
+              <div class="trans-evidence">证据：rating_count &gt; 0</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">评分均分生效 → radar_weight_refreshed</div>
+              <div class="trans-trigger">动作：刷新雷达视觉权重</div>
+              
+              <div class="trans-evidence">证据：resource_metrics.recommendation_score 已更新</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+        
+      </div>
+      
+
+      <!-- Guardrails -->
+      
+      <div class="ws-guardrails">
+        <div class="guardrail-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          全局护栏（不可绕过）
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>最终推荐分数必须来自 resource_metrics</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>pending 推荐不进入正式分数</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>评分值不作为难度判断依据</span>
+        </div>
+        
+      </div>
+      
+
+      <!-- Dependency Mapping -->
+      
+      <div class="ws-deps">
+        <div class="dep-title">跨流依赖（Dependency Mapping）</div>
+        
+        <div class="dep-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <div>
+            <div class="dep-ws-name">→ 难度判断与圈层映射</div>
+            <div class="dep-condition">条件：新增书籍需要进入雷达</div>
+            <div class="dep-impact">影响：最终推荐分数只能决定优先级，圈层还需要 difficulty_level</div>
+          </div>
+        </div>
+        
+      </div>
+      
+
+    </div><!-- /ws-block -->
+    
+    <div class="ws-block">
+      <!-- Workstream Header -->
+      <div class="ws-header">
+        <div style="flex:1;">
+          <div class="ws-name">⚙️ 难度判断与圈层映射</div>
+          <div class="ws-desc">从内容证据和 AI 评估得到 difficulty_level，再映射到首页雷达三层圈。</div>
+          
+          <div class="ws-anchors">
+            <span style="font-size:11px;color:rgba(255,255,255,0.55);flex-shrink:0;margin-top:2px;">锚点对象：</span>
+            
+            <span class="ws-anchor-chip">resource</span>
+            
+            <span class="ws-anchor-chip">recommendation</span>
+            
+            <span class="ws-anchor-chip">ai_evaluation</span>
+            
+            <span class="ws-anchor-chip">radar_display_state</span>
+            
+          </div>
+          
+        </div>
+      </div>
+
+      <!-- State Flow -->
+      
+      <div class="ws-flow">
+        <div class="mermaid" id="mermaid-ws_difficulty_judgement">
+          graph LR
+            %% Styling classes
+            classDef default fill:#EFF6FF,stroke:#3B82F6,stroke-width:2px,color:#1D4ED8;
+            classDef terminal fill:#ECFDF5,stroke:#10B981,stroke-width:2px,color:#065F46;
+            classDef exception fill:#FEF3C7,stroke:#F59E0B,stroke-width:2px,color:#92400E;
+
+            %% Nodes definition
+            
+              
+              
+              diff_waiting_evidence["<b>等待证据</b><br/><span style='font-size:10px;color:#64748B;'>新增书籍只有基础字段，难度证据不足。</span>"]
+              
+                class diff_waiting_evidence default;
+              
+            
+              
+              
+              diff_ai_suggested["<b>AI 已建议难度</b><br/><span style='font-size:10px;color:#64748B;'>AI 给出 suggested_difficulty、置信度和判断依据。</span>"]
+              
+                class diff_ai_suggested default;
+              
+            
+              
+              
+              diff_review_needed["<b>需要复核</b><br/><span style='font-size:10px;color:#64748B;'>难度不可自动确认，需要更多资料或人工判断。</span>"]
+              
+                class diff_review_needed default;
+              
+            
+              
+              
+              diff_confirmed["<b>难度已确认</b><br/><span style='font-size:10px;color:#64748B;'>resources.difficulty_level 已确认，可映射 radar_display_state.ring_...</span>"]
+              
+                class diff_confirmed terminal;
+              
+            
+
+            %% Transitions definition
+            
+              
+                
+                  diff_waiting_evidence -->|生成 AI 内容评估| diff_ai_suggested
+                
+              
+            
+              
+                
+                  diff_ai_suggested -->|采纳难度建议| diff_confirmed
+                
+              
+                
+                  diff_ai_suggested -.->|置信度不足| diff_review_needed
+                
+              
+            
+              
+                
+                  diff_review_needed ==>|人工补充或确认| diff_confirmed
+                
+              
+            
+              
+            
+        </div>
+      </div>
+
+      <!-- Transition Details -->
+      <div class="ws-transitions-detail">
+        <div class="trans-detail-title">迁移路径详情</div>
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">等待证据 → diff_ai_suggested</div>
+              <div class="trans-trigger">动作：生成 AI 内容评估</div>
+              
+              <div class="trans-evidence">证据：title、author、domain、ability_themes、reason 或 summary 足够</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot normal"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">AI 已建议难度 → diff_confirmed</div>
+              <div class="trans-trigger">动作：采纳难度建议</div>
+              
+              <div class="trans-evidence">证据：confidence 足够或人工确认</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">正常迁移</div>
+            </div>
+          </div>
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot exception"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">AI 已建议难度 → diff_review_needed</div>
+              <div class="trans-trigger">动作：置信度不足</div>
+              
+              <div class="trans-evidence">证据：证据不足或推荐理由冲突</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">异常分支</div>
+            </div>
+          </div>
+          
+        
+          
+          <div class="trans-detail-row">
+            <div class="trans-type-dot recovery"></div>
+            <div class="trans-detail-content">
+              <div class="trans-route">需要复核 → diff_confirmed</div>
+              <div class="trans-trigger">动作：人工补充或确认</div>
+              
+              <div class="trans-evidence">证据：补充 summary、能力主题、适合人群或前置知识</div>
+              
+              <div style="font-size:10px;color:var(--color-text-muted);margin-top:2px;">异常恢复</div>
+            </div>
+          </div>
+          
+        
+          
+        
+      </div>
+      
+
+      <!-- Guardrails -->
+      
+      <div class="ws-guardrails">
+        <div class="guardrail-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          全局护栏（不可绕过）
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>难度不是用户必填评分项</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>必须保留判断依据，尤其是 AI 建议被采纳时</span>
+        </div>
+        
+        <div class="guardrail-item">
+          <span class="guardrail-icon">🔒</span>
+          <span>难度只影响圈层，不表达书籍价值高低</span>
+        </div>
+        
+      </div>
+      
+
+      <!-- Dependency Mapping -->
+      
+      <div class="ws-deps">
+        <div class="dep-title">跨流依赖（Dependency Mapping）</div>
+        
+        <div class="dep-item">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0369A1" stroke-width="2" style="flex-shrink:0;margin-top:2px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <div>
+            <div class="dep-ws-name">→ 最终推荐分数计算</div>
+            <div class="dep-condition">条件：书籍已有最终推荐分数但没有难度</div>
+            <div class="dep-impact">影响：书籍可以排序，但不能可靠定位到雷达圈层</div>
+          </div>
+        </div>
+        
+      </div>
+      
+
+    </div><!-- /ws-block -->
+    
+
+  </div><!-- /tab-states -->
+
+
+  <!-- ══════════════════════════
+       TAB 4 · Agent Prompt
+       ══════════════════════════ -->
+  <div class="tab-panel" id="tab-prompt">
+
+    <div style="margin-bottom:16px; font-size:13px; color:var(--color-text-muted); line-height:1.6;">
+      以下是从本体结构自动生成的 Agent System Prompt 片段。
+      可直接复制并注入到 Agent 的系统提示词或知识库中，
+      让 Agent 掌握当前场景的业务对象边界、行动约束和状态护栏。
+    </div>
+
+    <div class="prompt-panel">
+      <div class="prompt-header">
+        <span class="prompt-header-title">🤖 Agent Prompt 片段</span>
+        <span class="prompt-hint">点击右上角「复制 Prompt」按钮一键复制</span>
+      </div>
+      <pre class="prompt-body" id="agent-prompt-content"># 业务本体：AI-Native读书雷达-书单推荐与评分本体设计
+领域：AI学习资料共建与推荐
+Agent 角色：AI-Native读书雷达数据治理助手
+场景：围绕书单列表页、书籍推荐抽屉和评分抽屉，定义书籍、推荐、评分、推荐人、最终推荐分数、难度判断与雷达展示之间的对象关系、行动边界和状态迁移。
+
+## 1. 核心业务对象与概念边界
+### 推荐人/评分人 [参考对象]
+- 定义：在推荐抽屉或评分抽屉中选填的人名或昵称，用于追踪贡献来源；当前阶段不等同于账号体系。
+- 属性定义：
+  * recommender_name (string) - 用户填写的推荐人或评分人姓名；为空时使用当前会话用户
+  * user_session_id (string) - 当前会话标识，用于限制同一会话同一本书只有一条有效评分
+  * is_anonymous (boolean) - 推荐记录是否匿名展示；当前实现默认 false
+- 关键概念边界（不可混淆）：
+  ⚠️ 推荐人/评分人姓名是贡献署名，不是登录账号
+  ⚠️ 姓名为空不阻止提交，系统以当前会话用户兜底
+  ⚠️ 评分唯一性由 user_session_id 控制，不由姓名控制
+### 资料/书籍 [核心对象]
+- 定义：进入系统的书籍或资料主对象，是首页雷达、书单列表和详情页的共同基础数据。
+- 属性定义：
+  * id (string) - 系统内唯一资料 ID
+  * title (string) - 资料名称
+  * author (string) - 作者或作者待补充
+  * domain (enum)（可选值：ai-engineering / ai-product-design / agent-and-intelligent-systems / ai-organizational-transformation / data-intelligence-and-knowledge / ai-business-implementation / ai-ethics-and-governance / ai-frontier-trends） - 八大领域之一，决定雷达扇区和列表标签
+  * ability_themes (string) - 能力主题，可作为领域和难度判断证据
+  * difficulty_level (enum)（可选值：1 / 2 / 3） - 三层难度，决定雷达内圈、中圈、外圈
+  * status (enum)（可选值：pending / published / rejected / archived） - 只有 published 才进入 radar_books 视图和正式前端展示
+- 关键概念边界（不可混淆）：
+  ⚠️ 书籍主表保存稳定事实，不直接保存所有用户推荐理由
+  ⚠️ domain 和 difficulty_level 是内容定位字段，不是用户喜好评分
+  ⚠️ status = published 才能进入正式雷达
+### 书籍推荐 [事件对象]
+- 定义：用户通过书籍推荐抽屉提交的新书或补充推荐，保存推荐理由、推荐分和推荐人。
+- 属性定义：
+  * resource_id (string) - 关联的资料 ID；新书在审核前也可先形成 pending 推荐
+  * recommender_name (string) - 推荐人姓名，来自推荐表单选填字段
+  * score (number) - 整星推荐指数，当前前端为 3 / 4 / 5
+  * reason (string) - 推荐理由
+  * status (enum)（可选值：pending / accepted / duplicate / error / adopted） - 推荐处理状态，决定是否进入聚合指标
+  * created_at (datetime) - 推荐提交时间
+- 关键概念边界（不可混淆）：
+  ⚠️ 推荐提交不是正式收录，pending 不等于 published
+  ⚠️ 推荐分是推荐人对价值的主观判断，可进入推荐指数聚合
+  ⚠️ 推荐理由和推荐人是一对多行为记录，不能压进 resource 单字段
+### 评分投票 [核心对象]
+- 定义：用户对已收录书籍的当前有效评分，同一会话同一本书只有一条，修改时覆盖。
+- 属性定义：
+  * resource_id (string) - 被评分的资料 ID
+  * user_session_id (string) - 当前会话标识
+  * recommender_name (string) - 推荐人/评分人姓名，来自评分表单选填字段
+  * score (number) - 半星评分，范围 3 到 5，步长 0.5
+  * reason (string) - 评分理由
+  * updated_at (datetime) - 当前有效评分更新时间
+- 关键概念边界（不可混淆）：
+  ⚠️ rating 是当前有效评分，不保留所有历史改动
+  ⚠️ 修改评分不新增有效票数，只替换同一会话的旧分
+  ⚠️ 评分用于推荐指数，不直接决定书籍难度
+### 评分流水 [事件对象]
+- 定义：评分创建或修改的历史流水，用于追踪评分变化和后续质量审计。
+- 属性定义：
+  * action_type (enum)（可选值：create / update） - 首次评分或修改评分
+  * recommender_name (string) - 本次操作填写的推荐人/评分人姓名
+  * previous_score (number) - 修改前评分，首次评分为空
+  * next_score (number) - 修改后评分
+  * reason (string) - 本次评分理由
+- 关键概念边界（不可混淆）：
+  ⚠️ rating_event 是历史流水，不参与同一会话唯一评分约束
+  ⚠️ rating_event 支持追溯，不直接作为前端当前分数来源
+### 资料聚合指标 [核心对象]
+- 定义：由推荐和评分聚合出的指标层，是推荐指数、榜单排序和视觉权重的主要来源。
+- 属性定义：
+  * recommendation_score (number) - 最终推荐指数；有评分时优先使用评分平均分，否则使用已采纳推荐平均分
+  * average_rating (number) - 评分平均分
+  * rating_count (number) - 有效评分数量
+  * recommendation_count (number) - 已采纳推荐数量
+  * unique_recommender_count (number) - 推荐记录中的去重推荐人数
+  * hotness_score (number) - 由评分数和推荐数计算的热度
+  * confidence_score (number) - 由互动数量推导的置信度
+- 关键概念边界（不可混淆）：
+  ⚠️ 最终推荐分数是聚合结果，不是 resource 手填字段
+  ⚠️ 评分平均分优先级高于推荐平均分
+  ⚠️ 榜单应读取聚合指标，而不是逐条重新扫前端数据
+### AI内容评估 [核心对象]
+- 定义：基于书名、作者、领域、能力主题、推荐理由、标签和已有评价，给出领域、难度、质量信号等建议。
+- 属性定义：
+  * suggested_domain (string) - AI 建议领域
+  * suggested_difficulty (number) - AI 建议难度层级 1 / 2 / 3
+  * confidence (number) - 建议置信度
+  * evidence_summary (string) - 判断依据摘要
+  * status (enum)（可选值：pending / accepted / rejected） - AI 建议是否被采纳
+- 关键概念边界（不可混淆）：
+  ⚠️ AI 难度建议需要证据，不应只看推荐分数
+  ⚠️ 难度是学习门槛判断，不是价值高低判断
+  ⚠️ 低置信度时应进入人工复核，而不是直接发布
+### 雷达展示状态 [核心对象]
+- 定义：将资料映射到首页雷达的位置和动态视觉状态。
+- 属性定义：
+  * sector_index (number) - 八大领域对应的扇区索引
+  * ring_index (number) - 三层难度对应的圈层索引
+  * x (number) - 雷达坐标 x
+  * y (number) - 雷达坐标 y
+  * visual_weight_score (number) - 视觉权重，影响圆点大小和展示优先级
+  * update_type (enum)（可选值：none / new_resource / score_up / score_down / new_recommendation / new_rating） - 动态更新类型
+- 关键概念边界（不可混淆）：
+  ⚠️ 领域决定扇区，难度决定圈层，推荐分数影响视觉权重
+  ⚠️ 评分升降可影响动态效果，但不直接改变难度圈层
+### 推荐抽屉表单 [核心对象]
+- 定义：用户新增书籍推荐或补充推荐的前端输入界面。
+- 属性定义：
+  * title (string) - 必填
+  * author (string) - 必填
+  * recommenderName (string) - 选填
+  * domain (string) - 必填
+  * reason (string) - 必填
+  * score (number) - 必填，3 / 4 / 5
+- 关键概念边界（不可混淆）：
+  ⚠️ 推荐人选填，不影响表单完成状态
+  ⚠️ 表单提交成功不等于书籍进入正式雷达
+### 评分抽屉表单 [核心对象]
+- 定义：用户对已有书籍提交或修改评分的前端输入界面。
+- 属性定义：
+  * bookId (string) - 必填，由当前书籍带入
+  * recommenderName (string) - 选填
+  * score (number) - 必填，3 到 5，步长 0.5
+  * reason (string) - 必填
+  * mode (enum)（可选值：create / edit） - 首次评分或修改评分
+- 关键概念边界（不可混淆）：
+  ⚠️ 评分表单服务已有书籍，不负责创建新书
+  ⚠️ 推荐人选填，不影响评分提交完成状态
+
+## 2. 对象关系依赖（Relationships）
+- 【推荐人/评分人】 --(提交, 基数 1:N)--&gt; 【书籍推荐】
+  说明：一个推荐人可以提交多条书籍推荐
+- 【推荐人/评分人】 --(评分, 基数 1:N)--&gt; 【评分投票】
+  说明：一个评分人可以在当前会话内给多本书评分
+- 【推荐抽屉表单】 --(写入, 基数 1:1)--&gt; 【书籍推荐】
+  说明：推荐抽屉提交后写入 recommendations.recommender_name、score、reason 等字段
+- 【评分抽屉表单】 --(创建或覆盖, 基数 1:1)--&gt; 【评分投票】
+  说明：评分抽屉提交后写入 ratings.recommender_name，并按 resource_id + user_session_id 覆盖当前有效评分
+- 【评分投票】 --(产生流水, 基数 1:N)--&gt; 【评分流水】
+  说明：每次创建或修改评分都会记录一条 rating_events
+- 【资料/书籍】 --(接收推荐, 基数 1:N)--&gt; 【书籍推荐】
+  说明：一本书可以被多名推荐人推荐
+- 【资料/书籍】 --(接收评分, 基数 1:N)--&gt; 【评分投票】
+  说明：一本书可以有多条当前有效评分
+- 【书籍推荐】 --(聚合输入, 基数 N:1)--&gt; 【资料聚合指标】
+  说明：accepted / adopted 推荐进入推荐数量、推荐平均分和推荐人计数
+- 【评分投票】 --(聚合输入, 基数 N:1)--&gt; 【资料聚合指标】
+  说明：有效评分进入 average_rating、rating_count 和最终 recommendation_score
+- 【资料聚合指标】 --(驱动视觉权重, 基数 1:1)--&gt; 【雷达展示状态】
+  说明：推荐指数、热度和置信度影响圆点大小、优先级和更新状态
+- 【资料/书籍】 --(决定基础位置, 基数 1:1)--&gt; 【雷达展示状态】
+  说明：domain 映射扇区，difficulty_level 映射难度圈层
+- 【AI内容评估】 --(建议分类, 基数 N:1)--&gt; 【资料/书籍】
+  说明：AI 内容评估可建议 domain、difficulty_level 和质量信号，经采纳后更新资料主表
+- 【书籍推荐】 --(提供证据, 基数 N:N)--&gt; 【AI内容评估】
+  说明：推荐理由、推荐分和推荐人贡献可作为 AI 判断领域与难度的辅助证据
+- 【评分投票】 --(提供弱证据, 基数 N:N)--&gt; 【AI内容评估】
+  说明：评分理由可补充内容判断证据，但评分值本身不应用来推断难度
+
+## 3. 行动边界限制（情境 - 证据 - 合法/禁止动作）
+### 情境：用户在书籍推荐抽屉提交一本书
+描述：用户填写书名、作者、领域、推荐理由和整星推荐指数，可选填推荐人姓名。
+必须核实的证据：
+  - [RecommendationForm] title、author、domain、reason、score 必填；recommenderName 可为空
+  - [resources normalized_title / normalized_author] 检查书名 + 作者是否已存在，决定 success 或 duplicate
+✅ 合法动作（允许执行）：
+  - 将 recommenderName 写入 recommendations.recommender_name，空值兜底为当前会话用户
+  - 把新书推荐保存为 pending，不自动进入正式雷达
+  - 重复书籍允许补充推荐理由，但需要保留 duplicate 结果反馈
+❌ 禁止动作（严禁执行，防范错误假设）：
+  - 因为用户未填写推荐人姓名而阻止提交 （禁止原因：推荐人是署名信息，不是本阶段必填的内容质量证据）
+  - 推荐提交成功后直接把新书发布到 radar_books （禁止原因：推荐成功只表示已接收，不等于审核采纳）
+⚠️ 异常触发规则：
+  - 当满足条件【后端未配置或 RPC 失败】 → 必须执行：回退到 mock service 并返回明确失败或模拟结果
+### 情境：用户在评分抽屉提交或修改评分
+描述：用户对已有书籍填写半星评分、必填理由，可选填推荐人/评分人姓名。
+必须核实的证据：
+  - [ScoringForm] bookId 已由当前书籍带入；score 和 reason 必填；recommenderName 可为空
+  - [ratings unique(resource_id, user_session_id)] 同一会话同一本书只有一条当前有效评分
+✅ 合法动作（允许执行）：
+  - 首次评分时创建 ratings，并记录 rating_events create
+  - 修改评分时覆盖 ratings 当前有效评分，并记录 rating_events update
+  - 将 recommenderName 写入 ratings 与 rating_events，空值兜底为当前会话用户
+  - 评分成功后刷新 resource_metrics 和当前书籍展示
+❌ 禁止动作（严禁执行，防范错误假设）：
+  - 修改评分时新增一条有效评分 （禁止原因：会破坏当前会话同一本书只有一条有效评分的规则）
+  - 把评分值用于改写 difficulty_level （禁止原因：评分表达价值判断，难度表达学习门槛，两者不是同一指标）
+⚠️ 异常触发规则：
+  - 当满足条件【score 为空或 reason 为空】 → 必须执行：阻止提交并提示补全必填项
+### 情境：推荐指数需要实时更新
+描述：用户提交评分或后台采纳推荐后，需要得到书籍的最终推荐分数。
+必须核实的证据：
+  - [ratings] 读取所有当前有效评分，计算 average_rating 与 rating_count
+  - [recommendations] 只读取 accepted / adopted 推荐，计算 recommendation_count 与推荐平均分
+✅ 合法动作（允许执行）：
+  - 有有效评分时，recommendation_score 优先等于评分平均分
+  - 没有有效评分但有已采纳推荐时，recommendation_score 使用推荐平均分
+  - 刷新 hotness_score、confidence_score 和 votesCount 展示
+❌ 禁止动作（严禁执行，防范错误假设）：
+  - 把 pending 或 error 推荐纳入最终推荐分数 （禁止原因：这些推荐尚未被采纳或已失败，不能作为正式质量信号）
+  - 在前端临时扫列表重新定义推荐指数规则 （禁止原因：推荐指数规则应由 resource_metrics 统一承接，保证列表、详情、雷达一致）
+⚠️ 异常触发规则：
+  - 当满足条件【评分数量和采纳推荐数量都为 0】 → 必须执行：保留默认推荐指数或等待种子数据/审核采纳
+### 情境：需要判断书籍难度层级
+描述：新增书籍或已有书籍需要进入雷达圈层时，系统需要判断 difficulty_level。
+必须核实的证据：
+  - [resources] title、author、domain、ability_themes、tags、summary、fit_for、takeaways
+  - [recommendations] 推荐理由中是否说明适合人群、前置知识、应用深度
+  - [ai_evaluations] AI 给出 suggested_difficulty、confidence 和 evidence_summary
+✅ 合法动作（允许执行）：
+  - 使用能力主题、推荐理由、适合人群和内容摘要判断难度
+  - 低置信度时进入人工复核或保持 pending
+  - 采纳后写入 resources.difficulty_level，再映射 radar_display_state.ring_index
+❌ 禁止动作（严禁执行，防范错误假设）：
+  - 要求用户像推荐分一样必填难度 （禁止原因：难度是内容层级判断，普通用户填写会增加负担且主观漂移较大）
+  - 只根据推荐分数高低判断难度 （禁止原因：高分可以是入门好书，也可以是进阶经典，分数不能代表门槛）
+⚠️ 异常触发规则：
+  - 当满足条件【书名、作者、理由和能力主题不足以判断难度】 → 必须执行：把难度标为待评估，等待更多推荐理由或人工补充
+### 情境：书单列表页生成三个推荐榜单
+描述：列表页需要展示本周推荐量最多、本周上新和长期高分学习路径。
+必须核实的证据：
+  - [resource_metrics] recommendation_score、rating_count、recommendation_count、hotness_score、last_recommended_at
+  - [resources] created_at、domain、difficulty_level、status
+✅ 合法动作（允许执行）：
+  - 推荐量最多榜优先按本周互动量和 hotness_score 排序
+  - 本周上新榜读取本周 created_at 或 first_appeared_at
+  - 长期高分学习路径按领域选取不同 difficulty_level 的高分书
+❌ 禁止动作（严禁执行，防范错误假设）：
+  - 只按前端数组顺序展示榜单 （禁止原因：榜单需要有可追溯的指标来源）
+⚠️ 异常触发规则：
+  - 当满足条件【某领域不足三本不同难度高分书】 → 必须执行：展示已有层级并标记该领域路径待补充
+
+## 4. 状态流转与全局护栏（Workstreams &amp; States）
+### 执行流（Workstream）：书籍推荐提交
+描述：从用户填写推荐表单到保存推荐记录、等待采纳的流程。
+状态节点及迁移路径：
+  - 状态：草稿填写中 (rec_draft)
+    状态定义：用户正在填写推荐表单，推荐人姓名可为空。
+    可用的状态转移路径：
+      * --[完成必填字段] (核实证据: title、author、domain、reason、score 均已填写)--&gt; 到达状态 rec_ready (性质: 正常迁移)
+  - 状态：可提交 (rec_ready)
+    状态定义：推荐信息满足提交条件。
+    可用的状态转移路径：
+      * --[调用 submit_recommendation&#34;] (核实证据: 后端接收推荐并写入 recommendations)--&gt; 到达状态 rec_pending (性质: 正常迁移)
+      * --[检测重复书籍] (核实证据: normalized_title + normalized_author 已存在)--&gt; 到达状态 rec_duplicate (性质: 异常分支)
+  - 状态：等待采纳 (rec_pending)
+    状态定义：推荐已保存，但不会自动进入正式雷达。
+    可用的状态转移路径：
+      * --[审核采纳推荐] (核实证据: status 变为 accepted 或 adopted)--&gt; 到达状态 rec_adopted (性质: 正常迁移)
+  - 状态：重复推荐 (rec_duplicate)
+    状态定义：书籍已存在，用户可作为补充推荐继续提交。
+    可用的状态转移路径：
+      * --[用户确认补充推荐] (核实证据: 允许重复补充并保留推荐理由)--&gt; 到达状态 rec_pending (性质: 异常恢复)
+  - 状态：已采纳 (rec_adopted)
+    状态定义：推荐成为聚合指标输入。
+🔒 全局不可绕过护栏规则：
+  - 推荐人姓名选填，不能作为提交阻塞条件
+  - pending 推荐不进入正式推荐指数
+  - 推荐记录必须保留 reason 与 recommender_name
+🔗 跨流依赖关系：
+  - 自身在该工作流时，若另一执行流 【最终推荐分数计算】 满足条件【推荐状态变为 accepted 或 adopted】，则受到影响：触发 resource_metrics 刷新
+### 执行流（Workstream）：评分投票提交
+描述：从用户在书籍列表或详情入口打开评分抽屉，到更新当前有效评分和推荐指数。
+状态节点及迁移路径：
+  - 状态：评分填写中 (rate_draft)
+    状态定义：用户填写 score、reason 和可选 recommenderName。
+    可用的状态转移路径：
+      * --[完成评分和理由] (核实证据: score 非空且 reason 非空)--&gt; 到达状态 rate_ready (性质: 正常迁移)
+  - 状态：可提交评分 (rate_ready)
+    状态定义：评分表单满足提交条件。
+    可用的状态转移路径：
+      * --[首次提交评分] (核实证据: 当前 resource_id + user_session_id 尚无 rating)--&gt; 到达状态 rate_created (性质: 正常迁移)
+      * --[修改评分] (核实证据: 当前 resource_id + user_session_id 已存在 rating)--&gt; 到达状态 rate_updated (性质: 正常迁移)
+  - 状态：首次评分生效 (rate_created)
+    状态定义：创建当前有效评分并记录 create 流水。
+    可用的状态转移路径：
+      * --[refresh_resource_metrics] (核实证据: ratings 已写入)--&gt; 到达状态 metrics_refreshed (性质: 正常迁移)
+  - 状态：评分已更新 (rate_updated)
+    状态定义：覆盖当前有效评分并记录 update 流水。
+    可用的状态转移路径：
+      * --[refresh_resource_metrics] (核实证据: ratings 已覆盖)--&gt; 到达状态 metrics_refreshed (性质: 正常迁移)
+  - 状态：推荐指数已刷新 (metrics_refreshed)
+    状态定义：列表、详情和当前书籍展示拿到新的推荐指数和推荐人数。
+🔒 全局不可绕过护栏规则：
+  - 同一会话同一本书只保留一条有效评分
+  - 评分理由必填，推荐人/评分人姓名选填
+  - 评分成功会影响推荐指数，不改变难度层级
+🔗 跨流依赖关系：
+  - 自身在该工作流时，若另一执行流 【最终推荐分数计算】 满足条件【rating create 或 update】，则受到影响：重新计算 final recommendation_score
+### 执行流（Workstream）：最终推荐分数计算
+描述：将有效评分和已采纳推荐汇总为资源级推荐指数、热度和置信度。
+状态节点及迁移路径：
+  - 状态：等待有效输入 (score_waiting_input)
+    状态定义：资料尚无评分或已采纳推荐。
+    可用的状态转移路径：
+      * --[推荐被采纳] (核实证据: recommendations.status in accepted / adopted)--&gt; 到达状态 score_from_recommendation (性质: 正常迁移)
+      * --[用户提交评分] (核实证据: ratings 存在当前有效评分)--&gt; 到达状态 score_from_rating (性质: 正常迁移)
+  - 状态：推荐均分生效 (score_from_recommendation)
+    状态定义：无评分时，最终推荐指数来自已采纳推荐平均分。
+    可用的状态转移路径：
+      * --[新增有效评分] (核实证据: rating_count &gt; 0)--&gt; 到达状态 score_from_rating (性质: 正常迁移)
+  - 状态：评分均分生效 (score_from_rating)
+    状态定义：有评分时，最终推荐指数优先来自有效评分平均分。
+    可用的状态转移路径：
+      * --[刷新雷达视觉权重] (核实证据: resource_metrics.recommendation_score 已更新)--&gt; 到达状态 radar_weight_refreshed (性质: 正常迁移)
+  - 状态：视觉权重已刷新 (radar_weight_refreshed)
+    状态定义：圆点大小、榜单排序和动态状态可读取新的聚合指标。
+🔒 全局不可绕过护栏规则：
+  - 最终推荐分数必须来自 resource_metrics
+  - pending 推荐不进入正式分数
+  - 评分值不作为难度判断依据
+🔗 跨流依赖关系：
+  - 自身在该工作流时，若另一执行流 【难度判断与圈层映射】 满足条件【新增书籍需要进入雷达】，则受到影响：最终推荐分数只能决定优先级，圈层还需要 difficulty_level
+### 执行流（Workstream）：难度判断与圈层映射
+描述：从内容证据和 AI 评估得到 difficulty_level，再映射到首页雷达三层圈。
+状态节点及迁移路径：
+  - 状态：等待证据 (diff_waiting_evidence)
+    状态定义：新增书籍只有基础字段，难度证据不足。
+    可用的状态转移路径：
+      * --[生成 AI 内容评估] (核实证据: title、author、domain、ability_themes、reason 或 summary 足够)--&gt; 到达状态 diff_ai_suggested (性质: 正常迁移)
+  - 状态：AI 已建议难度 (diff_ai_suggested)
+    状态定义：AI 给出 suggested_difficulty、置信度和判断依据。
+    可用的状态转移路径：
+      * --[采纳难度建议] (核实证据: confidence 足够或人工确认)--&gt; 到达状态 diff_confirmed (性质: 正常迁移)
+      * --[置信度不足] (核实证据: 证据不足或推荐理由冲突)--&gt; 到达状态 diff_review_needed (性质: 异常分支)
+  - 状态：需要复核 (diff_review_needed)
+    状态定义：难度不可自动确认，需要更多资料或人工判断。
+    可用的状态转移路径：
+      * --[人工补充或确认] (核实证据: 补充 summary、能力主题、适合人群或前置知识)--&gt; 到达状态 diff_confirmed (性质: 异常恢复)
+  - 状态：难度已确认 (diff_confirmed)
+    状态定义：resources.difficulty_level 已确认，可映射 radar_display_state.ring_index。
+🔒 全局不可绕过护栏规则：
+  - 难度不是用户必填评分项
+  - 必须保留判断依据，尤其是 AI 建议被采纳时
+  - 难度只影响圈层，不表达书籍价值高低
+🔗 跨流依赖关系：
+  - 自身在该工作流时，若另一执行流 【最终推荐分数计算】 满足条件【书籍已有最终推荐分数但没有难度】，则受到影响：书籍可以排序，但不能可靠定位到雷达圈层
+</pre>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <p class="section-title">原始 YAML 本体</p>
+      <div class="prompt-panel">
+        <div class="prompt-header">
+          <span class="prompt-header-title">📄 Source YAML</span>
+          <span class="prompt-hint">点击「复制 YAML」按钮一键复制</span>
+        </div>
+        <pre class="prompt-body" id="raw-yaml-content">title: AI-Native读书雷达-书单推荐与评分本体设计
+domain: AI学习资料共建与推荐
+scenario_description: &#34;围绕书单列表页、书籍推荐抽屉和评分抽屉，定义书籍、推荐、评分、推荐人、最终推荐分数、难度判断与雷达展示之间的对象关系、行动边界和状态迁移。&#34;
+target_agent_role: AI-Native读书雷达数据治理助手
+
+entities:
+  - id: contributor
+    name: 推荐人/评分人
+    type: reference
+    description: &#34;在推荐抽屉或评分抽屉中选填的人名或昵称，用于追踪贡献来源；当前阶段不等同于账号体系。&#34;
+    attributes:
+      - name: recommender_name
+        type: string
+        description: &#34;用户填写的推荐人或评分人姓名；为空时使用当前会话用户&#34;
+      - name: user_session_id
+        type: string
+        description: &#34;当前会话标识，用于限制同一会话同一本书只有一条有效评分&#34;
+      - name: is_anonymous
+        type: boolean
+        description: &#34;推荐记录是否匿名展示；当前实现默认 false&#34;
+    key_distinctions:
+      - &#34;推荐人/评分人姓名是贡献署名，不是登录账号&#34;
+      - &#34;姓名为空不阻止提交，系统以当前会话用户兜底&#34;
+      - &#34;评分唯一性由 user_session_id 控制，不由姓名控制&#34;
+
+  - id: resource
+    name: 资料/书籍
+    type: core
+    description: &#34;进入系统的书籍或资料主对象，是首页雷达、书单列表和详情页的共同基础数据。&#34;
+    attributes:
+      - name: id
+        type: string
+        description: &#34;系统内唯一资料 ID&#34;
+      - name: title
+        type: string
+        description: &#34;资料名称&#34;
+      - name: author
+        type: string
+        description: &#34;作者或作者待补充&#34;
+      - name: domain
+        type: enum
+        values: [ai-engineering, ai-product-design, agent-and-intelligent-systems, ai-organizational-transformation, data-intelligence-and-knowledge, ai-business-implementation, ai-ethics-and-governance, ai-frontier-trends]
+        description: &#34;八大领域之一，决定雷达扇区和列表标签&#34;
+      - name: ability_themes
+        type: string
+        description: &#34;能力主题，可作为领域和难度判断证据&#34;
+      - name: difficulty_level
+        type: enum
+        values: [1, 2, 3]
+        description: &#34;三层难度，决定雷达内圈、中圈、外圈&#34;
+      - name: status
+        type: enum
+        values: [pending, published, rejected, archived]
+        description: &#34;只有 published 才进入 radar_books 视图和正式前端展示&#34;
+    key_distinctions:
+      - &#34;书籍主表保存稳定事实，不直接保存所有用户推荐理由&#34;
+      - &#34;domain 和 difficulty_level 是内容定位字段，不是用户喜好评分&#34;
+      - &#34;status = published 才能进入正式雷达&#34;
+
+  - id: recommendation
+    name: 书籍推荐
+    type: event
+    description: &#34;用户通过书籍推荐抽屉提交的新书或补充推荐，保存推荐理由、推荐分和推荐人。&#34;
+    attributes:
+      - name: resource_id
+        type: string
+        description: &#34;关联的资料 ID；新书在审核前也可先形成 pending 推荐&#34;
+      - name: recommender_name
+        type: string
+        description: &#34;推荐人姓名，来自推荐表单选填字段&#34;
+      - name: score
+        type: number
+        description: &#34;整星推荐指数，当前前端为 3 / 4 / 5&#34;
+      - name: reason
+        type: string
+        description: &#34;推荐理由&#34;
+      - name: status
+        type: enum
+        values: [pending, accepted, duplicate, error, adopted]
+        description: &#34;推荐处理状态，决定是否进入聚合指标&#34;
+      - name: created_at
+        type: datetime
+        description: &#34;推荐提交时间&#34;
+    key_distinctions:
+      - &#34;推荐提交不是正式收录，pending 不等于 published&#34;
+      - &#34;推荐分是推荐人对价值的主观判断，可进入推荐指数聚合&#34;
+      - &#34;推荐理由和推荐人是一对多行为记录，不能压进 resource 单字段&#34;
+
+  - id: rating
+    name: 评分投票
+    type: core
+    description: &#34;用户对已收录书籍的当前有效评分，同一会话同一本书只有一条，修改时覆盖。&#34;
+    attributes:
+      - name: resource_id
+        type: string
+        description: &#34;被评分的资料 ID&#34;
+      - name: user_session_id
+        type: string
+        description: &#34;当前会话标识&#34;
+      - name: recommender_name
+        type: string
+        description: &#34;推荐人/评分人姓名，来自评分表单选填字段&#34;
+      - name: score
+        type: number
+        description: &#34;半星评分，范围 3 到 5，步长 0.5&#34;
+      - name: reason
+        type: string
+        description: &#34;评分理由&#34;
+      - name: updated_at
+        type: datetime
+        description: &#34;当前有效评分更新时间&#34;
+    key_distinctions:
+      - &#34;rating 是当前有效评分，不保留所有历史改动&#34;
+      - &#34;修改评分不新增有效票数，只替换同一会话的旧分&#34;
+      - &#34;评分用于推荐指数，不直接决定书籍难度&#34;
+
+  - id: rating_event
+    name: 评分流水
+    type: event
+    description: &#34;评分创建或修改的历史流水，用于追踪评分变化和后续质量审计。&#34;
+    attributes:
+      - name: action_type
+        type: enum
+        values: [create, update]
+        description: &#34;首次评分或修改评分&#34;
+      - name: recommender_name
+        type: string
+        description: &#34;本次操作填写的推荐人/评分人姓名&#34;
+      - name: previous_score
+        type: number
+        description: &#34;修改前评分，首次评分为空&#34;
+      - name: next_score
+        type: number
+        description: &#34;修改后评分&#34;
+      - name: reason
+        type: string
+        description: &#34;本次评分理由&#34;
+    key_distinctions:
+      - &#34;rating_event 是历史流水，不参与同一会话唯一评分约束&#34;
+      - &#34;rating_event 支持追溯，不直接作为前端当前分数来源&#34;
+
+  - id: resource_metrics
+    name: 资料聚合指标
+    type: derived
+    description: &#34;由推荐和评分聚合出的指标层，是推荐指数、榜单排序和视觉权重的主要来源。&#34;
+    attributes:
+      - name: recommendation_score
+        type: number
+        description: &#34;最终推荐指数；有评分时优先使用评分平均分，否则使用已采纳推荐平均分&#34;
+      - name: average_rating
+        type: number
+        description: &#34;评分平均分&#34;
+      - name: rating_count
+        type: number
+        description: &#34;有效评分数量&#34;
+      - name: recommendation_count
+        type: number
+        description: &#34;已采纳推荐数量&#34;
+      - name: unique_recommender_count
+        type: number
+        description: &#34;推荐记录中的去重推荐人数&#34;
+      - name: hotness_score
+        type: number
+        description: &#34;由评分数和推荐数计算的热度&#34;
+      - name: confidence_score
+        type: number
+        description: &#34;由互动数量推导的置信度&#34;
+    key_distinctions:
+      - &#34;最终推荐分数是聚合结果，不是 resource 手填字段&#34;
+      - &#34;评分平均分优先级高于推荐平均分&#34;
+      - &#34;榜单应读取聚合指标，而不是逐条重新扫前端数据&#34;
+
+  - id: ai_evaluation
+    name: AI内容评估
+    type: derived
+    description: &#34;基于书名、作者、领域、能力主题、推荐理由、标签和已有评价，给出领域、难度、质量信号等建议。&#34;
+    attributes:
+      - name: suggested_domain
+        type: string
+        description: &#34;AI 建议领域&#34;
+      - name: suggested_difficulty
+        type: number
+        description: &#34;AI 建议难度层级 1 / 2 / 3&#34;
+      - name: confidence
+        type: number
+        description: &#34;建议置信度&#34;
+      - name: evidence_summary
+        type: string
+        description: &#34;判断依据摘要&#34;
+      - name: status
+        type: enum
+        values: [pending, accepted, rejected]
+        description: &#34;AI 建议是否被采纳&#34;
+    key_distinctions:
+      - &#34;AI 难度建议需要证据，不应只看推荐分数&#34;
+      - &#34;难度是学习门槛判断，不是价值高低判断&#34;
+      - &#34;低置信度时应进入人工复核，而不是直接发布&#34;
+
+  - id: radar_display_state
+    name: 雷达展示状态
+    type: derived
+    description: &#34;将资料映射到首页雷达的位置和动态视觉状态。&#34;
+    attributes:
+      - name: sector_index
+        type: number
+        description: &#34;八大领域对应的扇区索引&#34;
+      - name: ring_index
+        type: number
+        description: &#34;三层难度对应的圈层索引&#34;
+      - name: x
+        type: number
+        description: &#34;雷达坐标 x&#34;
+      - name: y
+        type: number
+        description: &#34;雷达坐标 y&#34;
+      - name: visual_weight_score
+        type: number
+        description: &#34;视觉权重，影响圆点大小和展示优先级&#34;
+      - name: update_type
+        type: enum
+        values: [none, new_resource, score_up, score_down, new_recommendation, new_rating]
+        description: &#34;动态更新类型&#34;
+    key_distinctions:
+      - &#34;领域决定扇区，难度决定圈层，推荐分数影响视觉权重&#34;
+      - &#34;评分升降可影响动态效果，但不直接改变难度圈层&#34;
+
+  - id: recommendation_form
+    name: 推荐抽屉表单
+    type: interface
+    description: &#34;用户新增书籍推荐或补充推荐的前端输入界面。&#34;
+    attributes:
+      - name: title
+        type: string
+        description: &#34;必填&#34;
+      - name: author
+        type: string
+        description: &#34;必填&#34;
+      - name: recommenderName
+        type: string
+        description: &#34;选填&#34;
+      - name: domain
+        type: string
+        description: &#34;必填&#34;
+      - name: reason
+        type: string
+        description: &#34;必填&#34;
+      - name: score
+        type: number
+        description: &#34;必填，3 / 4 / 5&#34;
+    key_distinctions:
+      - &#34;推荐人选填，不影响表单完成状态&#34;
+      - &#34;表单提交成功不等于书籍进入正式雷达&#34;
+
+  - id: scoring_form
+    name: 评分抽屉表单
+    type: interface
+    description: &#34;用户对已有书籍提交或修改评分的前端输入界面。&#34;
+    attributes:
+      - name: bookId
+        type: string
+        description: &#34;必填，由当前书籍带入&#34;
+      - name: recommenderName
+        type: string
+        description: &#34;选填&#34;
+      - name: score
+        type: number
+        description: &#34;必填，3 到 5，步长 0.5&#34;
+      - name: reason
+        type: string
+        description: &#34;必填&#34;
+      - name: mode
+        type: enum
+        values: [create, edit]
+        description: &#34;首次评分或修改评分&#34;
+    key_distinctions:
+      - &#34;评分表单服务已有书籍，不负责创建新书&#34;
+      - &#34;推荐人选填，不影响评分提交完成状态&#34;
+
+relationships:
+  - from: contributor
+    to: recommendation
+    label: 提交
+    cardinality: &#34;1:N&#34;
+    description: &#34;一个推荐人可以提交多条书籍推荐&#34;
+  - from: contributor
+    to: rating
+    label: 评分
+    cardinality: &#34;1:N&#34;
+    description: &#34;一个评分人可以在当前会话内给多本书评分&#34;
+  - from: recommendation_form
+    to: recommendation
+    label: 写入
+    cardinality: &#34;1:1&#34;
+    description: &#34;推荐抽屉提交后写入 recommendations.recommender_name、score、reason 等字段&#34;
+  - from: scoring_form
+    to: rating
+    label: 创建或覆盖
+    cardinality: &#34;1:1&#34;
+    description: &#34;评分抽屉提交后写入 ratings.recommender_name，并按 resource_id + user_session_id 覆盖当前有效评分&#34;
+  - from: rating
+    to: rating_event
+    label: 产生流水
+    cardinality: &#34;1:N&#34;
+    description: &#34;每次创建或修改评分都会记录一条 rating_events&#34;
+  - from: resource
+    to: recommendation
+    label: 接收推荐
+    cardinality: &#34;1:N&#34;
+    description: &#34;一本书可以被多名推荐人推荐&#34;
+  - from: resource
+    to: rating
+    label: 接收评分
+    cardinality: &#34;1:N&#34;
+    description: &#34;一本书可以有多条当前有效评分&#34;
+  - from: recommendation
+    to: resource_metrics
+    label: 聚合输入
+    cardinality: &#34;N:1&#34;
+    description: &#34;accepted / adopted 推荐进入推荐数量、推荐平均分和推荐人计数&#34;
+  - from: rating
+    to: resource_metrics
+    label: 聚合输入
+    cardinality: &#34;N:1&#34;
+    description: &#34;有效评分进入 average_rating、rating_count 和最终 recommendation_score&#34;
+  - from: resource_metrics
+    to: radar_display_state
+    label: 驱动视觉权重
+    cardinality: &#34;1:1&#34;
+    description: &#34;推荐指数、热度和置信度影响圆点大小、优先级和更新状态&#34;
+  - from: resource
+    to: radar_display_state
+    label: 决定基础位置
+    cardinality: &#34;1:1&#34;
+    description: &#34;domain 映射扇区，difficulty_level 映射难度圈层&#34;
+  - from: ai_evaluation
+    to: resource
+    label: 建议分类
+    cardinality: &#34;N:1&#34;
+    description: &#34;AI 内容评估可建议 domain、difficulty_level 和质量信号，经采纳后更新资料主表&#34;
+  - from: recommendation
+    to: ai_evaluation
+    label: 提供证据
+    cardinality: &#34;N:N&#34;
+    description: &#34;推荐理由、推荐分和推荐人贡献可作为 AI 判断领域与难度的辅助证据&#34;
+  - from: rating
+    to: ai_evaluation
+    label: 提供弱证据
+    cardinality: &#34;N:N&#34;
+    description: &#34;评分理由可补充内容判断证据，但评分值本身不应用来推断难度&#34;
+
+action_boundaries:
+  - id: ab_submit_recommendation
+    situation: 用户在书籍推荐抽屉提交一本书
+    situation_description: &#34;用户填写书名、作者、领域、推荐理由和整星推荐指数，可选填推荐人姓名。&#34;
+    required_evidence:
+      - source: &#34;RecommendationForm&#34;
+        checks: &#34;title、author、domain、reason、score 必填；recommenderName 可为空&#34;
+      - source: &#34;resources normalized_title / normalized_author&#34;
+        checks: &#34;检查书名 + 作者是否已存在，决定 success 或 duplicate&#34;
+    valid_actions:
+      - &#34;将 recommenderName 写入 recommendations.recommender_name，空值兜底为当前会话用户&#34;
+      - &#34;把新书推荐保存为 pending，不自动进入正式雷达&#34;
+      - &#34;重复书籍允许补充推荐理由，但需要保留 duplicate 结果反馈&#34;
+    invalid_actions:
+      - action: &#34;因为用户未填写推荐人姓名而阻止提交&#34;
+        reason: &#34;推荐人是署名信息，不是本阶段必填的内容质量证据&#34;
+      - action: &#34;推荐提交成功后直接把新书发布到 radar_books&#34;
+        reason: &#34;推荐成功只表示已接收，不等于审核采纳&#34;
+    exception_triggers:
+      - condition: &#34;后端未配置或 RPC 失败&#34;
+        action: &#34;回退到 mock service 并返回明确失败或模拟结果&#34;
+
+  - id: ab_submit_rating
+    situation: 用户在评分抽屉提交或修改评分
+    situation_description: &#34;用户对已有书籍填写半星评分、必填理由，可选填推荐人/评分人姓名。&#34;
+    required_evidence:
+      - source: &#34;ScoringForm&#34;
+        checks: &#34;bookId 已由当前书籍带入；score 和 reason 必填；recommenderName 可为空&#34;
+      - source: &#34;ratings unique(resource_id, user_session_id)&#34;
+        checks: &#34;同一会话同一本书只有一条当前有效评分&#34;
+    valid_actions:
+      - &#34;首次评分时创建 ratings，并记录 rating_events create&#34;
+      - &#34;修改评分时覆盖 ratings 当前有效评分，并记录 rating_events update&#34;
+      - &#34;将 recommenderName 写入 ratings 与 rating_events，空值兜底为当前会话用户&#34;
+      - &#34;评分成功后刷新 resource_metrics 和当前书籍展示&#34;
+    invalid_actions:
+      - action: &#34;修改评分时新增一条有效评分&#34;
+        reason: &#34;会破坏当前会话同一本书只有一条有效评分的规则&#34;
+      - action: &#34;把评分值用于改写 difficulty_level&#34;
+        reason: &#34;评分表达价值判断，难度表达学习门槛，两者不是同一指标&#34;
+    exception_triggers:
+      - condition: &#34;score 为空或 reason 为空&#34;
+        action: &#34;阻止提交并提示补全必填项&#34;
+
+  - id: ab_compute_final_score
+    situation: 推荐指数需要实时更新
+    situation_description: &#34;用户提交评分或后台采纳推荐后，需要得到书籍的最终推荐分数。&#34;
+    required_evidence:
+      - source: &#34;ratings&#34;
+        checks: &#34;读取所有当前有效评分，计算 average_rating 与 rating_count&#34;
+      - source: &#34;recommendations&#34;
+        checks: &#34;只读取 accepted / adopted 推荐，计算 recommendation_count 与推荐平均分&#34;
+    valid_actions:
+      - &#34;有有效评分时，recommendation_score 优先等于评分平均分&#34;
+      - &#34;没有有效评分但有已采纳推荐时，recommendation_score 使用推荐平均分&#34;
+      - &#34;刷新 hotness_score、confidence_score 和 votesCount 展示&#34;
+    invalid_actions:
+      - action: &#34;把 pending 或 error 推荐纳入最终推荐分数&#34;
+        reason: &#34;这些推荐尚未被采纳或已失败，不能作为正式质量信号&#34;
+      - action: &#34;在前端临时扫列表重新定义推荐指数规则&#34;
+        reason: &#34;推荐指数规则应由 resource_metrics 统一承接，保证列表、详情、雷达一致&#34;
+    exception_triggers:
+      - condition: &#34;评分数量和采纳推荐数量都为 0&#34;
+        action: &#34;保留默认推荐指数或等待种子数据/审核采纳&#34;
+
+  - id: ab_judge_difficulty
+    situation: 需要判断书籍难度层级
+    situation_description: &#34;新增书籍或已有书籍需要进入雷达圈层时，系统需要判断 difficulty_level。&#34;
+    required_evidence:
+      - source: &#34;resources&#34;
+        checks: &#34;title、author、domain、ability_themes、tags、summary、fit_for、takeaways&#34;
+      - source: &#34;recommendations&#34;
+        checks: &#34;推荐理由中是否说明适合人群、前置知识、应用深度&#34;
+      - source: &#34;ai_evaluations&#34;
+        checks: &#34;AI 给出 suggested_difficulty、confidence 和 evidence_summary&#34;
+    valid_actions:
+      - &#34;使用能力主题、推荐理由、适合人群和内容摘要判断难度&#34;
+      - &#34;低置信度时进入人工复核或保持 pending&#34;
+      - &#34;采纳后写入 resources.difficulty_level，再映射 radar_display_state.ring_index&#34;
+    invalid_actions:
+      - action: &#34;要求用户像推荐分一样必填难度&#34;
+        reason: &#34;难度是内容层级判断，普通用户填写会增加负担且主观漂移较大&#34;
+      - action: &#34;只根据推荐分数高低判断难度&#34;
+        reason: &#34;高分可以是入门好书，也可以是进阶经典，分数不能代表门槛&#34;
+    exception_triggers:
+      - condition: &#34;书名、作者、理由和能力主题不足以判断难度&#34;
+        action: &#34;把难度标为待评估，等待更多推荐理由或人工补充&#34;
+
+  - id: ab_generate_book_lists
+    situation: 书单列表页生成三个推荐榜单
+    situation_description: &#34;列表页需要展示本周推荐量最多、本周上新和长期高分学习路径。&#34;
+    required_evidence:
+      - source: &#34;resource_metrics&#34;
+        checks: &#34;recommendation_score、rating_count、recommendation_count、hotness_score、last_recommended_at&#34;
+      - source: &#34;resources&#34;
+        checks: &#34;created_at、domain、difficulty_level、status&#34;
+    valid_actions:
+      - &#34;推荐量最多榜优先按本周互动量和 hotness_score 排序&#34;
+      - &#34;本周上新榜读取本周 created_at 或 first_appeared_at&#34;
+      - &#34;长期高分学习路径按领域选取不同 difficulty_level 的高分书&#34;
+    invalid_actions:
+      - action: &#34;只按前端数组顺序展示榜单&#34;
+        reason: &#34;榜单需要有可追溯的指标来源&#34;
+    exception_triggers:
+      - condition: &#34;某领域不足三本不同难度高分书&#34;
+        action: &#34;展示已有层级并标记该领域路径待补充&#34;
+
+workstreams:
+  - id: ws_recommendation_submission
+    name: 书籍推荐提交
+    description: &#34;从用户填写推荐表单到保存推荐记录、等待采纳的流程。&#34;
+    anchor_objects:
+      - recommendation_form
+      - recommendation
+      - resource
+      - contributor
+    states:
+      - id: rec_draft
+        name: 草稿填写中
+        description: &#34;用户正在填写推荐表单，推荐人姓名可为空。&#34;
+        transitions:
+          - to_state: rec_ready
+            trigger_action: 完成必填字段
+            required_evidence: &#34;title、author、domain、reason、score 均已填写&#34;
+            type: normal
+      - id: rec_ready
+        name: 可提交
+        description: &#34;推荐信息满足提交条件。&#34;
+        transitions:
+          - to_state: rec_pending
+            trigger_action: 调用 submit_recommendation&#34;
+            required_evidence: &#34;后端接收推荐并写入 recommendations&#34;
+            type: normal
+          - to_state: rec_duplicate
+            trigger_action: 检测重复书籍
+            required_evidence: &#34;normalized_title + normalized_author 已存在&#34;
+            type: exception
+      - id: rec_pending
+        name: 等待采纳
+        description: &#34;推荐已保存，但不会自动进入正式雷达。&#34;
+        transitions:
+          - to_state: rec_adopted
+            trigger_action: 审核采纳推荐
+            required_evidence: &#34;status 变为 accepted 或 adopted&#34;
+            type: normal
+      - id: rec_duplicate
+        name: 重复推荐
+        description: &#34;书籍已存在，用户可作为补充推荐继续提交。&#34;
+        transitions:
+          - to_state: rec_pending
+            trigger_action: 用户确认补充推荐
+            required_evidence: &#34;允许重复补充并保留推荐理由&#34;
+            type: recovery
+      - id: rec_adopted
+        name: 已采纳
+        description: &#34;推荐成为聚合指标输入。&#34;
+        transitions: []
+    guardrails:
+      - &#34;推荐人姓名选填，不能作为提交阻塞条件&#34;
+      - &#34;pending 推荐不进入正式推荐指数&#34;
+      - &#34;推荐记录必须保留 reason 与 recommender_name&#34;
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: &#34;推荐状态变为 accepted 或 adopted&#34;
+        impact: &#34;触发 resource_metrics 刷新&#34;
+
+  - id: ws_rating_submission
+    name: 评分投票提交
+    description: &#34;从用户在书籍列表或详情入口打开评分抽屉，到更新当前有效评分和推荐指数。&#34;
+    anchor_objects:
+      - scoring_form
+      - rating
+      - rating_event
+      - resource_metrics
+    states:
+      - id: rate_draft
+        name: 评分填写中
+        description: &#34;用户填写 score、reason 和可选 recommenderName。&#34;
+        transitions:
+          - to_state: rate_ready
+            trigger_action: 完成评分和理由
+            required_evidence: &#34;score 非空且 reason 非空&#34;
+            type: normal
+      - id: rate_ready
+        name: 可提交评分
+        description: &#34;评分表单满足提交条件。&#34;
+        transitions:
+          - to_state: rate_created
+            trigger_action: 首次提交评分
+            required_evidence: &#34;当前 resource_id + user_session_id 尚无 rating&#34;
+            type: normal
+          - to_state: rate_updated
+            trigger_action: 修改评分
+            required_evidence: &#34;当前 resource_id + user_session_id 已存在 rating&#34;
+            type: normal
+      - id: rate_created
+        name: 首次评分生效
+        description: &#34;创建当前有效评分并记录 create 流水。&#34;
+        transitions:
+          - to_state: metrics_refreshed
+            trigger_action: refresh_resource_metrics
+            required_evidence: &#34;ratings 已写入&#34;
+            type: normal
+      - id: rate_updated
+        name: 评分已更新
+        description: &#34;覆盖当前有效评分并记录 update 流水。&#34;
+        transitions:
+          - to_state: metrics_refreshed
+            trigger_action: refresh_resource_metrics
+            required_evidence: &#34;ratings 已覆盖&#34;
+            type: normal
+      - id: metrics_refreshed
+        name: 推荐指数已刷新
+        description: &#34;列表、详情和当前书籍展示拿到新的推荐指数和推荐人数。&#34;
+        transitions: []
+    guardrails:
+      - &#34;同一会话同一本书只保留一条有效评分&#34;
+      - &#34;评分理由必填，推荐人/评分人姓名选填&#34;
+      - &#34;评分成功会影响推荐指数，不改变难度层级&#34;
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: &#34;rating create 或 update&#34;
+        impact: &#34;重新计算 final recommendation_score&#34;
+
+  - id: ws_score_aggregation
+    name: 最终推荐分数计算
+    description: &#34;将有效评分和已采纳推荐汇总为资源级推荐指数、热度和置信度。&#34;
+    anchor_objects:
+      - rating
+      - recommendation
+      - resource_metrics
+      - radar_display_state
+    states:
+      - id: score_waiting_input
+        name: 等待有效输入
+        description: &#34;资料尚无评分或已采纳推荐。&#34;
+        transitions:
+          - to_state: score_from_recommendation
+            trigger_action: 推荐被采纳
+            required_evidence: &#34;recommendations.status in accepted / adopted&#34;
+            type: normal
+          - to_state: score_from_rating
+            trigger_action: 用户提交评分
+            required_evidence: &#34;ratings 存在当前有效评分&#34;
+            type: normal
+      - id: score_from_recommendation
+        name: 推荐均分生效
+        description: &#34;无评分时，最终推荐指数来自已采纳推荐平均分。&#34;
+        transitions:
+          - to_state: score_from_rating
+            trigger_action: 新增有效评分
+            required_evidence: &#34;rating_count &gt; 0&#34;
+            type: normal
+      - id: score_from_rating
+        name: 评分均分生效
+        description: &#34;有评分时，最终推荐指数优先来自有效评分平均分。&#34;
+        transitions:
+          - to_state: radar_weight_refreshed
+            trigger_action: 刷新雷达视觉权重
+            required_evidence: &#34;resource_metrics.recommendation_score 已更新&#34;
+            type: normal
+      - id: radar_weight_refreshed
+        name: 视觉权重已刷新
+        description: &#34;圆点大小、榜单排序和动态状态可读取新的聚合指标。&#34;
+        transitions: []
+    guardrails:
+      - &#34;最终推荐分数必须来自 resource_metrics&#34;
+      - &#34;pending 推荐不进入正式分数&#34;
+      - &#34;评分值不作为难度判断依据&#34;
+    dependency_mapping:
+      - workstream: ws_difficulty_judgement
+        condition: &#34;新增书籍需要进入雷达&#34;
+        impact: &#34;最终推荐分数只能决定优先级，圈层还需要 difficulty_level&#34;
+
+  - id: ws_difficulty_judgement
+    name: 难度判断与圈层映射
+    description: &#34;从内容证据和 AI 评估得到 difficulty_level，再映射到首页雷达三层圈。&#34;
+    anchor_objects:
+      - resource
+      - recommendation
+      - ai_evaluation
+      - radar_display_state
+    states:
+      - id: diff_waiting_evidence
+        name: 等待证据
+        description: &#34;新增书籍只有基础字段，难度证据不足。&#34;
+        transitions:
+          - to_state: diff_ai_suggested
+            trigger_action: 生成 AI 内容评估
+            required_evidence: &#34;title、author、domain、ability_themes、reason 或 summary 足够&#34;
+            type: normal
+      - id: diff_ai_suggested
+        name: AI 已建议难度
+        description: &#34;AI 给出 suggested_difficulty、置信度和判断依据。&#34;
+        transitions:
+          - to_state: diff_confirmed
+            trigger_action: 采纳难度建议
+            required_evidence: &#34;confidence 足够或人工确认&#34;
+            type: normal
+          - to_state: diff_review_needed
+            trigger_action: 置信度不足
+            required_evidence: &#34;证据不足或推荐理由冲突&#34;
+            type: exception
+      - id: diff_review_needed
+        name: 需要复核
+        description: &#34;难度不可自动确认，需要更多资料或人工判断。&#34;
+        transitions:
+          - to_state: diff_confirmed
+            trigger_action: 人工补充或确认
+            required_evidence: &#34;补充 summary、能力主题、适合人群或前置知识&#34;
+            type: recovery
+      - id: diff_confirmed
+        name: 难度已确认
+        description: &#34;resources.difficulty_level 已确认，可映射 radar_display_state.ring_index。&#34;
+        transitions: []
+    guardrails:
+      - &#34;难度不是用户必填评分项&#34;
+      - &#34;必须保留判断依据，尤其是 AI 建议被采纳时&#34;
+      - &#34;难度只影响圈层，不表达书籍价值高低&#34;
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: &#34;书籍已有最终推荐分数但没有难度&#34;
+        impact: &#34;书籍可以排序，但不能可靠定位到雷达圈层&#34;
+</pre>
+      </div>
+    </div>
+
+  </div><!-- /tab-prompt -->
+
+</div><!-- /page-wrap -->
+
+<div class="toast" id="toast">已复制到剪贴板</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  // Initialize Mermaid with custom configuration
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: 'loose',
+    theme: 'base',
+    themeVariables: {
+      fontFamily: 'Plus Jakarta Sans, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      lineColor: '#CBD5E1',
+      primaryColor: '#EFF6FF',
+      primaryTextColor: '#1D4ED8',
+      primaryBorderColor: '#3B82F6',
+      secondaryColor: '#F5F3FF',
+      tertiaryColor: '#FFF7ED',
+      edgeLabelBackground: '#FFFFFF'
+    }
+  });
+
+  let mermaidInitialized = false;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // Render objects relationship graph immediately on page load
+    mermaid.init(undefined, '#mermaid-relationships');
+  });
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.getElementById('tab-btn-' + name).classList.add('active');
+
+    // Render Mermaid diagrams lazily when the tab becomes active and visible
+    if (name === 'states' && !mermaidInitialized) {
+      setTimeout(() => {
+        mermaid.init(undefined, '.tab-panel#tab-states .mermaid');
+        mermaidInitialized = true;
+      }, 50);
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 2500);
+  }
+
+  function copyYAML() {
+    const text = document.getElementById('raw-yaml-content').textContent.trim();
+    navigator.clipboard.writeText(text).then(() => showToast('✅ YAML 已复制'));
+  }
+
+  function copyPrompt() {
+    const text = document.getElementById('agent-prompt-content').textContent.trim();
+    navigator.clipboard.writeText(text).then(() => showToast('✅ Prompt 已复制'));
+  }
+</script>
+</body>
+</html>

@@ -333,11 +333,11 @@
     <div class="summary">
       <p>
         <span class="tag current">当前已实现</span>
-        当前前端在配置 Supabase 后读取 <code>radar_books</code> 视图；未配置或请求失败时回退 <code>src/mocks/mockData.ts</code>。推荐、评分会优先写入 RPC，当前会话记录仍通过 Zustand store 和 sessionStorage 保留。
+        当前前端主要依赖 <code>src/mocks/mockData.ts</code> 模拟正式书库数据，并通过 Zustand store 和 sessionStorage 模拟推荐、评分记录。
       </p>
       <p>
-        <span class="tag current">当前已实现</span>
-        <code>supabase/seeds/001_imported_books.sql</code> 由 <code>scripts/export-supabase-seed.mjs</code> 从 Excel 全量生成：88 行原始资料按规范化资料名称合并为 72 份资料，覆盖书籍、在线课程/官方文档、文章/其他资料。
+        <span class="tag assumption">新增建议</span>
+        如果未来接入真实后台，建议不要只用一张大表，而是拆成资源主表、推荐记录表、评分记录表、指标聚合表、雷达展示状态表和 AI 评估表。
       </p>
     </div>
 
@@ -355,7 +355,7 @@
           </div>
           <div class="map-node action">
             <strong>recommendations</strong>
-            <span>推荐记录：类型、URL、人群/能力建议、推荐人、推荐理由、推荐分、处理状态</span>
+            <span>推荐记录：推荐人、推荐理由、推荐分、处理状态</span>
           </div>
           <div class="map-node action">
             <strong>ratings</strong>
@@ -405,7 +405,7 @@
       </div>
     </section>
 
-    <h2>0.1 核心功能链路</h2>
+    <h2>0.1 三条核心功能链路</h2>
     <section class="route-grid" aria-label="核心功能链路脑图">
       <article class="route-card">
         <h3>首页雷达展示链路</h3>
@@ -441,16 +441,13 @@
       </article>
 
       <article class="route-card">
-        <h3>资料推荐提交链路</h3>
+        <h3>书籍推荐提交链路</h3>
         <div class="route-step">
           <strong>用户填写</strong>
           <div class="field-chip-row">
             <span class="field-chip">title</span>
             <span class="field-chip">resourceType</span>
-            <span class="field-chip">url</span>
             <span class="field-chip">author</span>
-            <span class="field-chip">fitFor</span>
-            <span class="field-chip">prerequisites</span>
             <span class="field-chip">reason</span>
             <span class="field-chip">score</span>
           </div>
@@ -461,11 +458,7 @@
         </div>
         <div class="route-step">
           <strong>recommendations</strong>
-          <span>写入推荐理由、推荐人、推荐分、资料类型、URL、人群/能力建议和处理状态。</span>
-        </div>
-        <div class="route-step">
-          <strong>ai_evaluations</strong>
-          <span>把标题、作者/来源、URL、适合人群、前置能力、能力主题和推荐理由保存为后续 AI 判断证据。</span>
+          <span>写入推荐理由、推荐人、推荐分和处理状态。</span>
         </div>
         <div class="route-step">
           <strong>推荐抽屉 / 推荐记录</strong>
@@ -494,33 +487,6 @@
         <div class="route-step">
           <strong>radar_display_state / 榜单</strong>
           <span>更新点大小、光晕、最近更新态，并影响热门/高推荐榜单。</span>
-        </div>
-      </article>
-
-      <article class="route-card">
-        <h3>历史版本对比链路（本周更新）</h3>
-        <div class="route-step">
-          <strong>generate_weekly_version()</strong>
-          <span>对当前雷达全量做快照，生成新版本（版本号 +1）。</span>
-        </div>
-        <div class="route-step">
-          <strong>radar_versions / radar_version_books</strong>
-          <div class="field-chip-row">
-            <span class="field-chip">versionNumber</span>
-            <span class="field-chip">weekStart</span>
-            <span class="field-chip">resource_id</span>
-            <span class="field-chip">score</span>
-            <span class="field-chip">votesCount</span>
-            <span class="field-chip">visualWeight</span>
-          </div>
-        </div>
-        <div class="route-step">
-          <strong>get_version_diff()</strong>
-          <span>返回最近两版元数据 + 上一版书目快照。</span>
-        </div>
-        <div class="route-step">
-          <strong>首页「本周更新」</strong>
-          <span>computeVersionCompareData 以 resourceId 匹配出 added / score_up / score_down / unchanged，雷达叠加对比态渲染 + 左上角计数面板；跌出雷达的书不单独标注。</span>
         </div>
       </article>
     </section>
@@ -658,19 +624,7 @@
           <td><code>ai_evaluations</code></td>
           <td>AI 辅助评估表，保存领域、难度、质量分和判断依据</td>
           <td>后台审核、AI 评分解释、能力主题校正、质量判断</td>
-          <td>表已建（migration 001），当前无流程写入</td>
-        </tr>
-        <tr>
-          <td><code>radar_versions</code></td>
-          <td>周版本元数据表，保存版本号、周区间、生成时间</td>
-          <td>首页「本周更新」对比面板（第 N 期 vs 第 M 期）</td>
-          <td>已实现（migration 003），前端 RPC <code>get_version_diff</code> 读取</td>
-        </tr>
-        <tr>
-          <td><code>radar_version_books</code></td>
-          <td>版本内书目快照，保存每本书 score / votesCount / 坐标 / 视觉权重；<code>resource_id</code> 不加外键以支持幽灵书</td>
-          <td>版本对比中「上一版书目」数据源（新增/升降判定；跌出雷达的书不单独标注）</td>
-          <td>已实现（migration 003），含可删除的演示差异数据 <code>ghost-demo-1</code></td>
+          <td>否，属于后续新增能力</td>
         </tr>
       </tbody>
     </table>
@@ -795,36 +749,6 @@
           <td>关联资料 ID</td>
           <td>把推荐记录挂到某本书或某篇文章下</td>
           <td>系统关联</td>
-        </tr>
-        <tr>
-          <td><code>resource_type</code> / <code>resourceType</code></td>
-          <td>推荐资料类型</td>
-          <td>推荐抽屉单选、列表卡片、详情页资料类型标签</td>
-          <td>用户选择；Excel <code>资料类型</code> 导入</td>
-        </tr>
-        <tr>
-          <td><code>url</code></td>
-          <td>资料链接</td>
-          <td>推荐抽屉 URL 输入、详情页原始链接、推荐记录链接</td>
-          <td>用户选填；Excel <code>资料链接</code> 导入</td>
-        </tr>
-        <tr>
-          <td><code>fit_for_suggestions</code> / <code>fitFor</code></td>
-          <td>适合人群建议</td>
-          <td>推荐抽屉多选、新资料入库后的适合人群标签、AI eval 证据</td>
-          <td>用户多选；Excel <code>能力主题</code> 前缀推导</td>
-        </tr>
-        <tr>
-          <td><code>prerequisite_suggestions</code> / <code>prerequisites</code></td>
-          <td>能力类型建议</td>
-          <td>推荐抽屉多选、新资料入库后的标签、AI eval 难度判断证据</td>
-          <td>用户多选；Excel <code>能力主题</code> 概括推导</td>
-        </tr>
-        <tr>
-          <td><code>ability_theme_suggestions</code></td>
-          <td>完整能力主题建议</td>
-          <td>新资料入库后的能力主题、雷达领域/难度辅助判断、AI eval 证据</td>
-          <td>系统根据用户选择的能力类型生成；Excel <code>能力主题</code> 导入</td>
         </tr>
         <tr>
           <td><code>recommenderName</code></td>
@@ -1160,13 +1084,13 @@
         </tr>
         <tr>
           <td><code>qualitySignals</code></td>
-          <td>质量信号与推荐入口证据包：标题、作者/来源、资料类型、URL、适合人群、能力类型、能力主题、推荐理由</td>
-          <td>后台质量判断、领域/难度辅助判断、未来详情页解释</td>
+          <td>质量信号，例如权威性、系统性、长期价值、实践价值</td>
+          <td>后台质量判断、未来详情页解释</td>
           <td>否</td>
         </tr>
         <tr>
           <td><code>evidenceSummary</code></td>
-          <td>AI 判断依据摘要，当前推荐提交会汇总资料类型、适合人群、前置能力、能力主题建议和推荐理由</td>
+          <td>AI 判断依据摘要</td>
           <td>后台审核，未来可作为“为什么推荐”补充</td>
           <td>否</td>
         </tr>
@@ -1195,13 +1119,13 @@
           <td>这些字段用户知道，填写成本可控，也是推荐动作的核心表达。</td>
         </tr>
         <tr>
-          <td>建议用户选择或系统辅助</td>
-          <td><code>fitFor</code>、<code>prerequisites</code>、<code>abilityThemes</code></td>
-          <td>用户只多选适合人群和概括能力类型；完整能力主题由系统按选项映射生成，降低填写负担。</td>
+          <td>建议用户选择或 AI 辅助</td>
+          <td><code>abilityThemes</code></td>
+          <td>能力主题有业务语义，用户可选，但 AI 应该给默认建议，降低填写负担。</td>
         </tr>
         <tr>
           <td>建议系统/AI 生成</td>
-          <td><code>domain</code>、<code>difficultyLevel</code>、<code>tags</code>、<code>takeaways</code>、<code>summary</code></td>
+          <td><code>domain</code>、<code>difficultyLevel</code>、<code>tags</code>、<code>fitFor</code>、<code>takeaways</code>、<code>summary</code></td>
           <td>这些字段需要一致性和专业判断，直接让用户填会增加复杂度，也容易不稳定。</td>
         </tr>
         <tr>
@@ -1248,9 +1172,9 @@
           <td>完整资料信息、推荐理由、推荐人、能力主题</td>
         </tr>
         <tr>
-          <td>资料推荐抽屉</td>
-          <td><code>resources</code>、<code>recommendations</code>、<code>ai_evaluations</code></td>
-          <td><code>title</code>、<code>author</code>、<code>resourceType</code>、<code>url</code>、<code>fitFor</code>、<code>prerequisites</code>、<code>recommendationReason</code>、<code>recommendationScore</code></td>
+          <td>书籍推荐抽屉</td>
+          <td><code>resources</code>、<code>recommendations</code></td>
+          <td><code>title</code>、<code>author</code>、<code>resourceType</code>、<code>recommendationReason</code>、<code>recommendationScore</code></td>
           <td>用户提交新资料推荐，系统判断是否重复并返回结果</td>
         </tr>
         <tr>
@@ -1282,7 +1206,7 @@
       </p>
       <p>
         <strong>结论 2：</strong>
-        <code>recommendations</code> 和 <code>ratings</code> 是用户行为记录表，不能只压进资源主表，否则未来无法追溯推荐理由、评分变化和推荐人/评分人贡献。
+        <code>recommendations</code> 和 <code>ratings</code> 是用户行为记录表，不能只压进资源主表，否则未来无法追溯推荐理由、评分变化和推荐人贡献。
       </p>
       <p>
         <strong>结论 3：</strong>
@@ -1294,62 +1218,14 @@
       </p>
       <p>
         <strong>结论 5：</strong>
-        用户表单必须轻量。当前用户需要表达“推荐什么、为什么推荐、给多少分”，并可选填 URL、推荐人、适合人群和能力类型；完整能力主题、难度、标签、雷达坐标和 AI 评估应由系统辅助生成。
-      </p>
-      <p>
-        <strong>结论 6：</strong>
-        推荐抽屉与评分抽屉都允许用户选填 <code>recommenderName</code>；推荐写入 <code>recommendations.recommender_name</code>，评分写入 <code>ratings.recommender_name</code> 与 <code>rating_events.recommender_name</code>。
+        用户表单必须轻量。用户只需要表达“推荐什么、为什么推荐、给多少分”，其余分类、难度、标签、雷达坐标和 AI 评估应由系统辅助生成。
       </p>
     </div>
-
-    <h2>13. 版本对比（本周更新）新增表与前端映射</h2>
-    <div class="summary">
-      <p>
-        <strong>版本对比链路</strong>由 <code>supabase/migrations/003_radar_versions.sql</code> 新增落地（产品 Brief 见
-        <a href="./radar-version-compare.md">radar-version-compare.md</a>），只读快照、不写回 <code>resources</code>，
-        不改变现有表结构语义。
-      </p>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th>表 / RPC</th>
-          <th>字段</th>
-          <th>前端用途</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><code>radar_versions</code></td>
-          <td><code>id</code>、<code>version_number</code>、<code>week_start</code>、<code>week_end</code>、<code>generated_at</code>、<code>note</code></td>
-          <td>对比面板标题「第 N 期 vs 第 M 期」与周次文案（如「8月13日 起」）</td>
-        </tr>
-        <tr>
-          <td><code>radar_version_books</code></td>
-          <td><code>resource_id</code>（无外键，支持幽灵书）、<code>title</code>、<code>author</code>、<code>domain</code>、<code>difficulty_level</code>、<code>sector_index</code>、<code>ring_index</code>、<code>x</code>、<code>y</code>、<code>recommendation_score</code>、<code>votes_count</code>、<code>point_radius</code>、<code>halo_radius</code>、<code>halo_opacity</code>、<code>stroke_width</code>、<code>fill_opacity</code>、<code>radar_visible</code></td>
-          <td>上一版书目快照 → <code>computeVersionCompareData</code> 与当前 <code>books</code> 按 <code>resourceId</code> 匹配，判定 <code>added / score_up / score_down / unchanged</code>；跌出雷达的书不单独标注。<strong>视觉权重字段已存储但本轮不参与渲染</strong>，仅随快照保留</td>
-        </tr>
-        <tr>
-          <td><code>generate_weekly_version()</code></td>
-          <td>返回新版本 <code>jsonb</code>（版本号 +1）</td>
-          <td>对当前雷达（<code>radar_books</code> 视图）全量做快照生成新版本；当前为简化实现（不含 AI 审核 / 成员重排），供后续周更定时触发使用</td>
-        </tr>
-        <tr>
-          <td><code>get_version_diff()</code></td>
-          <td>返回 <code>currentVersion</code> / <code>previousVersion</code> / <code>previousBooks</code>（含演示幽灵书）</td>
-          <td><code>versionCompareService.fetchVersionDiff</code> 读取；后端未配置或 RPC 失败时回退本地演示数据；确无上一版时返回 <code>null</code>（不兜底）</td>
-        </tr>
-      </tbody>
-    </table>
 
     <div class="warning">
-      本文档主体撰写于版本对比落地之前。当前实现中，<code>resources</code>、<code>recommendations</code>、<code>ratings</code>、
-      <code>rating_events</code>、<code>resource_metrics</code>、<code>radar_display_state</code>、<code>ai_evaluations</code> 已在
-      <code>supabase/migrations/001_initial_schema.sql</code> 建表，并提供
-      <code>refresh_resource_metrics</code>、<code>refresh_radar_display_state</code>、<code>submit_recommendation</code>、
-      <code>submit_book_score</code> 等 RPC；前端在未配置 Supabase 或请求失败时回退 <code>mockData.ts</code>。
-      雷达视觉权重字段（<code>point_radius</code> 等）已随快照存储，但渲染仍由实时数据驱动，视觉权重参与渲染与 AI 评估写入待后续迭代。
+      当前代码里的 <code>mockData.ts</code> 已经模拟了 <code>resources</code>、部分 <code>recommendations</code> 和基础雷达坐标。
+      但还没有真正拆出 <code>resource_metrics</code>、<code>radar_display_state</code>、<code>ai_evaluations</code>。
+      如果后续要做评分后雷达视觉权重自动更新、推荐榜单和 AI 严谨评分依据，这三类数据需要补上。
     </div>
   </main>
 </body>

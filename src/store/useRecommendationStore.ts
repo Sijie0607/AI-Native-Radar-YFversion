@@ -25,9 +25,14 @@ const persistRecommendationRecords = (records: RecommendationRecord[]) => {
 };
 
 export const EMPTY_RECOMMENDATION_DRAFT: BookRecommendationDraft = {
+  resourceType: '书籍',
   title: '',
   author: '',
+  url: '',
+  recommenderName: '',
   domain: '',
+  fitFor: [],
+  prerequisites: [],
   reason: '',
   score: null,
 };

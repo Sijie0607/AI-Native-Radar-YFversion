@@ -1,0 +1,673 @@
+title: AI-Native读书雷达-书单推荐与评分本体设计
+domain: AI学习资料共建与推荐
+scenario_description: "围绕书单列表页、书籍推荐抽屉和评分抽屉，定义书籍、推荐、评分、推荐人、最终推荐分数、难度判断与雷达展示之间的对象关系、行动边界和状态迁移。"
+target_agent_role: AI-Native读书雷达数据治理助手
+
+entities:
+  - id: contributor
+    name: 推荐人/评分人
+    type: reference
+    description: "在推荐抽屉或评分抽屉中选填的人名或昵称，用于追踪贡献来源；当前阶段不等同于账号体系。"
+    attributes:
+      - name: recommender_name
+        type: string
+        description: "用户填写的推荐人或评分人姓名；为空时使用当前会话用户"
+      - name: user_session_id
+        type: string
+        description: "当前会话标识，用于限制同一会话同一本书只有一条有效评分"
+      - name: is_anonymous
+        type: boolean
+        description: "推荐记录是否匿名展示；当前实现默认 false"
+    key_distinctions:
+      - "推荐人/评分人姓名是贡献署名，不是登录账号"
+      - "姓名为空不阻止提交，系统以当前会话用户兜底"
+      - "评分唯一性由 user_session_id 控制，不由姓名控制"
+
+  - id: resource
+    name: 资料/书籍
+    type: core
+    description: "进入系统的书籍或资料主对象，是首页雷达、书单列表和详情页的共同基础数据。"
+    attributes:
+      - name: id
+        type: string
+        description: "系统内唯一资料 ID"
+      - name: title
+        type: string
+        description: "资料名称"
+      - name: author
+        type: string
+        description: "作者或作者待补充"
+      - name: domain
+        type: enum
+        values: [ai-engineering, ai-product-design, agent-and-intelligent-systems, ai-organizational-transformation, data-intelligence-and-knowledge, ai-business-implementation, ai-ethics-and-governance, ai-frontier-trends]
+        description: "八大领域之一，决定雷达扇区和列表标签"
+      - name: ability_themes
+        type: string
+        description: "能力主题，可作为领域和难度判断证据"
+      - name: difficulty_level
+        type: enum
+        values: [1, 2, 3]
+        description: "三层难度，决定雷达内圈、中圈、外圈"
+      - name: status
+        type: enum
+        values: [pending, published, rejected, archived]
+        description: "只有 published 才进入 radar_books 视图和正式前端展示"
+    key_distinctions:
+      - "书籍主表保存稳定事实，不直接保存所有用户推荐理由"
+      - "domain 和 difficulty_level 是内容定位字段，不是用户喜好评分"
+      - "status = published 才能进入正式雷达"
+
+  - id: recommendation
+    name: 书籍推荐
+    type: event
+    description: "用户通过书籍推荐抽屉提交的新书或补充推荐，保存推荐理由、推荐分和推荐人。"
+    attributes:
+      - name: resource_id
+        type: string
+        description: "关联的资料 ID；新书在审核前也可先形成 pending 推荐"
+      - name: recommender_name
+        type: string
+        description: "推荐人姓名，来自推荐表单选填字段"
+      - name: score
+        type: number
+        description: "整星推荐指数，当前前端为 3 / 4 / 5"
+      - name: reason
+        type: string
+        description: "推荐理由"
+      - name: status
+        type: enum
+        values: [pending, accepted, duplicate, error, adopted]
+        description: "推荐处理状态，决定是否进入聚合指标"
+      - name: created_at
+        type: datetime
+        description: "推荐提交时间"
+    key_distinctions:
+      - "推荐提交不是正式收录，pending 不等于 published"
+      - "推荐分是推荐人对价值的主观判断，可进入推荐指数聚合"
+      - "推荐理由和推荐人是一对多行为记录，不能压进 resource 单字段"
+
+  - id: rating
+    name: 评分投票
+    type: core
+    description: "用户对已收录书籍的当前有效评分，同一会话同一本书只有一条，修改时覆盖。"
+    attributes:
+      - name: resource_id
+        type: string
+        description: "被评分的资料 ID"
+      - name: user_session_id
+        type: string
+        description: "当前会话标识"
+      - name: recommender_name
+        type: string
+        description: "推荐人/评分人姓名，来自评分表单选填字段"
+      - name: score
+        type: number
+        description: "半星评分，范围 3 到 5，步长 0.5"
+      - name: reason
+        type: string
+        description: "评分理由"
+      - name: updated_at
+        type: datetime
+        description: "当前有效评分更新时间"
+    key_distinctions:
+      - "rating 是当前有效评分，不保留所有历史改动"
+      - "修改评分不新增有效票数，只替换同一会话的旧分"
+      - "评分用于推荐指数，不直接决定书籍难度"
+
+  - id: rating_event
+    name: 评分流水
+    type: event
+    description: "评分创建或修改的历史流水，用于追踪评分变化和后续质量审计。"
+    attributes:
+      - name: action_type
+        type: enum
+        values: [create, update]
+        description: "首次评分或修改评分"
+      - name: recommender_name
+        type: string
+        description: "本次操作填写的推荐人/评分人姓名"
+      - name: previous_score
+        type: number
+        description: "修改前评分，首次评分为空"
+      - name: next_score
+        type: number
+        description: "修改后评分"
+      - name: reason
+        type: string
+        description: "本次评分理由"
+    key_distinctions:
+      - "rating_event 是历史流水，不参与同一会话唯一评分约束"
+      - "rating_event 支持追溯，不直接作为前端当前分数来源"
+
+  - id: resource_metrics
+    name: 资料聚合指标
+    type: derived
+    description: "由推荐和评分聚合出的指标层，是推荐指数、榜单排序和视觉权重的主要来源。"
+    attributes:
+      - name: recommendation_score
+        type: number
+        description: "最终推荐指数；有评分时优先使用评分平均分，否则使用已采纳推荐平均分"
+      - name: average_rating
+        type: number
+        description: "评分平均分"
+      - name: rating_count
+        type: number
+        description: "有效评分数量"
+      - name: recommendation_count
+        type: number
+        description: "已采纳推荐数量"
+      - name: unique_recommender_count
+        type: number
+        description: "推荐记录中的去重推荐人数"
+      - name: hotness_score
+        type: number
+        description: "由评分数和推荐数计算的热度"
+      - name: confidence_score
+        type: number
+        description: "由互动数量推导的置信度"
+    key_distinctions:
+      - "最终推荐分数是聚合结果，不是 resource 手填字段"
+      - "评分平均分优先级高于推荐平均分"
+      - "榜单应读取聚合指标，而不是逐条重新扫前端数据"
+
+  - id: ai_evaluation
+    name: AI内容评估
+    type: derived
+    description: "基于书名、作者、领域、能力主题、推荐理由、标签和已有评价，给出领域、难度、质量信号等建议。"
+    attributes:
+      - name: suggested_domain
+        type: string
+        description: "AI 建议领域"
+      - name: suggested_difficulty
+        type: number
+        description: "AI 建议难度层级 1 / 2 / 3"
+      - name: confidence
+        type: number
+        description: "建议置信度"
+      - name: evidence_summary
+        type: string
+        description: "判断依据摘要"
+      - name: status
+        type: enum
+        values: [pending, accepted, rejected]
+        description: "AI 建议是否被采纳"
+    key_distinctions:
+      - "AI 难度建议需要证据，不应只看推荐分数"
+      - "难度是学习门槛判断，不是价值高低判断"
+      - "低置信度时应进入人工复核，而不是直接发布"
+
+  - id: radar_display_state
+    name: 雷达展示状态
+    type: derived
+    description: "将资料映射到首页雷达的位置和动态视觉状态。"
+    attributes:
+      - name: sector_index
+        type: number
+        description: "八大领域对应的扇区索引"
+      - name: ring_index
+        type: number
+        description: "三层难度对应的圈层索引"
+      - name: x
+        type: number
+        description: "雷达坐标 x"
+      - name: y
+        type: number
+        description: "雷达坐标 y"
+      - name: visual_weight_score
+        type: number
+        description: "视觉权重，影响圆点大小和展示优先级"
+      - name: update_type
+        type: enum
+        values: [none, new_resource, score_up, score_down, new_recommendation, new_rating]
+        description: "动态更新类型"
+    key_distinctions:
+      - "领域决定扇区，难度决定圈层，推荐分数影响视觉权重"
+      - "评分升降可影响动态效果，但不直接改变难度圈层"
+
+  - id: recommendation_form
+    name: 推荐抽屉表单
+    type: interface
+    description: "用户新增书籍推荐或补充推荐的前端输入界面。"
+    attributes:
+      - name: title
+        type: string
+        description: "必填"
+      - name: author
+        type: string
+        description: "必填"
+      - name: recommenderName
+        type: string
+        description: "选填"
+      - name: domain
+        type: string
+        description: "必填"
+      - name: reason
+        type: string
+        description: "必填"
+      - name: score
+        type: number
+        description: "必填，3 / 4 / 5"
+    key_distinctions:
+      - "推荐人选填，不影响表单完成状态"
+      - "表单提交成功不等于书籍进入正式雷达"
+
+  - id: scoring_form
+    name: 评分抽屉表单
+    type: interface
+    description: "用户对已有书籍提交或修改评分的前端输入界面。"
+    attributes:
+      - name: bookId
+        type: string
+        description: "必填，由当前书籍带入"
+      - name: recommenderName
+        type: string
+        description: "选填"
+      - name: score
+        type: number
+        description: "必填，3 到 5，步长 0.5"
+      - name: reason
+        type: string
+        description: "必填"
+      - name: mode
+        type: enum
+        values: [create, edit]
+        description: "首次评分或修改评分"
+    key_distinctions:
+      - "评分表单服务已有书籍，不负责创建新书"
+      - "推荐人选填，不影响评分提交完成状态"
+
+relationships:
+  - from: contributor
+    to: recommendation
+    label: 提交
+    cardinality: "1:N"
+    description: "一个推荐人可以提交多条书籍推荐"
+  - from: contributor
+    to: rating
+    label: 评分
+    cardinality: "1:N"
+    description: "一个评分人可以在当前会话内给多本书评分"
+  - from: recommendation_form
+    to: recommendation
+    label: 写入
+    cardinality: "1:1"
+    description: "推荐抽屉提交后写入 recommendations.recommender_name、score、reason 等字段"
+  - from: scoring_form
+    to: rating
+    label: 创建或覆盖
+    cardinality: "1:1"
+    description: "评分抽屉提交后写入 ratings.recommender_name，并按 resource_id + user_session_id 覆盖当前有效评分"
+  - from: rating
+    to: rating_event
+    label: 产生流水
+    cardinality: "1:N"
+    description: "每次创建或修改评分都会记录一条 rating_events"
+  - from: resource
+    to: recommendation
+    label: 接收推荐
+    cardinality: "1:N"
+    description: "一本书可以被多名推荐人推荐"
+  - from: resource
+    to: rating
+    label: 接收评分
+    cardinality: "1:N"
+    description: "一本书可以有多条当前有效评分"
+  - from: recommendation
+    to: resource_metrics
+    label: 聚合输入
+    cardinality: "N:1"
+    description: "accepted / adopted 推荐进入推荐数量、推荐平均分和推荐人计数"
+  - from: rating
+    to: resource_metrics
+    label: 聚合输入
+    cardinality: "N:1"
+    description: "有效评分进入 average_rating、rating_count 和最终 recommendation_score"
+  - from: resource_metrics
+    to: radar_display_state
+    label: 驱动视觉权重
+    cardinality: "1:1"
+    description: "推荐指数、热度和置信度影响圆点大小、优先级和更新状态"
+  - from: resource
+    to: radar_display_state
+    label: 决定基础位置
+    cardinality: "1:1"
+    description: "domain 映射扇区，difficulty_level 映射难度圈层"
+  - from: ai_evaluation
+    to: resource
+    label: 建议分类
+    cardinality: "N:1"
+    description: "AI 内容评估可建议 domain、difficulty_level 和质量信号，经采纳后更新资料主表"
+  - from: recommendation
+    to: ai_evaluation
+    label: 提供证据
+    cardinality: "N:N"
+    description: "推荐理由、推荐分和推荐人贡献可作为 AI 判断领域与难度的辅助证据"
+  - from: rating
+    to: ai_evaluation
+    label: 提供弱证据
+    cardinality: "N:N"
+    description: "评分理由可补充内容判断证据，但评分值本身不应用来推断难度"
+
+action_boundaries:
+  - id: ab_submit_recommendation
+    situation: 用户在书籍推荐抽屉提交一本书
+    situation_description: "用户填写书名、作者、领域、推荐理由和整星推荐指数，可选填推荐人姓名。"
+    required_evidence:
+      - source: "RecommendationForm"
+        checks: "title、author、domain、reason、score 必填；recommenderName 可为空"
+      - source: "resources normalized_title / normalized_author"
+        checks: "检查书名 + 作者是否已存在，决定 success 或 duplicate"
+    valid_actions:
+      - "将 recommenderName 写入 recommendations.recommender_name，空值兜底为当前会话用户"
+      - "把新书推荐保存为 pending，不自动进入正式雷达"
+      - "重复书籍允许补充推荐理由，但需要保留 duplicate 结果反馈"
+    invalid_actions:
+      - action: "因为用户未填写推荐人姓名而阻止提交"
+        reason: "推荐人是署名信息，不是本阶段必填的内容质量证据"
+      - action: "推荐提交成功后直接把新书发布到 radar_books"
+        reason: "推荐成功只表示已接收，不等于审核采纳"
+    exception_triggers:
+      - condition: "后端未配置或 RPC 失败"
+        action: "回退到 mock service 并返回明确失败或模拟结果"
+
+  - id: ab_submit_rating
+    situation: 用户在评分抽屉提交或修改评分
+    situation_description: "用户对已有书籍填写半星评分、必填理由，可选填推荐人/评分人姓名。"
+    required_evidence:
+      - source: "ScoringForm"
+        checks: "bookId 已由当前书籍带入；score 和 reason 必填；recommenderName 可为空"
+      - source: "ratings unique(resource_id, user_session_id)"
+        checks: "同一会话同一本书只有一条当前有效评分"
+    valid_actions:
+      - "首次评分时创建 ratings，并记录 rating_events create"
+      - "修改评分时覆盖 ratings 当前有效评分，并记录 rating_events update"
+      - "将 recommenderName 写入 ratings 与 rating_events，空值兜底为当前会话用户"
+      - "评分成功后刷新 resource_metrics 和当前书籍展示"
+    invalid_actions:
+      - action: "修改评分时新增一条有效评分"
+        reason: "会破坏当前会话同一本书只有一条有效评分的规则"
+      - action: "把评分值用于改写 difficulty_level"
+        reason: "评分表达价值判断，难度表达学习门槛，两者不是同一指标"
+    exception_triggers:
+      - condition: "score 为空或 reason 为空"
+        action: "阻止提交并提示补全必填项"
+
+  - id: ab_compute_final_score
+    situation: 推荐指数需要实时更新
+    situation_description: "用户提交评分或后台采纳推荐后，需要得到书籍的最终推荐分数。"
+    required_evidence:
+      - source: "ratings"
+        checks: "读取所有当前有效评分，计算 average_rating 与 rating_count"
+      - source: "recommendations"
+        checks: "只读取 accepted / adopted 推荐，计算 recommendation_count 与推荐平均分"
+    valid_actions:
+      - "有有效评分时，recommendation_score 优先等于评分平均分"
+      - "没有有效评分但有已采纳推荐时，recommendation_score 使用推荐平均分"
+      - "刷新 hotness_score、confidence_score 和 votesCount 展示"
+    invalid_actions:
+      - action: "把 pending 或 error 推荐纳入最终推荐分数"
+        reason: "这些推荐尚未被采纳或已失败，不能作为正式质量信号"
+      - action: "在前端临时扫列表重新定义推荐指数规则"
+        reason: "推荐指数规则应由 resource_metrics 统一承接，保证列表、详情、雷达一致"
+    exception_triggers:
+      - condition: "评分数量和采纳推荐数量都为 0"
+        action: "保留默认推荐指数或等待种子数据/审核采纳"
+
+  - id: ab_judge_difficulty
+    situation: 需要判断书籍难度层级
+    situation_description: "新增书籍或已有书籍需要进入雷达圈层时，系统需要判断 difficulty_level。"
+    required_evidence:
+      - source: "resources"
+        checks: "title、author、domain、ability_themes、tags、summary、fit_for、takeaways"
+      - source: "recommendations"
+        checks: "推荐理由中是否说明适合人群、前置知识、应用深度"
+      - source: "ai_evaluations"
+        checks: "AI 给出 suggested_difficulty、confidence 和 evidence_summary"
+    valid_actions:
+      - "使用能力主题、推荐理由、适合人群和内容摘要判断难度"
+      - "低置信度时进入人工复核或保持 pending"
+      - "采纳后写入 resources.difficulty_level，再映射 radar_display_state.ring_index"
+    invalid_actions:
+      - action: "要求用户像推荐分一样必填难度"
+        reason: "难度是内容层级判断，普通用户填写会增加负担且主观漂移较大"
+      - action: "只根据推荐分数高低判断难度"
+        reason: "高分可以是入门好书，也可以是进阶经典，分数不能代表门槛"
+    exception_triggers:
+      - condition: "书名、作者、理由和能力主题不足以判断难度"
+        action: "把难度标为待评估，等待更多推荐理由或人工补充"
+
+  - id: ab_generate_book_lists
+    situation: 书单列表页生成三个推荐榜单
+    situation_description: "列表页需要展示本周推荐量最多、本周上新和长期高分学习路径。"
+    required_evidence:
+      - source: "resource_metrics"
+        checks: "recommendation_score、rating_count、recommendation_count、hotness_score、last_recommended_at"
+      - source: "resources"
+        checks: "created_at、domain、difficulty_level、status"
+    valid_actions:
+      - "推荐量最多榜优先按本周互动量和 hotness_score 排序"
+      - "本周上新榜读取本周 created_at 或 first_appeared_at"
+      - "长期高分学习路径按领域选取不同 difficulty_level 的高分书"
+    invalid_actions:
+      - action: "只按前端数组顺序展示榜单"
+        reason: "榜单需要有可追溯的指标来源"
+    exception_triggers:
+      - condition: "某领域不足三本不同难度高分书"
+        action: "展示已有层级并标记该领域路径待补充"
+
+workstreams:
+  - id: ws_recommendation_submission
+    name: 书籍推荐提交
+    description: "从用户填写推荐表单到保存推荐记录、等待采纳的流程。"
+    anchor_objects:
+      - recommendation_form
+      - recommendation
+      - resource
+      - contributor
+    states:
+      - id: rec_draft
+        name: 草稿填写中
+        description: "用户正在填写推荐表单，推荐人姓名可为空。"
+        transitions:
+          - to_state: rec_ready
+            trigger_action: 完成必填字段
+            required_evidence: "title、author、domain、reason、score 均已填写"
+            type: normal
+      - id: rec_ready
+        name: 可提交
+        description: "推荐信息满足提交条件。"
+        transitions:
+          - to_state: rec_pending
+            trigger_action: 调用 submit_recommendation"
+            required_evidence: "后端接收推荐并写入 recommendations"
+            type: normal
+          - to_state: rec_duplicate
+            trigger_action: 检测重复书籍
+            required_evidence: "normalized_title + normalized_author 已存在"
+            type: exception
+      - id: rec_pending
+        name: 等待采纳
+        description: "推荐已保存，但不会自动进入正式雷达。"
+        transitions:
+          - to_state: rec_adopted
+            trigger_action: 审核采纳推荐
+            required_evidence: "status 变为 accepted 或 adopted"
+            type: normal
+      - id: rec_duplicate
+        name: 重复推荐
+        description: "书籍已存在，用户可作为补充推荐继续提交。"
+        transitions:
+          - to_state: rec_pending
+            trigger_action: 用户确认补充推荐
+            required_evidence: "允许重复补充并保留推荐理由"
+            type: recovery
+      - id: rec_adopted
+        name: 已采纳
+        description: "推荐成为聚合指标输入。"
+        transitions: []
+    guardrails:
+      - "推荐人姓名选填，不能作为提交阻塞条件"
+      - "pending 推荐不进入正式推荐指数"
+      - "推荐记录必须保留 reason 与 recommender_name"
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: "推荐状态变为 accepted 或 adopted"
+        impact: "触发 resource_metrics 刷新"
+
+  - id: ws_rating_submission
+    name: 评分投票提交
+    description: "从用户在书籍列表或详情入口打开评分抽屉，到更新当前有效评分和推荐指数。"
+    anchor_objects:
+      - scoring_form
+      - rating
+      - rating_event
+      - resource_metrics
+    states:
+      - id: rate_draft
+        name: 评分填写中
+        description: "用户填写 score、reason 和可选 recommenderName。"
+        transitions:
+          - to_state: rate_ready
+            trigger_action: 完成评分和理由
+            required_evidence: "score 非空且 reason 非空"
+            type: normal
+      - id: rate_ready
+        name: 可提交评分
+        description: "评分表单满足提交条件。"
+        transitions:
+          - to_state: rate_created
+            trigger_action: 首次提交评分
+            required_evidence: "当前 resource_id + user_session_id 尚无 rating"
+            type: normal
+          - to_state: rate_updated
+            trigger_action: 修改评分
+            required_evidence: "当前 resource_id + user_session_id 已存在 rating"
+            type: normal
+      - id: rate_created
+        name: 首次评分生效
+        description: "创建当前有效评分并记录 create 流水。"
+        transitions:
+          - to_state: metrics_refreshed
+            trigger_action: refresh_resource_metrics
+            required_evidence: "ratings 已写入"
+            type: normal
+      - id: rate_updated
+        name: 评分已更新
+        description: "覆盖当前有效评分并记录 update 流水。"
+        transitions:
+          - to_state: metrics_refreshed
+            trigger_action: refresh_resource_metrics
+            required_evidence: "ratings 已覆盖"
+            type: normal
+      - id: metrics_refreshed
+        name: 推荐指数已刷新
+        description: "列表、详情和当前书籍展示拿到新的推荐指数和推荐人数。"
+        transitions: []
+    guardrails:
+      - "同一会话同一本书只保留一条有效评分"
+      - "评分理由必填，推荐人/评分人姓名选填"
+      - "评分成功会影响推荐指数，不改变难度层级"
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: "rating create 或 update"
+        impact: "重新计算 final recommendation_score"
+
+  - id: ws_score_aggregation
+    name: 最终推荐分数计算
+    description: "将有效评分和已采纳推荐汇总为资源级推荐指数、热度和置信度。"
+    anchor_objects:
+      - rating
+      - recommendation
+      - resource_metrics
+      - radar_display_state
+    states:
+      - id: score_waiting_input
+        name: 等待有效输入
+        description: "资料尚无评分或已采纳推荐。"
+        transitions:
+          - to_state: score_from_recommendation
+            trigger_action: 推荐被采纳
+            required_evidence: "recommendations.status in accepted / adopted"
+            type: normal
+          - to_state: score_from_rating
+            trigger_action: 用户提交评分
+            required_evidence: "ratings 存在当前有效评分"
+            type: normal
+      - id: score_from_recommendation
+        name: 推荐均分生效
+        description: "无评分时，最终推荐指数来自已采纳推荐平均分。"
+        transitions:
+          - to_state: score_from_rating
+            trigger_action: 新增有效评分
+            required_evidence: "rating_count > 0"
+            type: normal
+      - id: score_from_rating
+        name: 评分均分生效
+        description: "有评分时，最终推荐指数优先来自有效评分平均分。"
+        transitions:
+          - to_state: radar_weight_refreshed
+            trigger_action: 刷新雷达视觉权重
+            required_evidence: "resource_metrics.recommendation_score 已更新"
+            type: normal
+      - id: radar_weight_refreshed
+        name: 视觉权重已刷新
+        description: "圆点大小、榜单排序和动态状态可读取新的聚合指标。"
+        transitions: []
+    guardrails:
+      - "最终推荐分数必须来自 resource_metrics"
+      - "pending 推荐不进入正式分数"
+      - "评分值不作为难度判断依据"
+    dependency_mapping:
+      - workstream: ws_difficulty_judgement
+        condition: "新增书籍需要进入雷达"
+        impact: "最终推荐分数只能决定优先级，圈层还需要 difficulty_level"
+
+  - id: ws_difficulty_judgement
+    name: 难度判断与圈层映射
+    description: "从内容证据和 AI 评估得到 difficulty_level，再映射到首页雷达三层圈。"
+    anchor_objects:
+      - resource
+      - recommendation
+      - ai_evaluation
+      - radar_display_state
+    states:
+      - id: diff_waiting_evidence
+        name: 等待证据
+        description: "新增书籍只有基础字段，难度证据不足。"
+        transitions:
+          - to_state: diff_ai_suggested
+            trigger_action: 生成 AI 内容评估
+            required_evidence: "title、author、domain、ability_themes、reason 或 summary 足够"
+            type: normal
+      - id: diff_ai_suggested
+        name: AI 已建议难度
+        description: "AI 给出 suggested_difficulty、置信度和判断依据。"
+        transitions:
+          - to_state: diff_confirmed
+            trigger_action: 采纳难度建议
+            required_evidence: "confidence 足够或人工确认"
+            type: normal
+          - to_state: diff_review_needed
+            trigger_action: 置信度不足
+            required_evidence: "证据不足或推荐理由冲突"
+            type: exception
+      - id: diff_review_needed
+        name: 需要复核
+        description: "难度不可自动确认，需要更多资料或人工判断。"
+        transitions:
+          - to_state: diff_confirmed
+            trigger_action: 人工补充或确认
+            required_evidence: "补充 summary、能力主题、适合人群或前置知识"
+            type: recovery
+      - id: diff_confirmed
+        name: 难度已确认
+        description: "resources.difficulty_level 已确认，可映射 radar_display_state.ring_index。"
+        transitions: []
+    guardrails:
+      - "难度不是用户必填评分项"
+      - "必须保留判断依据，尤其是 AI 建议被采纳时"
+      - "难度只影响圈层，不表达书籍价值高低"
+    dependency_mapping:
+      - workstream: ws_score_aggregation
+        condition: "书籍已有最终推荐分数但没有难度"
+        impact: "书籍可以排序，但不能可靠定位到雷达圈层"

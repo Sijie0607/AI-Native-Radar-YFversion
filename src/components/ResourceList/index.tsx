@@ -12,14 +12,14 @@ const ResourceList = ({ onScoreClick }: ResourceListProps) => {
 
   if (books.length === 0) {
     return (
-      <div className="text-center py-16">
-        <p className="text-slate-400 text-lg">没有找到符合条件的书籍</p>
+      <div className="py-10 text-center">
+        <p className="text-base text-slate-400">没有找到符合条件的资料</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {books.map((book) => (
         <ResourceCard key={book.id} resource={book} onScoreClick={onScoreClick} />
       ))}
